@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react';
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: './', // Relative base path fixes blank screen issues on many hosts
+  base: './', 
   server: {
     port: 3000,
     open: true
@@ -12,6 +12,6 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
-    sourcemap: true // Useful for debugging in production if needed
+    sourcemap: true
   }
 });
