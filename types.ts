@@ -1,11 +1,22 @@
+
 export type SubscriptionTier = 'free' | 'pro';
+
+export type ContentType = 'video' | 'audio' | 'pdf' | 'document' | 'image';
+
+export interface ContentItem {
+  id: string;
+  type: ContentType;
+  title: string;
+  url: string;
+  duration?: string; // For video/audio
+  fileSize?: string; // For documents
+}
 
 export interface Lesson {
   id: string;
   title: string;
-  duration: string;
-  isLocked: boolean; // Original lock status (e.g. not released yet)
-  videoUrl?: string;
+  isLocked: boolean; 
+  contents: ContentItem[]; // New: Array of content items
 }
 
 export interface Course {
