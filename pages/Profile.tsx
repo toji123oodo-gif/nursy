@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import { User, Phone, Calendar, Shield, Edit2, LogOut, CheckCircle, Save, X, Clock } from 'lucide-react';
+import { User, Phone, Calendar, Shield, Edit2, LogOut, CheckCircle, Save, X, Clock, Mail } from 'lucide-react';
 
 export const Profile: React.FC = () => {
   const { user, logout, updateUserData } = useApp();
@@ -137,6 +137,16 @@ export const Profile: React.FC = () => {
                     </div>
 
                     <div className="space-y-4">
+                        <div className="flex items-center p-4 bg-brand-main rounded-xl border border-white/5">
+                            <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-brand-muted ml-4 shrink-0">
+                                <Mail size={18} />
+                            </div>
+                            <div className="flex-1">
+                                <p className="text-xs text-brand-muted">البريد الإلكتروني</p>
+                                <p className="text-white font-mono text-sm">{user.email || 'تم التسجيل برقم الهاتف'}</p>
+                            </div>
+                        </div>
+
                         <div className="flex items-center p-4 bg-brand-main rounded-xl border border-white/5">
                             <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-brand-muted ml-4 shrink-0">
                                 <Phone size={18} />

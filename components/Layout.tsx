@@ -12,6 +12,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
   const isActive = (path: string) => location.pathname === path;
 
+  // List of Admin Emails
+  const adminEmails = ['admin@nursy.com', 'toji123oodo@gmail.com'];
+
   const handleLogout = () => {
     logout();
     navigate('/');
@@ -66,7 +69,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                     <>
                       <NavLink to="/dashboard" icon={LayoutDashboard} label="مساحة العمل" />
                       <NavLink to="/wallet" icon={Wallet} label="المحفظة" />
-                      {(searchTerm === '1221' || user.email === 'admin@nursy.com') && (
+                      {(searchTerm === '1221' || (user.email && adminEmails.includes(user.email))) && (
                         <NavLink to="/admin" icon={ShieldAlert} label="الأدمن" />
                       )}
                     </>
@@ -156,7 +159,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                     <>
                     <NavLink to="/dashboard" icon={LayoutDashboard} label="مساحة العمل" mobileOnly />
                     <NavLink to="/wallet" icon={Wallet} label="المحفظة والاشتراكات" mobileOnly />
-                    {(searchTerm === '1221' || user.email === 'admin@nursy.com') && (
+                    {(searchTerm === '1221' || (user.email && adminEmails.includes(user.email))) && (
                         <NavLink to="/admin" icon={ShieldAlert} label="لوحة تحكم الأدمن" mobileOnly />
                     )}
                     <div className="border-t border-white/5 my-4 pt-4">

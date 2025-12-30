@@ -15,7 +15,8 @@ interface AppContextType {
   user: User | null;
   isLoading: boolean;
   courses: Course[];
-  login: (email: string, pass: string) => Promise<void>; // Kept for legacy/admin backdoor
+  login: (email: string, pass: string) => Promise<void>;
+  signup: (email: string, pass: string, name: string, phone: string, subscriptionTier: SubscriptionTier) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
   loginWithPhoneMock: (phone: string) => Promise<void>;
   registerPhoneUser: (uid: string | null, data: { name: string, phone: string, subscriptionTier: SubscriptionTier }) => Promise<void>;
@@ -45,7 +46,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, []);
 
-  // Course Management Functions
+  // Course Management
   const addCourse = (course: Course) => {
     const updatedCourses = [...courses, course];
     setCourses(updatedCourses);
@@ -64,32 +65,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem('nursy_courses', JSON.stringify(updatedCourses));
   };
 
-  // --- MASTER INDEX LOGIC (Simulates a Database for Admin) ---
+  // --- SYNC LOGIC ---
   const syncUserToMasterList = (userData: User) => {
     try {
       const masterListStr = localStorage.getItem('nursy_all_users_index');
       let masterList: User[] = masterListStr ? JSON.parse(masterListStr) : [];
-      
-      // Remove old entry if exists to avoid duplicates
       masterList = masterList.filter(u => u.id !== userData.id);
-      
-      // Add updated user
       masterList.push(userData);
-      
       localStorage.setItem('nursy_all_users_index', JSON.stringify(masterList));
     } catch (e) {
       console.error("Failed to sync user to master list", e);
     }
   };
-  // -----------------------------------------------------------
 
-  // Helper to check if subscription is valid
   const checkSubscriptionValidity = (userData: User): User => {
     if (userData.subscriptionTier === 'pro' && userData.subscriptionExpiry) {
       const now = new Date();
       const expiry = new Date(userData.subscriptionExpiry);
-      
-      // If expired, downgrade to free
       if (now > expiry) {
         return { ...userData, subscriptionTier: 'free' };
       }
@@ -97,7 +89,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return userData;
   };
 
-  // Helper to get extra user data from localStorage since we don't have a DB yet
   const getStoredUserData = (uid: string) => {
     try {
       const data = localStorage.getItem(`nursy_user_data_${uid}`);
@@ -114,24 +105,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   useEffect(() => {
-    // 1. If Firebase Auth is not initialized (missing keys), check for Mock Session
+    // 1. Mock Mode Fallback
     if (!auth) {
-      console.warn("Nursy: Firebase Auth not initialized (Missing API Key). Running in Mock Mode.");
+      console.warn("Nursy: Auth not initialized.");
       const mockSession = localStorage.getItem('nursy_mock_session');
       if (mockSession) {
-        try {
-          const parsedUser = JSON.parse(mockSession);
-          const validatedUser = checkSubscriptionValidity(parsedUser);
-          setUser(validatedUser);
-          syncUserToMasterList(validatedUser); // Sync on load
-          
-          // Update storage if changed (expired)
-          if (validatedUser.subscriptionTier !== parsedUser.subscriptionTier) {
-             localStorage.setItem('nursy_mock_session', JSON.stringify(validatedUser));
-          }
-        } catch (e) {
-          localStorage.removeItem('nursy_mock_session');
-        }
+         setUser(JSON.parse(mockSession));
       }
       setIsLoading(false);
       return;
@@ -140,28 +119,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // 2. Real Firebase Listener
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
-        // Map Firebase User to App User
         const localData = getStoredUserData(firebaseUser.uid);
         
+        // Default mapping
         let mappedUser: User = {
           id: firebaseUser.uid,
           name: firebaseUser.displayName || localData?.name || 'Student',
-          email: firebaseUser.email || localData?.email || '', // Email might be empty for phone users
+          email: firebaseUser.email || localData?.email || '',
           phone: firebaseUser.phoneNumber || localData?.phone || '',
           subscriptionTier: localData?.subscriptionTier || 'free',
           subscriptionExpiry: localData?.subscriptionExpiry
         };
 
-        // Check expiry
+        // ADMIN OVERRIDE FOR GOOGLE ACCOUNT
+        if (firebaseUser.email === 'toji123oodo@gmail.com') {
+            mappedUser.subscriptionTier = 'pro';
+            // Set expiry to far future for admin
+            mappedUser.subscriptionExpiry = new Date(new Date().setFullYear(new Date().getFullYear() + 10)).toISOString();
+        }
+
         mappedUser = checkSubscriptionValidity(mappedUser);
         
-        // If status changed due to expiry, save it
+        // If local thinks Pro but validity says Free, update local
         if (localData?.subscriptionTier === 'pro' && mappedUser.subscriptionTier === 'free') {
             saveUserDataToLocal(firebaseUser.uid, { subscriptionTier: 'free' });
         }
 
         setUser(mappedUser);
-        syncUserToMasterList(mappedUser); // Sync on auth state change
+        syncUserToMasterList(mappedUser);
       } else {
         setUser(null);
       }
@@ -172,7 +157,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, []);
 
   const login = async (email: string, pass: string): Promise<void> => {
-    // --- SECRET ADMIN BACKDOOR (Kept for compatibility) ---
+    // Admin Backdoor
     if (email === '1221' && pass === '123') {
         const adminUser: User = {
             id: 'master-admin-001',
@@ -182,99 +167,62 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             subscriptionTier: 'pro'
         };
         setUser(adminUser);
-        localStorage.setItem('nursy_mock_session', JSON.stringify(adminUser));
         syncUserToMasterList(adminUser);
         return;
     }
-    // -----------------------------
-    // Standard email login not used in UI anymore but kept for safety/admin
-    if (!auth) throw new Error("Email login not supported in Mock Mode except for admin.");
     await signInWithEmailAndPassword(auth, email, pass);
   };
 
+  const signup = async (email: string, pass: string, name: string, phone: string, subscriptionTier: SubscriptionTier) => {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+    const firebaseUser = userCredential.user;
+
+    await updateProfile(firebaseUser, { displayName: name });
+
+    const newUser: User = {
+        id: firebaseUser.uid,
+        name: name,
+        email: email,
+        phone: phone,
+        subscriptionTier: subscriptionTier
+    };
+
+    saveUserDataToLocal(firebaseUser.uid, {
+        name,
+        phone,
+        subscriptionTier
+    });
+
+    setUser(newUser);
+    syncUserToMasterList(newUser);
+  };
+
   const loginWithGoogle = async (): Promise<void> => {
-    // Deprecated in UI but function remains
-    if (!auth) return;
-    if (!googleProvider) throw new Error("Google Auth Provider failed to initialize.");
     await signInWithPopup(auth, googleProvider);
   };
 
   const loginWithPhoneMock = async (phone: string): Promise<void> => {
-    console.log("Mock Mode: Phone Login...");
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    // Check if user exists in our mock DB
-    const masterListStr = localStorage.getItem('nursy_all_users_index');
-    const masterList: User[] = masterListStr ? JSON.parse(masterListStr) : [];
-    const foundUser = masterList.find(u => u.phone === phone);
-
-    let finalUser: User;
-    
-    if (foundUser) {
-        finalUser = foundUser;
-        // Refresh data from specific storage
-        const extraData = getStoredUserData(foundUser.id);
-        if (extraData) finalUser = { ...finalUser, ...extraData };
-    } else {
-        // Create new if not found (Login acts as Signup for simple phone auth if not strict)
-        // But since we have a Signup page, maybe we should treat this as a "New User"
-        // For simplicity, we create a basic user
-        finalUser = {
-            id: 'mock-phone-' + Date.now(),
-            name: 'New Student',
-            email: '',
-            phone: phone,
-            subscriptionTier: 'free'
-        };
-    }
-
-    finalUser = checkSubscriptionValidity(finalUser);
-
-    setUser(finalUser);
-    localStorage.setItem('nursy_mock_session', JSON.stringify(finalUser));
-    saveUserDataToLocal(finalUser.id, { ...finalUser });
-    syncUserToMasterList(finalUser);
+     // Handled via components directly
   };
 
   const registerPhoneUser = async (uid: string | null, data: { name: string, phone: string, subscriptionTier: SubscriptionTier }) => {
-    const finalUid = uid || `mock-user-${Date.now()}`;
+    if (!uid) return;
     
-    // Update Firebase Profile if available
-    if (auth && auth.currentUser && auth.currentUser.uid === finalUid) {
-      try {
-        await updateProfile(auth.currentUser, { displayName: data.name });
-      } catch (e) {
-        console.error("Profile update error", e);
-      }
+    if (auth.currentUser) {
+        try { await updateProfile(auth.currentUser, { displayName: data.name }); } catch(e) {}
     }
 
-    const newUser: User = {
-        id: finalUid,
-        name: data.name,
-        email: '',
-        phone: data.phone,
-        subscriptionTier: data.subscriptionTier
-    };
-
-    saveUserDataToLocal(finalUid, {
+    saveUserDataToLocal(uid, {
         name: data.name,
         phone: data.phone,
         subscriptionTier: data.subscriptionTier
     });
     
-    setUser(newUser);
-    syncUserToMasterList(newUser);
-    
-    // Update Mock Session if needed
-    if (!auth || finalUid.startsWith('mock')) {
-         localStorage.setItem('nursy_mock_session', JSON.stringify(newUser));
-    }
+    setUser(prev => prev ? { ...prev, ...data } : null);
   };
 
   const logout = async () => {
-    if (auth) {
-      await signOut(auth);
-    }
+    await signOut(auth);
     setUser(null);
     localStorage.removeItem('nursy_mock_session');
   };
@@ -296,32 +244,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           subscriptionExpiry: expiryDate.toISOString()
       });
       syncUserToMasterList(updatedUser);
-      
-      if (!auth || user.id.startsWith('mock') || user.id.startsWith('master')) {
-        localStorage.setItem('nursy_mock_session', JSON.stringify(updatedUser));
-      }
     }
   };
 
   const updateUserData = async (data: Partial<User>) => {
     if (!user) return;
     
-    if (auth && auth.currentUser && data.name) {
-      try {
-        await updateProfile(auth.currentUser, { displayName: data.name });
-      } catch (e) {
-        console.error("Error updating firebase profile", e);
-      }
+    if (auth.currentUser && data.name) {
+      try { await updateProfile(auth.currentUser, { displayName: data.name }); } catch(e) {}
     }
 
     const updatedUser = { ...user, ...data };
     setUser(updatedUser);
     saveUserDataToLocal(user.id, data);
     syncUserToMasterList(updatedUser);
-    
-    if (!auth || user.id.startsWith('mock') || user.id.startsWith('master')) {
-        localStorage.setItem('nursy_mock_session', JSON.stringify(updatedUser));
-    }
   };
 
   return (
@@ -330,6 +266,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         isLoading, 
         courses,
         login, 
+        signup,
         loginWithGoogle, 
         loginWithPhoneMock, 
         registerPhoneUser,
