@@ -1,7 +1,7 @@
 import React from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
-import { Play, Clock, BookOpen, Star, User, Shield, CheckCircle, Lock, ArrowLeft, Share2, Facebook, Twitter, MessageCircle, Tag, TrendingDown, Award, GraduationCap, Briefcase, Download } from 'lucide-react';
+import { Play, Clock, BookOpen, Star, User, Shield, CheckCircle, Lock, ArrowLeft, Share2, Facebook, Twitter, MessageCircle, Tag, TrendingDown, Award, GraduationCap, Briefcase, Download, Copy } from 'lucide-react';
 
 export const CourseDetail: React.FC = () => {
   const { courseId } = useParams();
@@ -40,6 +40,23 @@ export const CourseDetail: React.FC = () => {
   const shareUrl = window.location.href;
   const shareText = `Check out this course: ${course.title}`;
   
+  const handleNativeShare = async () => {
+    if (navigator.share) {
+        try {
+            await navigator.share({
+                title: course.title,
+                text: shareText,
+                url: shareUrl,
+            });
+        } catch (err) {
+            console.log('Error sharing', err);
+        }
+    } else {
+        navigator.clipboard.writeText(shareUrl);
+        alert('تم نسخ الرابط للحافظة!');
+    }
+  };
+
   const discountPercentage = course.originalPrice 
     ? Math.round(((course.originalPrice - course.price) / course.originalPrice) * 100) 
     : 0;
@@ -241,7 +258,7 @@ export const CourseDetail: React.FC = () => {
                                 <li className="flex items-center gap-3"><CheckCircle size={16} className="text-green-500" /> دعم فني ومتابعة</li>
                             </ul>
 
-                            {/* Social Share */}
+                            {/* Social Share (Desktop) */}
                             <div className="mt-6 pt-6 border-t border-white/10">
                                 <p className="text-white font-bold text-sm mb-3 flex items-center gap-2">
                                     <Share2 size={16} className="text-brand-gold" />
@@ -316,26 +333,30 @@ export const CourseDetail: React.FC = () => {
 
         {/* Mobile Sticky Enroll Bar */}
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-brand-card/95 backdrop-blur-xl border-t border-white/10 p-4 lg:hidden animate-fade-in-up shadow-[0_-5px_20px_rgba(0,0,0,0.3)]">
-            <div className="flex items-center gap-4 max-w-lg mx-auto">
+            <div className="flex items-center gap-3 max-w-lg mx-auto">
+                {/* Mobile Share Button */}
+                <button 
+                    onClick={handleNativeShare}
+                    className="w-12 h-12 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center text-brand-muted hover:text-white active:scale-95 transition-all"
+                    title="مشاركة الكورس"
+                >
+                    <Share2 size={20} />
+                </button>
+                
                 <div className="flex-1">
                      <div className="flex items-end gap-1">
-                        <span className="text-2xl font-black text-brand-gold">
+                        <span className="text-xl font-black text-brand-gold">
                             {course.price}
                         </span>
                         <span className="text-xs text-brand-gold/80 font-bold mb-1">ج.م</span>
                     </div>
-                    {course.originalPrice && course.originalPrice > course.price && (
-                        <span className="text-xs text-brand-muted line-through decoration-red-500/50 block">
-                            {course.originalPrice} ج.م
-                        </span>
-                    )}
                 </div>
                 <button 
                     onClick={handleEnroll}
-                    className="flex-[2] bg-brand-gold text-brand-main font-bold py-3.5 rounded-xl hover:bg-brand-goldHover transition-all shadow-glow flex items-center justify-center gap-2"
+                    className="flex-[2] bg-brand-gold text-brand-main font-bold py-3 rounded-xl hover:bg-brand-goldHover transition-all shadow-glow flex items-center justify-center gap-2"
                 >
-                    {user?.subscriptionTier === 'pro' ? 'ابدأ التعلم' : 'اشترك الآن'}
-                    <ArrowLeft size={20} />
+                    {user?.subscriptionTier === 'pro' ? 'ابدأ' : 'اشترك'}
+                    <ArrowLeft size={18} />
                 </button>
             </div>
         </div>

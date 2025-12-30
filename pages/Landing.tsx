@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Play, CheckCircle, Star, ArrowLeft, Clock, BookOpen, Shield, Award, Skull, Activity, Microscope, Stethoscope, BedDouble } from 'lucide-react';
+import { Play, CheckCircle, Star, ArrowLeft, Clock, BookOpen, Shield, Award, Skull, Activity, Microscope, Stethoscope, BedDouble, User, Filter } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 const getCourseIcon = (subject: string) => {
@@ -17,6 +17,7 @@ const getCourseIcon = (subject: string) => {
 export const Landing: React.FC = () => {
   const { user, courses } = useApp();
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedSubject, setSelectedSubject] = useState('All');
 
   useEffect(() => {
     // Simulate data fetching delay for visual effect
@@ -26,6 +27,18 @@ export const Landing: React.FC = () => {
 
     return () => clearTimeout(timer);
   }, []);
+
+  // Compute unique subjects from courses
+  const subjects = useMemo(() => {
+    const unique = Array.from(new Set(courses.map(c => c.subject)));
+    return ['All', ...unique];
+  }, [courses]);
+
+  // Filter courses based on selection
+  const filteredCourses = useMemo(() => {
+    if (selectedSubject === 'All') return courses;
+    return courses.filter(c => c.subject === selectedSubject);
+  }, [courses, selectedSubject]);
 
   return (
     <div className="pb-20">
@@ -125,10 +138,28 @@ export const Landing: React.FC = () => {
       {/* Featured Courses */}
       <section className="py-24 relative">
         <div className="container mx-auto px-6">
-          <div className="flex justify-between items-end mb-16">
+          <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
             <div>
                 <h2 className="text-3xl md:text-4xl font-black text-white mb-3">المواد الدراسية</h2>
                 <p className="text-brand-muted text-lg">جميع هذه المواد متاحة ضمن اشتراكك</p>
+            </div>
+
+            {/* Subject Filters */}
+            <div className="flex flex-wrap gap-2 justify-end">
+                {subjects.map(subject => (
+                    <button
+                        key={subject}
+                        onClick={() => setSelectedSubject(subject)}
+                        className={`px-5 py-2.5 rounded-full text-sm font-bold transition-all border flex items-center gap-2 ${
+                            selectedSubject === subject
+                            ? 'bg-brand-gold text-brand-main border-brand-gold shadow-glow'
+                            : 'bg-white/5 text-brand-muted border-white/10 hover:bg-white/10 hover:text-white'
+                        }`}
+                    >
+                        {subject !== 'All' && getCourseIcon(subject)}
+                        {subject === 'All' ? 'الكل' : subject}
+                    </button>
+                ))}
             </div>
           </div>
           
@@ -163,51 +194,74 @@ export const Landing: React.FC = () => {
                    </div>
                ))
             ) : (
-                courses.map((course) => (
-                <Link to={`/course/${course.id}`} key={course.id} className="block group bg-brand-card rounded-2xl overflow-hidden border border-white/5 hover:border-brand-gold/30 transition-all duration-300 hover:shadow-glow hover:-translate-y-2 cursor-pointer">
+                filteredCourses.map((course) => (
+                <Link to={`/course/${course.id}`} key={course.id} className="block group bg-[#112240] rounded-2xl overflow-hidden border border-white/5 hover:border-brand-gold/50 transition-all duration-300 hover:shadow-[0_0_30px_rgba(251,191,36,0.15)] hover:-translate-y-2 cursor-pointer relative">
+                    
                     {/* Image Area */}
-                    <div className="relative h-56 overflow-hidden">
-                    <div className="absolute inset-0 bg-brand-main/20 group-hover:bg-transparent transition-colors z-10"></div>
-                    <img src={course.image} alt={course.title} className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700" />
-                    <div className="absolute top-4 right-4 z-20 bg-brand-main/80 backdrop-blur-sm text-brand-gold text-xs font-bold px-3 py-1.5 rounded-lg border border-brand-gold/20 flex items-center gap-2">
-                        {getCourseIcon(course.subject)}
-                        {course.subject}
-                    </div>
+                    <div className="relative h-48 overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#112240] to-transparent z-10 opacity-80"></div>
+                        <img src={course.image} alt={course.title} className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700 opacity-80 group-hover:opacity-100" />
+                        
+                        {/* Subject Badge */}
+                        <div className="absolute top-4 right-4 z-20 bg-black/40 backdrop-blur-md text-white text-[10px] font-bold px-3 py-1 rounded-full border border-white/10 flex items-center gap-1.5">
+                            {getCourseIcon(course.subject)}
+                            {course.subject}
+                        </div>
                     </div>
 
                     {/* Content */}
-                    <div className="p-6">
-                    <h3 className="text-lg font-bold text-white mb-2 line-clamp-2 group-hover:text-brand-gold transition-colors min-h-[3.5rem]">{course.title}</h3>
-                    <div className="flex items-center gap-2 text-brand-muted text-sm mb-6">
-                        <div className="w-5 h-5 rounded-full bg-brand-gold/20 flex items-center justify-center shrink-0">
-                            <CheckCircle size={12} className="text-brand-gold" />
+                    <div className="p-5 relative z-20 -mt-10">
+                        <h3 className="text-xl font-bold text-white mb-1 leading-tight group-hover:text-brand-gold transition-colors">{course.title}</h3>
+                        
+                        <div className="flex items-center gap-2 text-brand-muted/80 text-xs mb-4">
+                            <User size={12} />
+                            <span>{course.instructor}</span>
                         </div>
-                        <span className="line-clamp-1">{course.instructor}</span>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4 mb-6">
-                        <div className="bg-brand-main/50 rounded-lg p-2 text-center border border-white/5">
-                            <BookOpen className="w-4 h-4 text-brand-muted mx-auto mb-1" />
-                            <span className="text-xs text-white">{course.lessons.length} فصول</span>
-                        </div>
-                        <div className="bg-brand-main/50 rounded-lg p-2 text-center border border-white/5">
-                            <Clock className="w-4 h-4 text-brand-muted mx-auto mb-1" />
-                            <span className="text-xs text-white">15 ساعة</span>
-                        </div>
-                    </div>
 
-                    <div className="flex justify-between items-center border-t border-white/5 pt-4">
-                        <div className="flex flex-col">
-                            <span className="text-xs text-brand-muted">السعر</span>
-                            <span className="text-lg font-bold text-green-400">ضمن الاشتراك</span>
+                        {/* Divider */}
+                        <div className="h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent my-4"></div>
+
+                        {/* Metadata */}
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-4 text-xs font-medium text-gray-400">
+                                <div className="flex items-center gap-1.5 bg-white/5 px-2 py-1 rounded-lg">
+                                    <BookOpen size={12} className="text-brand-gold" />
+                                    <span>{course.lessons.length} دروس</span>
+                                </div>
+                                <div className="flex items-center gap-1.5 bg-white/5 px-2 py-1 rounded-lg">
+                                    <Clock size={12} className="text-brand-gold" />
+                                    <span>15 ساعة</span>
+                                </div>
+                            </div>
                         </div>
-                        <div className="w-12 h-12 bg-white text-brand-main rounded-full flex items-center justify-center group-hover:bg-brand-gold transition-colors shadow-lg">
-                            <Play size={20} fill="currentColor" className="ml-1" />
+
+                        {/* Price Row */}
+                        <div className="flex items-end justify-between">
+                            <div className="flex flex-col">
+                                <span className="text-[10px] text-brand-muted uppercase tracking-wider mb-0.5">السعر</span>
+                                <div className="flex items-baseline gap-2">
+                                    <span className="text-2xl font-black text-brand-gold drop-shadow-sm">{course.price} <span className="text-sm font-bold">ج.م</span></span>
+                                    {course.originalPrice && (
+                                        <span className="text-xs text-white/20 line-through decoration-white/20">{course.originalPrice}</span>
+                                    )}
+                                </div>
+                            </div>
+                            
+                            <button className="w-10 h-10 rounded-full bg-brand-gold text-brand-main flex items-center justify-center shadow-[0_0_10px_rgba(251,191,36,0.3)] group-hover:shadow-[0_0_20px_rgba(251,191,36,0.5)] transition-all duration-300 transform group-hover:rotate-[-45deg]">
+                                <ArrowLeft size={20} />
+                            </button>
                         </div>
-                    </div>
                     </div>
                 </Link>
                 ))
+            )}
+            
+            {!isLoading && filteredCourses.length === 0 && (
+                <div className="col-span-full flex flex-col items-center justify-center py-16 text-center border border-dashed border-white/10 rounded-2xl bg-white/5">
+                    <Filter className="text-brand-muted mb-4 opacity-50" size={48} />
+                    <p className="text-white font-bold text-lg mb-2">لا توجد مواد في هذا القسم</p>
+                    <p className="text-brand-muted text-sm">جرب اختيار قسم آخر لتصفح المواد المتاحة.</p>
+                </div>
             )}
           </div>
           
