@@ -17,10 +17,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check local storage for persistent session
+    // Check local storage for persistent session safely
     const storedUser = localStorage.getItem('nursy_user');
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (error) {
+        console.error("Failed to parse user data", error);
+        localStorage.removeItem('nursy_user');
+      }
     }
     setIsLoading(false);
   }, []);
