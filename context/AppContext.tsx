@@ -43,7 +43,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   useEffect(() => {
     if (!auth) {
-      console.warn("Auth not initialized. Skipping auth listener.");
+      // If auth is missing (no API key), we stop loading but user remains null
+      console.warn("Auth not initialized. Check your .env file for VITE_FIREBASE_API_KEY.");
       setIsLoading(false);
       return;
     }
@@ -72,12 +73,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, []);
 
   const login = async (email: string, pass: string): Promise<void> => {
-    if (!auth) throw new Error("System Error: Firebase is not configured correctly.");
+    if (!auth) throw new Error("Firebase configuration is missing. Cannot log in.");
     await signInWithEmailAndPassword(auth, email, pass);
   };
 
   const loginWithGoogle = async (): Promise<void> => {
-    if (!auth || !googleProvider) throw new Error("System Error: Google Auth not configured.");
+    if (!auth) throw new Error("Firebase configuration is missing. Cannot log in with Google.");
+    if (!googleProvider) throw new Error("Google Auth Provider failed to initialize.");
+    
     const result = await signInWithPopup(auth, googleProvider);
     // Initialize local data if new user
     const localData = getStoredUserData(result.user.uid);
@@ -90,7 +93,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const signup = async (data: Omit<User, 'id'> & { password?: string }) => {
-    if (!auth) throw new Error("System Error: Firebase is not configured correctly.");
+    if (!auth) throw new Error("Firebase configuration is missing. Cannot sign up.");
     if (!data.password) throw new Error("Password is required");
     
     const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);

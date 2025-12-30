@@ -13,7 +13,8 @@ const firebaseConfig = {
 };
 
 let auth: Auth | undefined;
-let googleProvider: GoogleAuthProvider | undefined;
+// Initialize provider immediately - it doesn't require the app instance to be ready
+const googleProvider = new GoogleAuthProvider();
 let analytics: any;
 
 try {
@@ -21,7 +22,6 @@ try {
   if (firebaseConfig.apiKey) {
     const app = initializeApp(firebaseConfig);
     auth = getAuth(app);
-    googleProvider = new GoogleAuthProvider();
     
     // Safely initialize analytics only in supported environments
     isSupported().then(yes => {
