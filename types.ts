@@ -25,4 +25,5 @@ export interface User {
   email: string;
   phone: string;
   subscriptionTier: SubscriptionTier;
+  subscriptionExpiry?: string; // ISO Date String
 }

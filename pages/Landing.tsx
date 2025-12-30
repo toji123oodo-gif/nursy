@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Play, CheckCircle, Star, ArrowLeft, Clock, BookOpen, Shield, Award, Skull, Activity, Microscope, Stethoscope, BedDouble } from 'lucide-react';
-import { courses as coursesData } from '../data/courses';
 import { useApp } from '../context/AppContext';
 
 const getCourseIcon = (subject: string) => {
@@ -16,16 +15,14 @@ const getCourseIcon = (subject: string) => {
 };
 
 export const Landing: React.FC = () => {
-  const { user } = useApp();
-  const [courses, setCourses] = useState<typeof coursesData>([]);
+  const { user, courses } = useApp();
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate data fetching delay
+    // Simulate data fetching delay for visual effect
     const timer = setTimeout(() => {
-        setCourses(coursesData);
         setIsLoading(false);
-    }, 2000);
+    }, 1000);
 
     return () => clearTimeout(timer);
   }, []);
@@ -61,12 +58,12 @@ export const Landing: React.FC = () => {
               </h1>
               
               <p className="text-brand-muted text-lg md:text-xl mb-10 max-w-2xl mx-auto md:mx-0 leading-relaxed font-light">
-                منصة تعليمية متخصصة لطلاب كليات التمريض. شرح أكاديمي مبسط، مراجعات شاملة، وتدريبات عملية تؤهلك لسوق العمل.
+                اشتراك شهري شامل بـ <span className="text-brand-gold font-bold">50 ج.م فقط</span>. احصل على جميع الكورسات، الامتحانات، والملازم في مكان واحد.
               </p>
               
               <div className="flex flex-col sm:flex-row gap-5 justify-center md:justify-start">
                 <Link to="/dashboard" className="bg-brand-gold text-brand-main text-lg font-bold py-4 px-10 rounded-xl hover:bg-brand-goldHover transition-all transform hover:-translate-y-1 shadow-glow flex items-center justify-center gap-3">
-                  <span>ابدأ رحلة التعلم</span>
+                  <span>اشترك الآن</span>
                   <ArrowLeft size={22} strokeWidth={3} />
                 </Link>
                 <button className="group px-10 py-4 rounded-xl border border-white/10 hover:border-brand-gold/50 hover:bg-brand-card/50 transition-all flex items-center justify-center gap-3 text-white">
@@ -80,18 +77,18 @@ export const Landing: React.FC = () => {
               {/* Stats */}
               <div className="mt-16 flex items-center justify-center md:justify-start gap-8 border-t border-white/5 pt-8">
                   <div>
-                      <h4 className="text-3xl font-black text-white">10K+</h4>
-                      <p className="text-sm text-brand-muted">طالب تمريض</p>
+                      <h4 className="text-3xl font-black text-white">50 ج.م</h4>
+                      <p className="text-sm text-brand-muted">اشتراك شهري</p>
                   </div>
                   <div className="w-px h-12 bg-white/10"></div>
                   <div>
-                      <h4 className="text-3xl font-black text-white">5+</h4>
-                      <p className="text-sm text-brand-muted">مواد أساسية</p>
+                      <h4 className="text-3xl font-black text-white">{courses.length}+</h4>
+                      <p className="text-sm text-brand-muted">مواد شاملة</p>
                   </div>
                   <div className="w-px h-12 bg-white/10"></div>
                   <div>
-                      <h4 className="text-3xl font-black text-white">4.8</h4>
-                      <p className="text-sm text-brand-muted">تقييم ممتاز</p>
+                      <h4 className="text-3xl font-black text-white">30</h4>
+                      <p className="text-sm text-brand-muted">يوم صلاحية</p>
                   </div>
               </div>
             </div>
@@ -131,7 +128,7 @@ export const Landing: React.FC = () => {
           <div className="flex justify-between items-end mb-16">
             <div>
                 <h2 className="text-3xl md:text-4xl font-black text-white mb-3">المواد الدراسية</h2>
-                <p className="text-brand-muted text-lg">اختر المادة وابدأ المذاكرة فوراً</p>
+                <p className="text-brand-muted text-lg">جميع هذه المواد متاحة ضمن اشتراكك</p>
             </div>
           </div>
           
@@ -201,8 +198,8 @@ export const Landing: React.FC = () => {
 
                     <div className="flex justify-between items-center border-t border-white/5 pt-4">
                         <div className="flex flex-col">
-                            <span className="text-xs text-brand-muted">سعر الكورس</span>
-                            <span className="text-2xl font-black text-brand-gold">{course.price} <span className="text-xs font-bold text-brand-muted">ج.م</span></span>
+                            <span className="text-xs text-brand-muted">السعر</span>
+                            <span className="text-lg font-bold text-green-400">ضمن الاشتراك</span>
                         </div>
                         <div className="w-12 h-12 bg-white text-brand-main rounded-full flex items-center justify-center group-hover:bg-brand-gold transition-colors shadow-lg">
                             <Play size={20} fill="currentColor" className="ml-1" />

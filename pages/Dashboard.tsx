@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Lock, Play, Star, Clock, AlertCircle, CheckCircle, XCircle, FileText, HelpCircle, Download, File, Activity, Unlock } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Lock, Play, Star, Clock, AlertCircle, CheckCircle, XCircle, FileText, HelpCircle, Download, File, Activity, Unlock, Brain, RotateCw, Bot, Send, Sparkles, X } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { Link } from 'react-router-dom';
 
@@ -23,6 +23,15 @@ const lessonResources = [
     { title: 'Lecture Notes (PDF)', size: '2.4 MB', type: 'pdf' },
     { title: 'Skeleton Diagram (High Res)', size: '1.1 MB', type: 'img' },
     { title: 'Extra Reading Materials', size: '500 KB', type: 'doc' },
+];
+
+// Mock Flashcards Data
+const lessonFlashcards = [
+    { id: 1, term: 'Osteoblast', definition: 'Cells that form new bone.' },
+    { id: 2, term: 'Osteoclast', definition: 'Cells that break down bone matrix.' },
+    { id: 3, term: 'Femur', definition: 'The longest and strongest bone in the body (Thigh bone).' },
+    { id: 4, term: 'Axial Skeleton', definition: 'Consists of the skull, vertebral column, and rib cage.' },
+    { id: 5, term: 'Ligament', definition: 'Connective tissue that connects bone to bone.' },
 ];
 
 // Mock Quiz Data
@@ -78,13 +87,115 @@ const Watermark: React.FC<{ userPhone: string }> = ({ userPhone }) => {
   );
 };
 
+// AI Chat Component
+const AiChatWidget: React.FC<{ onClose: () => void }> = ({ onClose }) => {
+    const [messages, setMessages] = useState<{sender: 'bot'|'user', text: string}[]>([
+        { sender: 'bot', text: 'مرحباً بك! أنا مساعدك الذكي في Nursy. اسألني أي سؤال عن التمريض أو محتوى الكورس.' }
+    ]);
+    const [input, setInput] = useState('');
+    const [isTyping, setIsTyping] = useState(false);
+    const scrollRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (scrollRef.current) {
+            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
+    }, [messages]);
+
+    const handleSend = () => {
+        if (!input.trim()) return;
+        
+        const userMsg = input;
+        setMessages(prev => [...prev, { sender: 'user', text: userMsg }]);
+        setInput('');
+        setIsTyping(true);
+
+        // Simulate AI Response
+        setTimeout(() => {
+            let reply = "هذا سؤال ممتاز! سأقوم بالبحث في المصادر الطبية والإجابة عليك.";
+            if (userMsg.includes("عظم") || userMsg.includes("bone")) reply = "العظام هي نسيج حي يشكل الهيكل العظمي. هل تريد معرفة المزيد عن أنواع الخلايا العظمية؟";
+            if (userMsg.includes("شرح") || userMsg.includes("summary")) reply = "باختصار، هذا الدرس يتحدث عن الجهاز العظمي المحوري والطرفي وكيفية عمل المفاصل.";
+            
+            setMessages(prev => [...prev, { sender: 'bot', text: reply }]);
+            setIsTyping(false);
+        }, 1500);
+    };
+
+    return (
+        <div className="fixed bottom-24 left-4 md:left-8 w-[90%] md:w-96 bg-brand-card border border-brand-gold/50 rounded-2xl shadow-2xl overflow-hidden z-40 animate-scale-up flex flex-col h-[500px]">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-brand-gold to-yellow-600 p-4 flex justify-between items-center text-brand-main">
+                <div className="flex items-center gap-2">
+                    <Bot size={24} />
+                    <div>
+                        <h3 className="font-black text-sm">Nursy AI</h3>
+                        <p className="text-[10px] opacity-80 font-bold">مساعد ذكي للمشتركين</p>
+                    </div>
+                </div>
+                <button onClick={onClose} className="hover:bg-black/10 p-1 rounded-full"><X size={18} /></button>
+            </div>
+
+            {/* Chat Area */}
+            <div className="flex-1 bg-brand-main/95 p-4 overflow-y-auto" ref={scrollRef}>
+                {messages.map((msg, idx) => (
+                    <div key={idx} className={`mb-3 flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`max-w-[80%] p-3 rounded-xl text-sm leading-relaxed ${
+                            msg.sender === 'user' 
+                            ? 'bg-brand-gold/20 text-brand-gold rounded-tr-none border border-brand-gold/20' 
+                            : 'bg-white/10 text-white rounded-tl-none'
+                        }`}>
+                            {msg.text}
+                        </div>
+                    </div>
+                ))}
+                {isTyping && (
+                    <div className="flex justify-start mb-3">
+                        <div className="bg-white/10 p-3 rounded-xl rounded-tl-none flex gap-1">
+                            <span className="w-2 h-2 bg-white/50 rounded-full animate-bounce"></span>
+                            <span className="w-2 h-2 bg-white/50 rounded-full animate-bounce delay-75"></span>
+                            <span className="w-2 h-2 bg-white/50 rounded-full animate-bounce delay-150"></span>
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Input Area */}
+            <div className="p-3 bg-brand-card border-t border-white/10">
+                <div className="relative">
+                    <input 
+                        type="text" 
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+                        placeholder="اكتب سؤالك هنا..."
+                        className="w-full bg-brand-main rounded-full py-3 px-4 pr-12 text-sm text-white border border-white/10 focus:border-brand-gold outline-none"
+                    />
+                    <button 
+                        onClick={handleSend}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 bg-brand-gold text-brand-main p-2 rounded-full hover:bg-brand-goldHover transition-colors"
+                    >
+                        <Send size={16} />
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 export const Dashboard: React.FC = () => {
   const { user, upgradeToPro } = useApp();
   const [activeLesson, setActiveLesson] = useState(sampleLessons[0]);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [activeTab, setActiveTab] = useState<'video' | 'quiz' | 'resources'>('video');
-  const [completedLessons, setCompletedLessons] = useState<string[]>(['l1']); // Pre-fill first lesson as completed for demo
+  const [activeTab, setActiveTab] = useState<'video' | 'quiz' | 'resources' | 'flashcards'>('video');
+  const [completedLessons, setCompletedLessons] = useState<string[]>(['l1']);
   const [videoProgress, setVideoProgress] = useState(0);
+  
+  // AI Chat State
+  const [showAiChat, setShowAiChat] = useState(false);
+
+  // Flashcards State
+  const [activeFlashcardIndex, setActiveFlashcardIndex] = useState(0);
+  const [isFlipped, setIsFlipped] = useState(false);
   
   // Quiz State
   const [quizStarted, setQuizStarted] = useState(false);
@@ -101,12 +212,13 @@ export const Dashboard: React.FC = () => {
     if (isLessonAccessible(index)) {
       setActiveLesson(lesson);
       setShowUpgradeModal(false);
-      // Reset logic when changing lesson
       setActiveTab('video');
       setQuizStarted(false);
       setShowResult(false);
       setScore(0);
       setCurrentQuestion(0);
+      setIsFlipped(false);
+      setActiveFlashcardIndex(0);
     } else {
       setShowUpgradeModal(true);
     }
@@ -120,7 +232,6 @@ export const Dashboard: React.FC = () => {
     );
   };
 
-  // Sync Progress with Completion Status
   useEffect(() => {
     if (completedLessons.includes(activeLesson.id)) {
         setVideoProgress(100);
@@ -129,13 +240,12 @@ export const Dashboard: React.FC = () => {
     }
   }, [activeLesson.id, completedLessons]);
 
-  // Simulate Video Progress
   useEffect(() => {
     let interval: any;
     if (activeTab === 'video' && !completedLessons.includes(activeLesson.id) && videoProgress < 100) {
         interval = setInterval(() => {
             setVideoProgress(prev => {
-                const next = prev + 0.2; // Simulate playback
+                const next = prev + 0.2; 
                 if (next >= 100) return 100;
                 return next;
             });
@@ -149,7 +259,6 @@ export const Dashboard: React.FC = () => {
     if (optionIndex === lessonQuiz[currentQuestion].correct) {
         setScore(score + 1);
     }
-
     if (currentQuestion < lessonQuiz.length - 1) {
         setCurrentQuestion(currentQuestion + 1);
     } else {
@@ -159,7 +268,6 @@ export const Dashboard: React.FC = () => {
 
   const handleDownload = (title: string) => {
     if (user?.subscriptionTier === 'pro') {
-        // Simulate download
         alert(`جاري تحميل الملف: ${title}`);
     } else {
         setShowUpgradeModal(true);
@@ -169,8 +277,7 @@ export const Dashboard: React.FC = () => {
   const handleSimulateUpgrade = () => {
       upgradeToPro();
       setShowUpgradeModal(false);
-      // Optional feedback
-      alert("تم تفعيل الاشتراك بنجاح! تم فتح التحميل.");
+      alert("تم تفعيل الاشتراك بنجاح لمدة 30 يوم!");
   };
 
   if (!user) return null;
@@ -178,6 +285,27 @@ export const Dashboard: React.FC = () => {
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto relative">
       
+      {/* Floating AI Button (Pro Only) */}
+      {user.subscriptionTier === 'pro' && !showAiChat && (
+          <button 
+            onClick={() => setShowAiChat(true)}
+            className="fixed bottom-6 left-6 z-40 bg-brand-gold text-brand-main p-4 rounded-full shadow-[0_0_20px_rgba(251,191,36,0.5)] animate-bounce-slow hover:scale-110 transition-transform group"
+            title="المساعد الذكي"
+          >
+              <Bot size={28} />
+              <span className="absolute -top-2 -right-2 flex h-4 w-4">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-4 w-4 bg-red-500"></span>
+              </span>
+              <div className="absolute left-14 top-1/2 -translate-y-1/2 bg-white text-brand-main text-xs font-bold px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                  اسأل Nursy AI
+              </div>
+          </button>
+      )}
+
+      {/* AI Chat Widget */}
+      {showAiChat && <AiChatWidget onClose={() => setShowAiChat(false)} />}
+
       {/* Upgrade Modal */}
       {showUpgradeModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
@@ -193,20 +321,16 @@ export const Dashboard: React.FC = () => {
             </div>
             <h3 className="text-2xl font-black text-white mb-2">هذا المحتوى للمشتركين فقط</h3>
             <p className="text-brand-muted mb-8">
-              أنت تستخدم الباقة المجانية. للوصول إلى باقي المحاضرات وتحميل الملفات، يرجى ترقية حسابك.
+              للوصول إلى باقي المحاضرات، الامتحانات، الكروت التعليمية والذكاء الاصطناعي، اشترك في الباقة الشهرية (50 جنيه فقط).
             </p>
             
-            {/* Simulation Button instead of Link */}
             <button 
               onClick={handleSimulateUpgrade}
               className="block w-full bg-brand-gold text-brand-main font-bold py-4 rounded-xl hover:bg-brand-goldHover transition-all shadow-glow flex items-center justify-center gap-2"
             >
               <Unlock size={20} />
-              ترقية الحساب فوراً (محاكاة)
+              تفعيل الاشتراك فوراً (محاكاة)
             </button>
-            <p className="text-xs text-brand-muted mt-4">
-                في الوضع الحقيقي، سينقلك هذا لصفحة الدفع. هنا نقوم بالمحاكاة فقط.
-            </p>
           </div>
         </div>
       )}
@@ -222,7 +346,7 @@ export const Dashboard: React.FC = () => {
         {user.subscriptionTier === 'free' && (
             <Link to="/wallet" className="bg-brand-card border border-brand-gold/30 text-brand-gold px-4 py-2 rounded-lg font-bold text-sm hover:bg-brand-gold hover:text-brand-main transition-colors flex items-center gap-2 animate-pulse">
                 <Star size={16} />
-                ترقية للنسخة الكاملة
+                اشترك الآن (50 ج.م)
             </Link>
         )}
       </header>
@@ -232,25 +356,32 @@ export const Dashboard: React.FC = () => {
         <div className="lg:col-span-2 space-y-6">
           
           {/* Tabs */}
-          <div className="flex bg-brand-card p-1 rounded-xl border border-white/5 w-fit overflow-x-auto max-w-full">
+          <div className="flex bg-brand-card p-1 rounded-xl border border-white/5 w-fit overflow-x-auto max-w-full no-scrollbar">
               <button 
                 onClick={() => setActiveTab('video')}
-                className={`px-6 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all whitespace-nowrap ${activeTab === 'video' ? 'bg-brand-gold text-brand-main shadow-lg' : 'text-brand-muted hover:text-white'}`}
+                className={`px-4 md:px-6 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all whitespace-nowrap ${activeTab === 'video' ? 'bg-brand-gold text-brand-main shadow-lg' : 'text-brand-muted hover:text-white'}`}
               >
                 <Play size={16} fill={activeTab === 'video' ? "currentColor" : "none"} />
                 المحاضرة
               </button>
               <button 
                 onClick={() => setActiveTab('quiz')}
-                className={`px-6 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all whitespace-nowrap ${activeTab === 'quiz' ? 'bg-brand-gold text-brand-main shadow-lg' : 'text-brand-muted hover:text-white'}`}
+                className={`px-4 md:px-6 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all whitespace-nowrap ${activeTab === 'quiz' ? 'bg-brand-gold text-brand-main shadow-lg' : 'text-brand-muted hover:text-white'}`}
               >
                 <HelpCircle size={16} />
                 الامتحان
-                <span className="bg-red-500 text-white text-[10px] px-1.5 rounded-full">جديد</span>
+              </button>
+              <button 
+                onClick={() => setActiveTab('flashcards')}
+                className={`px-4 md:px-6 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all whitespace-nowrap ${activeTab === 'flashcards' ? 'bg-brand-gold text-brand-main shadow-lg' : 'text-brand-muted hover:text-white'}`}
+              >
+                <Brain size={16} />
+                فلاش كارد
+                <span className="hidden md:inline bg-purple-500 text-white text-[10px] px-1.5 rounded-full">PRO</span>
               </button>
               <button 
                 onClick={() => setActiveTab('resources')}
-                className={`px-6 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all whitespace-nowrap ${activeTab === 'resources' ? 'bg-brand-gold text-brand-main shadow-lg' : 'text-brand-muted hover:text-white'}`}
+                className={`px-4 md:px-6 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all whitespace-nowrap ${activeTab === 'resources' ? 'bg-brand-gold text-brand-main shadow-lg' : 'text-brand-muted hover:text-white'}`}
               >
                 <FileText size={16} />
                 المرفقات
@@ -326,6 +457,74 @@ export const Dashboard: React.FC = () => {
                         {activeCourse.description}
                     </p>
                 </div>
+              </div>
+          )}
+
+          {activeTab === 'flashcards' && (
+              // FLASHCARDS VIEW (Pro Only Logic)
+              <div className="animate-fade-in h-[500px]">
+                  {user.subscriptionTier === 'free' ? (
+                       <div className="h-full flex flex-col items-center justify-center bg-brand-card rounded-2xl border border-brand-gold/20 relative overflow-hidden">
+                           <div className="absolute inset-0 bg-brand-gold/5 blur-3xl"></div>
+                           <Brain size={64} className="text-brand-gold mb-4 opacity-50" />
+                           <h2 className="text-2xl font-bold text-white mb-2">ميزة الفلاش كارد (Flashcards)</h2>
+                           <p className="text-brand-muted mb-6 text-center max-w-sm">
+                               أداة تعليمية تفاعلية لحفظ المصطلحات الطبية. متاحة فقط للمشتركين في الباقة الكاملة.
+                           </p>
+                           <button onClick={() => setShowUpgradeModal(true)} className="bg-brand-gold text-brand-main font-bold py-3 px-8 rounded-xl shadow-glow hover:bg-brand-goldHover transition-colors flex items-center gap-2">
+                               <Unlock size={18} />
+                               افتح الميزة الآن
+                           </button>
+                       </div>
+                  ) : (
+                      <div className="h-full flex flex-col items-center justify-center relative">
+                           {/* Flashcard Container */}
+                           <div className="w-full max-w-xl aspect-video relative perspective-1000 mb-8" onClick={() => setIsFlipped(!isFlipped)}>
+                               <div className={`w-full h-full relative transition-transform duration-500 transform-style-3d cursor-pointer ${isFlipped ? 'rotate-y-180' : ''}`}>
+                                   
+                                   {/* Front */}
+                                   <div className="absolute inset-0 backface-hidden bg-brand-card border border-white/10 rounded-2xl shadow-2xl flex flex-col items-center justify-center p-8 group hover:border-brand-gold/50 transition-colors">
+                                       <div className="text-xs font-bold text-brand-muted uppercase tracking-widest mb-4">Term / المصطلح</div>
+                                       <h3 className="text-4xl font-black text-white text-center">{lessonFlashcards[activeFlashcardIndex].term}</h3>
+                                       <div className="absolute bottom-4 right-4 text-xs text-brand-muted flex items-center gap-1 opacity-50 group-hover:opacity-100 transition-opacity">
+                                           <RotateCw size={12} /> اضغط للقلب
+                                       </div>
+                                   </div>
+
+                                   {/* Back */}
+                                   <div className="absolute inset-0 backface-hidden bg-brand-main border border-brand-gold/30 rounded-2xl shadow-2xl flex flex-col items-center justify-center p-8 rotate-y-180">
+                                       <div className="text-xs font-bold text-brand-gold uppercase tracking-widest mb-4">Definition / التعريف</div>
+                                       <p className="text-xl text-center text-white leading-relaxed">{lessonFlashcards[activeFlashcardIndex].definition}</p>
+                                   </div>
+                               </div>
+                           </div>
+
+                           {/* Controls */}
+                           <div className="flex items-center gap-4 bg-brand-card p-2 rounded-xl border border-white/5">
+                               <button 
+                                    onClick={() => {
+                                        setIsFlipped(false);
+                                        setActiveFlashcardIndex(prev => prev > 0 ? prev - 1 : lessonFlashcards.length - 1);
+                                    }}
+                                    className="p-3 hover:bg-white/5 rounded-lg text-white transition-colors"
+                               >
+                                   السابق
+                               </button>
+                               <span className="text-brand-muted font-mono text-sm px-4">
+                                   {activeFlashcardIndex + 1} / {lessonFlashcards.length}
+                               </span>
+                               <button 
+                                    onClick={() => {
+                                        setIsFlipped(false);
+                                        setActiveFlashcardIndex(prev => prev < lessonFlashcards.length - 1 ? prev + 1 : 0);
+                                    }}
+                                    className="p-3 hover:bg-white/5 rounded-lg text-white transition-colors"
+                               >
+                                   التالي
+                               </button>
+                           </div>
+                      </div>
+                  )}
               </div>
           )}
 
@@ -448,8 +647,8 @@ export const Dashboard: React.FC = () => {
                        <div className="mt-8 p-4 bg-yellow-900/20 border border-yellow-700/30 rounded-xl flex items-center gap-3 animate-pulse">
                            <Lock className="text-yellow-500 shrink-0" size={20} />
                            <p className="text-yellow-200 text-sm">
-                               تنبيه: تحميل الملفات (PDF) متاح فقط للمشتركين في الباقة الكاملة. 
-                               <button onClick={() => setShowUpgradeModal(true)} className="underline mr-1 font-bold hover:text-white">اضغط للترقية</button>
+                               تنبيه: تحميل الملفات (PDF) متاح فقط للمشتركين. 
+                               <button onClick={() => setShowUpgradeModal(true)} className="underline mr-1 font-bold hover:text-white">اضغط للاشتراك</button>
                            </p>
                        </div>
                   )}
@@ -515,10 +714,10 @@ export const Dashboard: React.FC = () => {
                 <div className="bg-gradient-to-br from-yellow-600 to-brand-gold rounded-2xl p-6 text-brand-main text-center relative overflow-hidden shadow-glow">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-white/20 blur-3xl rounded-full"></div>
                     <Star className="mx-auto text-brand-main mb-3" size={32} fill="currentColor" />
-                    <h3 className="font-black text-xl mb-1">افتح كل الدروس</h3>
-                    <p className="text-sm font-semibold opacity-80 mb-6">احصل على وصول كامل للكورسات والامتحانات</p>
+                    <h3 className="font-black text-xl mb-1">اشتراك شامل</h3>
+                    <p className="text-sm font-semibold opacity-80 mb-6">فتح جميع الكورسات والمواد لمدة 30 يوم</p>
                     <button onClick={() => setShowUpgradeModal(true)} className="block w-full bg-brand-main text-brand-gold font-bold py-3.5 rounded-xl hover:bg-brand-hover transition-colors border border-brand-main/20 shadow-lg">
-                        اشترك الآن بـ 250 ج.م
+                        اشترك الآن بـ 50 ج.م
                     </button>
                 </div>
             )}

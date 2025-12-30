@@ -42,6 +42,7 @@ const AppContent: React.FC = () => {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/course/:courseId" element={<CourseDetail />} />
+          <Route path="/help" element={<HelpCenter />} />
           
           {/* Protected Routes */}
           <Route 
@@ -73,14 +74,6 @@ const AppContent: React.FC = () => {
             element={
               <ProtectedRoute>
                 <Profile />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/help" 
-            element={
-              <ProtectedRoute>
-                <HelpCenter />
               </ProtectedRoute>
             } 
           />

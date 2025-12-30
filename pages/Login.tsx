@@ -218,7 +218,7 @@ export const Login: React.FC = () => {
               }`}
             >
               <Mail size={16} />
-              البريد
+              البريد / ID
             </button>
             <button
               onClick={() => { setLoginMethod('phone'); setError(''); }}
@@ -245,13 +245,13 @@ export const Login: React.FC = () => {
           {loginMethod === 'email' && (
             <form onSubmit={handleEmailLogin} className="space-y-6 relative z-10 animate-fade-in">
               <div>
-                <label className="block text-sm font-bold text-white mb-2">البريد الإلكتروني</label>
+                <label className="block text-sm font-bold text-white mb-2">البريد الإلكتروني أو ID</label>
                 <input
-                  type="email"
+                  type="text"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-brand-main border border-white/10 rounded-xl px-4 py-3.5 text-white focus:border-brand-gold focus:ring-1 focus:ring-brand-gold outline-none transition-all placeholder:text-white/20 disabled:opacity-50"
+                  className="w-full bg-brand-main border border-white/10 hover:border-white/20 rounded-xl px-4 py-3.5 text-white placeholder:text-brand-muted/50 focus:border-brand-gold focus:ring-1 focus:ring-brand-gold/50 outline-none transition-all duration-300 disabled:opacity-50"
                   placeholder="name@example.com"
                   disabled={isSubmitting}
                 />
@@ -264,7 +264,7 @@ export const Login: React.FC = () => {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-brand-main border border-white/10 rounded-xl px-4 py-3.5 text-white focus:border-brand-gold focus:ring-1 focus:ring-brand-gold outline-none transition-all placeholder:text-white/20 disabled:opacity-50"
+                  className="w-full bg-brand-main border border-white/10 hover:border-white/20 rounded-xl px-4 py-3.5 text-white placeholder:text-brand-muted/50 focus:border-brand-gold focus:ring-1 focus:ring-brand-gold/50 outline-none transition-all duration-300 disabled:opacity-50"
                   placeholder="••••••••"
                   disabled={isSubmitting}
                 />
@@ -314,7 +314,7 @@ export const Login: React.FC = () => {
                         required
                         value={phoneNumber}
                         onChange={(e) => setPhoneNumber(e.target.value)}
-                        className="w-full bg-brand-main border border-white/10 rounded-xl px-4 py-3.5 pl-16 text-white text-lg font-mono focus:border-brand-gold focus:ring-1 focus:ring-brand-gold outline-none transition-all placeholder:text-white/20 disabled:opacity-50"
+                        className="w-full bg-brand-main border border-white/10 hover:border-white/20 rounded-xl px-4 py-3.5 pl-16 text-white text-lg font-mono placeholder:text-brand-muted/50 focus:border-brand-gold focus:ring-1 focus:ring-brand-gold/50 outline-none transition-all duration-300 disabled:opacity-50"
                         placeholder="1012345678"
                         disabled={isSubmitting}
                       />
@@ -352,7 +352,7 @@ export const Login: React.FC = () => {
                       required
                       value={otpCode}
                       onChange={(e) => setOtpCode(e.target.value)}
-                      className="w-full bg-brand-main border border-white/10 rounded-xl px-4 py-3.5 text-center text-white text-2xl font-mono tracking-widest focus:border-brand-gold focus:ring-1 focus:ring-brand-gold outline-none transition-all placeholder:text-white/20 disabled:opacity-50"
+                      className="w-full bg-brand-main border border-white/10 hover:border-white/20 rounded-xl px-4 py-3.5 text-center text-white text-2xl font-mono tracking-widest placeholder:text-brand-muted/50 focus:border-brand-gold focus:ring-1 focus:ring-brand-gold/50 outline-none transition-all duration-300 disabled:opacity-50"
                       placeholder="------"
                       maxLength={6}
                       disabled={isSubmitting}
