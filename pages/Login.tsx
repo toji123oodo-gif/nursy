@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { LogIn, GraduationCap, AlertCircle, Smartphone, Mail, ArrowRight, CheckCircle, Globe } from 'lucide-react';
+import { LogIn, GraduationCap, AlertCircle, Smartphone, Mail, ArrowRight, CheckCircle, Globe, Unlock } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
 import { auth } from '../src/firebase';
@@ -46,9 +46,10 @@ export const Login: React.FC = () => {
   // General State
   const [error, setError] = useState('');
   const [errorDetails, setErrorDetails] = useState(''); // For technical details
+  const [showMockGoogle, setShowMockGoogle] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const { login, loginWithGoogle } = useApp();
+  const { login, loginWithGoogle, loginWithGoogleMock } = useApp();
   const navigate = useNavigate();
 
   const handleEmailLogin = async (e: React.FormEvent) => {
@@ -77,6 +78,7 @@ export const Login: React.FC = () => {
   const handleGoogleLogin = async () => {
     setError('');
     setErrorDetails('');
+    setShowMockGoogle(false);
     setIsSubmitting(true);
     try {
       await loginWithGoogle();
@@ -87,6 +89,7 @@ export const Login: React.FC = () => {
         const domain = window.location.hostname;
         setError('النطاق الحالي غير مصرح به في Firebase.');
         setErrorDetails(`يرجى إضافة النطاق "${domain}" إلى قائمة Authorized Domains في Firebase Console > Authentication > Settings.`);
+        setShowMockGoogle(true);
       } else if (err.code === 'auth/popup-closed-by-user') {
         setError('تم إغلاق النافذة قبل اكتمال تسجيل الدخول.');
       } else if (err.code === 'auth/popup-blocked') {
@@ -192,7 +195,7 @@ export const Login: React.FC = () => {
           {/* Tabs */}
           <div className="flex bg-brand-main/50 p-1 rounded-xl mb-6 relative z-10">
             <button
-              onClick={() => { setLoginMethod('email'); setError(''); setErrorDetails(''); }}
+              onClick={() => { setLoginMethod('email'); setError(''); setErrorDetails(''); setShowMockGoogle(false); }}
               className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition-all ${
                 loginMethod === 'email' 
                 ? 'bg-brand-card text-brand-gold shadow-sm' 
@@ -226,6 +229,18 @@ export const Login: React.FC = () => {
                 <div className="text-xs font-normal opacity-80 mt-2 p-2 bg-black/20 rounded border border-white/5 break-all font-mono" dir="ltr">
                   {errorDetails}
                 </div>
+              )}
+              {showMockGoogle && (
+                 <div className="mt-3 pt-3 border-t border-white/10 animate-fade-in">
+                    <p className="text-xs text-brand-muted mb-2">هل تريد المتابعة في الوضع التجريبي؟</p>
+                    <button 
+                        onClick={() => { loginWithGoogleMock(); navigate('/dashboard'); }}
+                        className="bg-brand-gold text-brand-main text-xs font-bold py-2 px-4 rounded-lg hover:bg-brand-goldHover transition-colors flex items-center gap-2 w-full justify-center"
+                    >
+                        <Unlock size={14} />
+                        دخول تجريبي (Mock Login)
+                    </button>
+                 </div>
               )}
             </div>
           )}

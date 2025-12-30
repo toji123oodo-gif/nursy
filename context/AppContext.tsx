@@ -18,6 +18,7 @@ interface AppContextType {
   login: (email: string, pass: string) => Promise<void>;
   signup: (email: string, pass: string, name: string, phone: string, subscriptionTier: SubscriptionTier) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
+  loginWithGoogleMock: () => Promise<void>;
   loginWithPhoneMock: (phone: string) => Promise<void>;
   registerPhoneUser: (uid: string | null, data: { name: string, phone: string, subscriptionTier: SubscriptionTier }) => Promise<void>;
   logout: () => Promise<void>;
@@ -201,6 +202,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     await signInWithPopup(auth, googleProvider);
   };
 
+  const loginWithGoogleMock = async (): Promise<void> => {
+    const mockUser: User = {
+        id: 'google-mock-user-001',
+        name: 'Demo Google User',
+        email: 'demo.user@gmail.com',
+        phone: '0000000000',
+        subscriptionTier: 'free'
+     };
+     setUser(mockUser);
+     saveUserDataToLocal(mockUser.id, { name: mockUser.name, subscriptionTier: 'free' });
+     syncUserToMasterList(mockUser);
+  };
+
   const loginWithPhoneMock = async (phone: string): Promise<void> => {
      // Handled via components directly
   };
@@ -268,6 +282,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         login, 
         signup,
         loginWithGoogle, 
+        loginWithGoogleMock,
         loginWithPhoneMock, 
         registerPhoneUser,
         logout, 
