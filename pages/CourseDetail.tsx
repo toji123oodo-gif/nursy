@@ -2,7 +2,7 @@ import React from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { courses } from '../data/courses';
 import { useApp } from '../context/AppContext';
-import { Play, Clock, BookOpen, Star, User, Shield, CheckCircle, Lock, ArrowLeft, Share2, Facebook, Twitter, MessageCircle } from 'lucide-react';
+import { Play, Clock, BookOpen, Star, User, Shield, CheckCircle, Lock, ArrowLeft, Share2, Facebook, Twitter, MessageCircle, Tag, TrendingDown } from 'lucide-react';
 
 export const CourseDetail: React.FC = () => {
   const { courseId } = useParams();
@@ -29,6 +29,11 @@ export const CourseDetail: React.FC = () => {
           navigate('/dashboard');
       }
   };
+
+  // Calculate Discount
+  const discountPercentage = course.originalPrice 
+    ? Math.round(((course.originalPrice - course.price) / course.originalPrice) * 100) 
+    : 0;
 
   const shareUrl = window.location.href;
   const shareText = `Check out this course: ${course.title}`;
@@ -161,9 +166,35 @@ export const CourseDetail: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="text-center mb-6">
-                            <span className="text-sm text-brand-muted line-through">500 ج.م</span>
-                            <div className="text-4xl font-black text-white mt-1">{course.price} <span className="text-lg text-brand-gold">ج.م</span></div>
+                        {/* Price Section with Discount Logic */}
+                        <div className="text-center mb-6 relative p-4 rounded-xl bg-brand-main/50 border border-white/5">
+                            {discountPercentage > 0 && (
+                                <div className="absolute -top-3 -right-3 bg-red-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1 animate-bounce">
+                                    <Tag size={12} fill="currentColor" />
+                                    <span>خصم {discountPercentage}%</span>
+                                </div>
+                            )}
+                            
+                            <div className="flex flex-col items-center">
+                                {course.originalPrice && (
+                                    <span className="text-lg text-brand-muted/70 line-through decoration-red-500/50 decoration-2 font-bold mb-1">
+                                        {course.originalPrice} ج.م
+                                    </span>
+                                )}
+                                <div className="flex items-end gap-1">
+                                    <span className="text-5xl font-black text-brand-gold leading-none tracking-tight">
+                                        {course.price}
+                                    </span>
+                                    <span className="text-lg font-bold text-brand-gold/80 mb-1">ج.م</span>
+                                </div>
+                            </div>
+                            
+                            {discountPercentage > 0 && (
+                                <div className="mt-2 text-xs font-bold text-green-400 flex items-center justify-center gap-1">
+                                    <TrendingDown size={14} />
+                                    <span>أقل سعر خلال 30 يوم</span>
+                                </div>
+                            )}
                         </div>
 
                         <button 

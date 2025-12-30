@@ -6,6 +6,7 @@ export const courses: Course[] = [
     title: 'Anatomy - علم التشريح',
     instructor: 'Dr. Ahmed Khaled',
     price: 300,
+    originalPrice: 600,
     subject: 'Anatomy',
     image: 'https://images.unsplash.com/photo-1530210124550-912dc1381cb8?q=80&w=800&auto=format&fit=crop',
     lessons: [
@@ -21,6 +22,7 @@ export const courses: Course[] = [
     title: 'Physiology - علم وظائف الأعضاء',
     instructor: 'Dr. Sarah Nabil',
     price: 280,
+    originalPrice: 450,
     subject: 'Physiology',
     image: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?q=80&w=800&auto=format&fit=crop',
     lessons: [
@@ -34,6 +36,7 @@ export const courses: Course[] = [
     title: 'Microbiology - ميكروبيولوجي',
     instructor: 'Dr. Mohamed Ezzat',
     price: 250,
+    originalPrice: 400,
     subject: 'Microbiology',
     image: 'https://images.unsplash.com/photo-1583911179663-edf711e04132?q=80&w=800&auto=format&fit=crop',
     lessons: [
@@ -46,6 +49,7 @@ export const courses: Course[] = [
     title: 'Adult Nursing - تمريض البالغين',
     instructor: 'Dr. Mona Sayed',
     price: 350,
+    originalPrice: 700,
     subject: 'Adult Nursing',
     image: 'https://images.unsplash.com/photo-1579684385180-75416b0c2688?q=80&w=800&auto=format&fit=crop',
     lessons: [
@@ -58,6 +62,7 @@ export const courses: Course[] = [
     title: 'Health Assessment - التقييم الصحي',
     instructor: 'Dr. Hoda Ali',
     price: 200,
+    originalPrice: 300,
     subject: 'Health',
     image: 'https://images.unsplash.com/photo-1505751172569-80037f7f6c48?q=80&w=800&auto=format&fit=crop',
     lessons: [

@@ -13,6 +13,7 @@ export interface Course {
   title: string;
   instructor: string;
   price: number;
+  originalPrice?: number;
   image: string;
   subject: string;
   lessons: Lesson[];
