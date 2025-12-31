@@ -4,6 +4,7 @@ import { Lock, Play, Star, Clock, AlertCircle, CheckCircle, XCircle, FileText, H
 import { useApp } from '../context/AppContext';
 import { Link } from 'react-router-dom';
 import { ContentItem } from '../types';
+import { GoogleGenAI } from "@google/genai";
 
 // Mock Flashcards Data (Keep existing)
 const lessonFlashcards = [
@@ -214,40 +215,86 @@ const ImageViewer: React.FC<{ url: string, title: string, userPhone: string }> =
     );
 };
 
-// --- AI Chat Widget (Keep as is) ---
+// --- AI Chat Widget (Upgraded with Real Gemini API) ---
 const AiChatWidget: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-    // ... (Keep existing AI Chat logic - simplified for brevity in this specific update block but functionally same as before)
     const [messages, setMessages] = useState<{sender: 'bot'|'user', text: string}[]>([
-        { sender: 'bot', text: 'مرحباً بك! أنا مساعدك الذكي في Nursy.' }
+        { sender: 'bot', text: 'مرحباً بك! أنا مساعدك الذكي في Nursy. كيف يمكنني مساعدتك في فهم محتوى الكورس اليوم؟' }
     ]);
     const [input, setInput] = useState('');
+    const [isThinking, setIsThinking] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
 
-    const handleSend = () => {
-        if (!input.trim()) return;
-        setMessages(prev => [...prev, { sender: 'user', text: input }]);
+    // Auto-scroll to latest message
+    useEffect(() => {
+        if (scrollRef.current) {
+            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
+    }, [messages, isThinking]);
+
+    const handleSend = async () => {
+        if (!input.trim() || isThinking) return;
+        
+        const userQuery = input.trim();
+        setMessages(prev => [...prev, { sender: 'user', text: userQuery }]);
         setInput('');
-        setTimeout(() => {
-            setMessages(prev => [...prev, { sender: 'bot', text: "أنا هنا لمساعدتك في فهم المحتوى!" }]);
-        }, 1000);
+        setIsThinking(true);
+
+        // Fix: Implementing real Gemini API content generation
+        try {
+            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const response = await ai.models.generateContent({
+                model: 'gemini-3-flash-preview',
+                contents: userQuery,
+                config: {
+                    systemInstruction: "أنت مساعد ذكي لمنصة Nursy التعليمية لطلاب التمريض. مهمتك هي الإجابة على استفسارات الطلاب حول المواد العلمية (تشريح، فسيولوجيا، ميكروبيولوجيا) بأسلوب أكاديمي دقيق ومبسط باللغة العربية.",
+                    temperature: 0.7,
+                }
+            });
+            
+            setMessages(prev => [...prev, { sender: 'bot', text: response.text || "عذراً، لم أتمكن من الحصول على رد مفيد. حاول مرة أخرى." }]);
+        } catch (err) {
+            console.error("Gemini AI error:", err);
+            setMessages(prev => [...prev, { sender: 'bot', text: "عذراً، واجهت مشكلة في الاتصال بمحرك الذكاء الاصطناعي. يرجى المحاولة لاحقاً." }]);
+        } finally {
+            setIsThinking(false);
+        }
     };
 
     return (
-        <div className="fixed bottom-24 left-4 md:left-8 w-[90%] md:w-96 bg-brand-card border border-brand-gold/50 rounded-2xl shadow-2xl overflow-hidden z-40 animate-scale-up flex flex-col h-[400px]">
+        <div className="fixed bottom-24 left-4 md:left-8 w-[90%] md:w-96 bg-brand-card border border-brand-gold/50 rounded-2xl shadow-2xl overflow-hidden z-40 animate-scale-up flex flex-col h-[450px]">
              <div className="bg-gradient-to-r from-brand-gold to-yellow-600 p-3 flex justify-between items-center text-brand-main">
-                <span className="font-bold flex items-center gap-2"><Bot size={18} /> Nursy AI</span>
+                <span className="font-bold flex items-center gap-2"><Bot size={18} /> Nursy AI Assistant</span>
                 <button onClick={onClose}><X size={16} /></button>
             </div>
-            <div className="flex-1 p-4 overflow-y-auto space-y-2 bg-brand-main">
+            <div ref={scrollRef} className="flex-1 p-4 overflow-y-auto space-y-3 bg-brand-main scroll-smooth">
                 {messages.map((m, i) => (
-                    <div key={i} className={`p-2 rounded-lg text-sm max-w-[80%] ${m.sender === 'user' ? 'bg-brand-gold/20 text-brand-gold mr-auto' : 'bg-white/10 text-white ml-auto'}`}>
+                    <div key={i} className={`p-3 rounded-2xl text-sm max-w-[85%] shadow-sm ${m.sender === 'user' ? 'bg-brand-gold/20 text-brand-gold mr-auto rounded-tl-none' : 'bg-white/5 text-white ml-auto rounded-tr-none border border-white/5'}`}>
                         {m.text}
                     </div>
                 ))}
+                {isThinking && (
+                    <div className="flex items-center gap-2 text-brand-muted text-xs animate-pulse bg-white/5 p-2 rounded-xl ml-auto w-fit">
+                        <RotateCw size={12} className="animate-spin" />
+                        جاري معالجة سؤالك...
+                    </div>
+                )}
             </div>
-            <div className="p-3 bg-brand-card flex gap-2">
-                <input value={input} onChange={e=>setInput(e.target.value)} className="flex-1 bg-brand-main rounded-full px-3 text-sm text-white border border-white/10" placeholder="اكتب سؤالك..." />
-                <button onClick={handleSend} className="text-brand-gold"><Send size={18} /></button>
+            <div className="p-3 bg-brand-card border-t border-white/5 flex gap-2">
+                <input 
+                    value={input} 
+                    onChange={e => setInput(e.target.value)} 
+                    onKeyDown={e => e.key === 'Enter' && handleSend()}
+                    className="flex-1 bg-brand-main rounded-full px-4 py-2 text-sm text-white border border-white/10 focus:border-brand-gold outline-none transition-all" 
+                    placeholder="اطلب شرحاً لأي نقطة علمية..." 
+                    disabled={isThinking}
+                />
+                <button 
+                    onClick={handleSend} 
+                    disabled={isThinking}
+                    className="w-10 h-10 rounded-full bg-brand-gold text-brand-main flex items-center justify-center hover:scale-105 active:scale-95 transition-all disabled:opacity-50 shadow-glow"
+                >
+                    <Send size={18} />
+                </button>
             </div>
         </div>
     );
