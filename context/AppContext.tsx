@@ -70,8 +70,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // --- SYNC LOGIC (CLOUD) ---
   const syncUserToCloud = async (userData: User) => {
     try {
-      // Save to Firestore "users" collection
-      // This ensures the Admin panel sees this user regardless of device
       await setDoc(doc(db, "users", userData.id), userData, { merge: true });
     } catch (e) {
       console.error("Failed to sync user to cloud", e);
@@ -91,95 +89,106 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const getStoredUserData = async (uid: string) => {
     try {
-      // Try fetching from Cloud first
       const docRef = doc(db, "users", uid);
       const docSnap = await getDoc(docRef);
-      
       if (docSnap.exists()) {
         return docSnap.data() as User;
       }
-      
-      // Fallback to LocalStorage
-      const data = localStorage.getItem(`nursy_user_data_${uid}`);
-      return data ? JSON.parse(data) : null;
+      return null;
     } catch (e) {
+      console.error("Error fetching user data from Firestore:", e);
       return null;
     }
   };
 
   useEffect(() => {
-    // 1. Mock Mode Fallback
     if (!auth) {
-      console.warn("Nursy: Auth not initialized.");
-      const mockSession = localStorage.getItem('nursy_mock_session');
-      if (mockSession) {
-         setUser(JSON.parse(mockSession));
-      }
       setIsLoading(false);
       return;
     }
 
-    // 2. Real Firebase Listener
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        const storedData = await getStoredUserData(firebaseUser.uid);
-        
-        // Default mapping
-        let mappedUser: User = {
-          id: firebaseUser.uid,
-          name: storedData?.name || firebaseUser.displayName || 'Student',
-          email: firebaseUser.email || storedData?.email || '',
-          phone: firebaseUser.phoneNumber || storedData?.phone || '',
-          subscriptionTier: storedData?.subscriptionTier || 'free',
-          subscriptionExpiry: storedData?.subscriptionExpiry
-        };
+      try {
+        if (firebaseUser) {
+          const storedData = await getStoredUserData(firebaseUser.uid);
+          
+          let mappedUser: User = {
+            id: firebaseUser.uid,
+            name: storedData?.name || firebaseUser.displayName || 'طالب جديد',
+            email: firebaseUser.email || storedData?.email || '',
+            phone: storedData?.phone || firebaseUser.phoneNumber || '',
+            subscriptionTier: storedData?.subscriptionTier || 'free',
+            subscriptionExpiry: storedData?.subscriptionExpiry
+          };
 
-        // ADMIN OVERRIDE
-        if (firebaseUser.email === 'toji123oodo@gmail.com') {
-            mappedUser.subscriptionTier = 'pro';
-            mappedUser.subscriptionExpiry = new Date(new Date().setFullYear(new Date().getFullYear() + 10)).toISOString();
+          // Admin logic
+          if (firebaseUser.email === 'toji123oodo@gmail.com') {
+              mappedUser.subscriptionTier = 'pro';
+              const farFuture = new Date();
+              farFuture.setFullYear(farFuture.getFullYear() + 10);
+              mappedUser.subscriptionExpiry = farFuture.toISOString();
+          }
+
+          mappedUser = checkSubscriptionValidity(mappedUser);
+          
+          // Background sync to not block UI
+          syncUserToCloud(mappedUser);
+          setUser(mappedUser);
+        } else {
+          setUser(null);
         }
-
-        mappedUser = checkSubscriptionValidity(mappedUser);
-        
-        // Sync Latest State to Cloud
-        await syncUserToCloud(mappedUser);
-
-        setUser(mappedUser);
-      } else {
-        setUser(null);
+      } catch (err) {
+        console.error("Auth State Listener Error:", err);
+      } finally {
+        // CRITICAL: Always stop loading regardless of success/fail
+        setIsLoading(false);
       }
-      setIsLoading(false);
     });
 
     return () => unsubscribe();
   }, []);
 
   const login = async (email: string, pass: string): Promise<void> => {
-    await signInWithEmailAndPassword(auth, email, pass);
+    setIsLoading(true);
+    try {
+        await signInWithEmailAndPassword(auth, email, pass);
+    } catch (e) {
+        setIsLoading(false);
+        throw e;
+    }
   };
 
   const signup = async (email: string, pass: string, name: string, phone: string, subscriptionTier: SubscriptionTier) => {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
-    const firebaseUser = userCredential.user;
+    setIsLoading(true);
+    try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+        const firebaseUser = userCredential.user;
+        await updateProfile(firebaseUser, { displayName: name });
 
-    await updateProfile(firebaseUser, { displayName: name });
+        const newUser: User = {
+            id: firebaseUser.uid,
+            name: name,
+            email: email,
+            phone: phone,
+            subscriptionTier: subscriptionTier
+        };
 
-    const newUser: User = {
-        id: firebaseUser.uid,
-        name: name,
-        email: email,
-        phone: phone,
-        subscriptionTier: subscriptionTier
-    };
-
-    // Save initial data to cloud
-    await syncUserToCloud(newUser);
-    setUser(newUser);
+        await syncUserToCloud(newUser);
+        setUser(newUser);
+    } catch (e) {
+        setIsLoading(false);
+        throw e;
+    }
   };
 
   const loginWithGoogle = async (): Promise<void> => {
-    await signInWithPopup(auth, googleProvider);
+    setIsLoading(true); // Start loader when Google button is clicked
+    try {
+        await signInWithPopup(auth, googleProvider);
+    } catch (e) {
+        setIsLoading(false);
+        throw e;
+    }
   };
 
   const loginWithGoogleMock = async (): Promise<void> => {
@@ -191,36 +200,44 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         subscriptionTier: 'free'
      };
      setUser(mockUser);
-     localStorage.setItem('nursy_mock_session', JSON.stringify(mockUser));
+     setIsLoading(false);
   };
 
   const loginWithPhoneMock = async (phone: string): Promise<void> => {
-     // Handled via components directly
+     // Logic handled by components
   };
 
   const registerPhoneUser = async (uid: string | null, data: { name: string, phone: string, subscriptionTier: SubscriptionTier }) => {
     if (!uid) return;
-    
-    if (auth.currentUser) {
-        try { await updateProfile(auth.currentUser, { displayName: data.name }); } catch(e) {}
+    setIsLoading(true);
+    try {
+        if (auth.currentUser) {
+            await updateProfile(auth.currentUser, { displayName: data.name });
+        }
+
+        const newUser = {
+            id: uid,
+            name: data.name,
+            email: auth.currentUser?.email || '',
+            phone: data.phone,
+            subscriptionTier: data.subscriptionTier
+        };
+
+        await syncUserToCloud(newUser);
+        setUser(prev => prev ? { ...prev, ...data } : newUser);
+    } finally {
+        setIsLoading(false);
     }
-
-    const newUser = {
-        id: uid,
-        name: data.name,
-        email: auth.currentUser?.email || '',
-        phone: data.phone,
-        subscriptionTier: data.subscriptionTier
-    };
-
-    await syncUserToCloud(newUser);
-    setUser(prev => prev ? { ...prev, ...data } : newUser);
   };
 
   const logout = async () => {
-    await signOut(auth);
-    setUser(null);
-    localStorage.removeItem('nursy_mock_session');
+    setIsLoading(true);
+    try {
+        await signOut(auth);
+        setUser(null);
+    } finally {
+        setIsLoading(false);
+    }
   };
 
   const upgradeToPro = async () => {
