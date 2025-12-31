@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { HashRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AppProvider, useApp } from './context/AppContext';
@@ -19,7 +20,8 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   const { user, isLoading } = useApp();
   const location = useLocation();
 
-  if (isLoading) return <Loader />;
+  // We only show loader briefly if we are explicitly waiting for auth check on a protected page
+  if (isLoading && !user) return <Loader />;
 
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
@@ -28,14 +30,8 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   return <>{children}</>;
 };
 
-// Wrapper to handle global loading state
 const AppContent: React.FC = () => {
-  const { isLoading } = useApp();
-
-  if (isLoading) {
-    return <Loader />;
-  }
-
+  // Removed global isLoading check to prevent getting stuck
   return (
     <Layout>
        <Routes>

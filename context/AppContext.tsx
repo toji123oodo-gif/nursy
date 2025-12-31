@@ -67,6 +67,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const syncUserToCloud = async (userData: User) => {
+    if (!db || !userData.id) return;
     try {
       await setDoc(doc(db, "users", userData.id), userData, { merge: true });
     } catch (e) {
@@ -85,20 +86,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return userData;
   };
 
-  const getStoredUserData = async (uid: string) => {
-    try {
-      const docRef = doc(db, "users", uid);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        return docSnap.data() as User;
-      }
-      return null;
-    } catch (e) {
-      console.error("Error fetching user data from Firestore:", e);
-      return null;
-    }
-  };
-
   useEffect(() => {
     if (!auth) {
       setIsLoading(false);
@@ -107,35 +94,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        // Step 1: Set a basic user immediately to unblock the UI
-        const basicUser: User = {
+        // 1. Create immediate local user
+        const localUser: User = {
           id: firebaseUser.uid,
           name: firebaseUser.displayName || 'طالب جديد',
           email: firebaseUser.email || '',
           phone: firebaseUser.phoneNumber || '',
-          subscriptionTier: 'free'
+          subscriptionTier: firebaseUser.email === 'toji123oodo@gmail.com' ? 'pro' : 'free'
         };
         
-        // Admin override check
-        if (firebaseUser.email === 'toji123oodo@gmail.com') {
-          basicUser.subscriptionTier = 'pro';
-        }
+        setUser(localUser);
+        setIsLoading(false); // Unblock UI immediately
 
-        setUser(basicUser);
-        setIsLoading(false); // <--- UNBLOCK UI NOW
-
-        // Step 2: Enrichment (fetch from Firestore in background)
+        // 2. Background: Fetch or Create in Firestore
         try {
-          const storedData = await getStoredUserData(firebaseUser.uid);
-          if (storedData) {
-            let enrichedUser = { ...basicUser, ...storedData };
-            enrichedUser = checkSubscriptionValidity(enrichedUser);
-            setUser(enrichedUser);
-            // Sync current state back
-            syncUserToCloud(enrichedUser);
+          const docRef = doc(db, "users", firebaseUser.uid);
+          const docSnap = await getDoc(docRef);
+          
+          if (docSnap.exists()) {
+            // User exists, update local state with Cloud data
+            let cloudData = docSnap.data() as User;
+            cloudData = checkSubscriptionValidity(cloudData);
+            setUser(cloudData);
+          } else {
+            // NEW USER: Save to Firestore immediately so they appear in Admin
+            await syncUserToCloud(localUser);
           }
-        } catch (enrichError) {
-          console.error("Enrichment failed", enrichError);
+        } catch (e) {
+          console.error("Error in background sync:", e);
         }
       } else {
         setUser(null);
@@ -187,10 +173,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const registerPhoneUser = async (uid: string | null, data: { name: string, phone: string, subscriptionTier: SubscriptionTier }) => {
     if (!uid) return;
-    if (auth.currentUser) {
-        try { await updateProfile(auth.currentUser, { displayName: data.name }); } catch(e) {}
-    }
-
     const newUser = {
         id: uid,
         name: data.name,
@@ -198,9 +180,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         phone: data.phone,
         subscriptionTier: data.subscriptionTier
     };
-
     await syncUserToCloud(newUser);
-    setUser(prev => prev ? { ...prev, ...data } : newUser);
+    setUser(newUser);
   };
 
   const logout = async () => {
@@ -212,13 +193,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (user) {
       const expiryDate = new Date();
       expiryDate.setDate(expiryDate.getDate() + 30); 
-
       const updatedUser: User = { 
         ...user, 
         subscriptionTier: 'pro',
         subscriptionExpiry: expiryDate.toISOString()
       };
-
       setUser(updatedUser);
       await syncUserToCloud(updatedUser);
     }
@@ -226,9 +205,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const updateUserData = async (data: Partial<User>) => {
     if (!user) return;
-    if (auth.currentUser && data.name) {
-      try { await updateProfile(auth.currentUser, { displayName: data.name }); } catch(e) {}
-    }
     const updatedUser = { ...user, ...data };
     setUser(updatedUser);
     await syncUserToCloud(updatedUser);
