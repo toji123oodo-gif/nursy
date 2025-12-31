@@ -11,7 +11,7 @@ import {
   updateProfile,
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { auth, googleProvider, db } from '../src/firebase';
+import { auth, googleProvider, db } from '../firebase';
 
 interface AppContextType {
   user: User | null;
@@ -69,9 +69,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const syncUserToCloud = async (userData: User) => {
     if (!db || !userData.id) return;
     try {
-      await setDoc(doc(db, "users", userData.id), userData, { merge: true });
+      console.log("Admin Sync: Syncing user", userData.id);
+      await setDoc(doc(db, "users", userData.id), {
+          ...userData,
+          lastLogin: new Date().toISOString()
+      }, { merge: true });
     } catch (e) {
-      console.error("Cloud Sync Error:", e);
+      console.error("Admin Sync Error:", e);
     }
   };
 
@@ -83,8 +87,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        // Step 1: Set immediate local user state to unblock UI
-        const baseUser: User = {
+        let baseUser: User = {
           id: firebaseUser.uid,
           name: firebaseUser.displayName || 'طالب جديد',
           email: firebaseUser.email || '',
@@ -92,23 +95,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           subscriptionTier: firebaseUser.email === 'toji123oodo@gmail.com' ? 'pro' : 'free'
         };
         
-        setUser(baseUser);
-        setIsLoading(false); // NO MORE LOADING PAGE
-
-        // Step 2: Background - Ensure user is in Firestore
         try {
           const docRef = doc(db, "users", firebaseUser.uid);
           const docSnap = await getDoc(docRef);
           
           if (docSnap.exists()) {
             const cloudData = docSnap.data() as User;
-            setUser(cloudData);
+            baseUser = { ...baseUser, ...cloudData };
+            setUser(baseUser);
           } else {
-            // If they don't exist (new Google login for example), create them now
+            // New user (like Google login), sync immediately
             await syncUserToCloud(baseUser);
+            setUser(baseUser);
           }
         } catch (error) {
-          console.error("Firestore background check failed:", error);
+          console.error("Sync background failed:", error);
+          setUser(baseUser);
+        } finally {
+          setIsLoading(false);
         }
       } else {
         setUser(null);
@@ -144,23 +148,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     await signInWithPopup(auth, googleProvider);
   };
 
-  const loginWithGoogleMock = async (): Promise<void> => {
-    const mockUser: User = {
-        id: 'google-mock-user-001',
-        name: 'Demo User',
-        email: 'demo@gmail.com',
-        phone: '0000',
-        subscriptionTier: 'free'
-     };
-     setUser(mockUser);
-     setIsLoading(false);
-  };
-
+  const loginWithGoogleMock = async (): Promise<void> => {};
   const loginWithPhoneMock = async (phone: string): Promise<void> => {};
 
   const registerPhoneUser = async (uid: string | null, data: { name: string, phone: string, subscriptionTier: SubscriptionTier }) => {
     if (!uid) return;
-    const newUser = {
+    const newUser: User = {
         id: uid,
         name: data.name,
         email: auth.currentUser?.email || '',
