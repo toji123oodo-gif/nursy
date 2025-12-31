@@ -18,6 +18,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   const { user, isLoading } = useApp();
   const location = useLocation();
 
+  // If loading and no user, show nothing (transparent transition) instead of a Loader
   if (isLoading && !user) return null; 
 
   if (!user) {
@@ -70,6 +71,7 @@ const AppContent: React.FC = () => {
             } 
           />
           
+          {/* Legacy redirects */}
           <Route path="/welcome" element={<Navigate to="/dashboard" replace />} />
           <Route path="*" element={<Navigate to="/" replace />} />
        </Routes>
