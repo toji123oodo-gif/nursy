@@ -1,10 +1,10 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogIn, GraduationCap, AlertCircle, Smartphone, Mail, Unlock } from 'lucide-react';
+import { LogIn, GraduationCap, AlertCircle, Smartphone, Mail, Unlock, Loader2 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
-import { auth } from '../firebase'; // Fixed import from root
+import { auth } from '../firebase';
 
 declare global {
   interface Window {
@@ -19,6 +19,13 @@ const GoogleIcon = () => (
     <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
     <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
   </svg>
+);
+
+const ButtonLoader = () => (
+  <div className="flex items-center gap-2">
+    <Loader2 className="animate-spin" size={20} />
+    <span className="animate-pulse">جاري التحميل...</span>
+  </div>
 );
 
 type LoginMethod = 'email' | 'phone';
@@ -123,27 +130,29 @@ export const Login: React.FC = () => {
         <div className="bg-brand-card border border-white/5 p-8 rounded-3xl shadow-2xl relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-32 h-32 bg-brand-gold/5 blur-[80px] pointer-events-none group-hover:bg-brand-gold/10 transition-all duration-700"></div>
           
-          <div className="flex bg-brand-main/50 p-1.5 rounded-2xl mb-8 relative z-10 border border-white/5 shadow-inner">
+          <div className="flex bg-brand-main/40 p-1.5 rounded-2xl mb-8 relative z-10 border border-white/5 shadow-inner backdrop-blur-sm">
             <button
               onClick={() => setLoginMethod('email')}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${
+              disabled={isSubmitting}
+              className={`flex-1 flex items-center justify-center gap-3 py-3.5 rounded-xl text-sm font-black transition-all duration-300 border-2 ${
                 loginMethod === 'email' 
-                ? 'bg-brand-card text-brand-gold shadow-lg ring-1 ring-white/5' 
-                : 'text-brand-muted hover:text-white'
-              }`}
+                ? 'bg-brand-gold text-brand-main border-brand-gold shadow-glow scale-[1.02]' 
+                : 'bg-transparent text-brand-muted border-transparent hover:text-white hover:bg-white/5'
+              } disabled:opacity-50`}
             >
-              <Mail size={18} />
+              <Mail size={18} strokeWidth={loginMethod === 'email' ? 3 : 2} />
               البريد الإلكتروني
             </button>
             <button
               onClick={() => setLoginMethod('phone')}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${
+              disabled={isSubmitting}
+              className={`flex-1 flex items-center justify-center gap-3 py-3.5 rounded-xl text-sm font-black transition-all duration-300 border-2 ${
                 loginMethod === 'phone' 
-                ? 'bg-brand-card text-brand-gold shadow-lg ring-1 ring-white/5' 
-                : 'text-brand-muted hover:text-white'
-              }`}
+                ? 'bg-brand-gold text-brand-main border-brand-gold shadow-glow scale-[1.02]' 
+                : 'bg-transparent text-brand-muted border-transparent hover:text-white hover:bg-white/5'
+              } disabled:opacity-50`}
             >
-              <Smartphone size={18} />
+              <Smartphone size={18} strokeWidth={loginMethod === 'phone' ? 3 : 2} />
               رقم الهاتف
             </button>
           </div>
@@ -166,7 +175,7 @@ export const Login: React.FC = () => {
                         required
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="w-full bg-brand-main border border-white/10 rounded-2xl px-12 py-4 text-white placeholder:text-brand-muted/40 focus:border-brand-gold focus:ring-1 focus:ring-brand-gold/50 outline-none transition-all duration-300 shadow-inner"
+                        className="w-full bg-brand-main border border-white/10 rounded-2xl px-12 py-4 text-white placeholder:text-brand-muted/40 focus:border-brand-gold focus:ring-1 focus:ring-brand-gold/50 outline-none transition-all duration-300 shadow-inner disabled:opacity-50"
                         placeholder="example@mail.com"
                         disabled={isSubmitting}
                     />
@@ -182,7 +191,7 @@ export const Login: React.FC = () => {
                         required
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="w-full bg-brand-main border border-white/10 rounded-2xl px-12 py-4 text-white placeholder:text-brand-muted/40 focus:border-brand-gold focus:ring-1 focus:ring-brand-gold/50 outline-none transition-all duration-300 shadow-inner"
+                        className="w-full bg-brand-main border border-white/10 rounded-2xl px-12 py-4 text-white placeholder:text-brand-muted/40 focus:border-brand-gold focus:ring-1 focus:ring-brand-gold/50 outline-none transition-all duration-300 shadow-inner disabled:opacity-50"
                         placeholder="••••••••"
                         disabled={isSubmitting}
                     />
@@ -192,10 +201,11 @@ export const Login: React.FC = () => {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-brand-gold text-brand-main font-black py-4.5 rounded-2xl hover:bg-brand-goldHover transition-all shadow-glow flex items-center justify-center gap-3 disabled:opacity-50 active:scale-95"
+                className={`w-full bg-brand-gold text-brand-main font-black py-4.5 rounded-2xl hover:bg-brand-goldHover transition-all shadow-glow flex items-center justify-center gap-3 active:scale-95 relative overflow-hidden group/btn ${isSubmitting ? 'cursor-not-allowed' : ''}`}
               >
+                {isSubmitting && <div className="absolute inset-0 bg-white/10 animate-[shimmer_2s_infinite]"></div>}
                 {isSubmitting ? (
-                   <div className="w-6 h-6 border-2 border-brand-main border-t-transparent rounded-full animate-spin"></div>
+                   <ButtonLoader />
                 ) : (
                   <>
                     <span className="text-lg">دخول</span>
@@ -218,7 +228,7 @@ export const Login: React.FC = () => {
                         required
                         value={phoneNumber}
                         onChange={(e) => setPhoneNumber(e.target.value)}
-                        className="w-full bg-brand-main border border-white/10 rounded-2xl px-4 py-4 pl-20 text-white text-xl font-mono placeholder:text-brand-muted/30 focus:border-brand-gold focus:ring-1 focus:ring-brand-gold/50 outline-none transition-all duration-300 shadow-inner"
+                        className="w-full bg-brand-main border border-white/10 rounded-2xl px-4 py-4 pl-20 text-white text-xl font-mono placeholder:text-brand-muted/30 focus:border-brand-gold focus:ring-1 focus:ring-brand-gold/50 outline-none transition-all duration-300 shadow-inner disabled:opacity-50"
                         placeholder="10XXXXXXXX"
                         disabled={isSubmitting}
                       />
@@ -231,9 +241,10 @@ export const Login: React.FC = () => {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full bg-brand-gold text-brand-main font-black py-4.5 rounded-2xl hover:bg-brand-goldHover transition-all shadow-glow flex items-center justify-center gap-3 disabled:opacity-50"
+                    className="w-full bg-brand-gold text-brand-main font-black py-4.5 rounded-2xl hover:bg-brand-goldHover transition-all shadow-glow flex items-center justify-center gap-3 disabled:opacity-50 relative overflow-hidden group/btn"
                   >
-                    إرسال الرمز
+                    {isSubmitting && <div className="absolute inset-0 bg-white/10 animate-[shimmer_2s_infinite]"></div>}
+                    {isSubmitting ? <ButtonLoader /> : 'إرسال الرمز'}
                   </button>
                 </form>
               ) : (
@@ -245,13 +256,20 @@ export const Login: React.FC = () => {
                       required
                       value={otpCode}
                       onChange={(e) => setOtpCode(e.target.value)}
-                      className="w-full bg-brand-main border border-brand-gold/40 rounded-2xl px-4 py-5 text-center text-white text-3xl font-mono tracking-[0.5em] focus:border-brand-gold outline-none transition-all shadow-2xl"
+                      className="w-full bg-brand-main border border-brand-gold/40 rounded-2xl px-4 py-5 text-center text-white text-3xl font-mono tracking-[0.5em] focus:border-brand-gold outline-none transition-all shadow-2xl disabled:opacity-50"
                       placeholder="------"
                       maxLength={6}
                       disabled={isSubmitting}
                     />
                   </div>
-                  <button type="submit" disabled={isSubmitting} className="w-full bg-brand-gold text-brand-main font-black py-4.5 rounded-2xl">تأكيد الرمز</button>
+                  <button 
+                    type="submit" 
+                    disabled={isSubmitting} 
+                    className="w-full bg-brand-gold text-brand-main font-black py-4.5 rounded-2xl relative overflow-hidden group/btn"
+                  >
+                    {isSubmitting && <div className="absolute inset-0 bg-white/10 animate-[shimmer_2s_infinite]"></div>}
+                    {isSubmitting ? <ButtonLoader /> : 'تأكيد الرمز'}
+                  </button>
                 </form>
               )}
             </div>
@@ -265,10 +283,13 @@ export const Login: React.FC = () => {
           <button 
             onClick={handleGoogleLogin} 
             disabled={isSubmitting} 
-            className="w-full bg-white text-gray-900 font-black py-4 rounded-2xl flex items-center justify-center gap-3 shadow-xl hover:bg-gray-50 transition-colors disabled:opacity-50"
+            className="w-full bg-white text-gray-900 font-black py-4 rounded-2xl flex items-center justify-center gap-3 shadow-xl hover:bg-gray-50 transition-colors disabled:opacity-50 active:scale-95"
           >
             {isSubmitting ? (
-              <div className="w-5 h-5 border-2 border-gray-900 border-t-transparent rounded-full animate-spin"></div>
+              <div className="flex items-center gap-2">
+                <Loader2 className="animate-spin" size={18} />
+                <span>يرجى الانتظار...</span>
+              </div>
             ) : (
               <>
                 <GoogleIcon />

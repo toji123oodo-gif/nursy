@@ -10,7 +10,7 @@ import {
   onAuthStateChanged,
   updateProfile,
 } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, collection, onSnapshot, writeBatch, addDoc, deleteDoc } from 'firebase/firestore';
 import { auth, googleProvider, db } from '../firebase';
 
 interface AppContextType {
@@ -20,15 +20,12 @@ interface AppContextType {
   login: (email: string, pass: string) => Promise<void>;
   signup: (email: string, pass: string, name: string, phone: string, subscriptionTier: SubscriptionTier) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
-  loginWithGoogleMock: () => Promise<void>;
-  loginWithPhoneMock: (phone: string) => Promise<void>;
-  registerPhoneUser: (uid: string | null, data: { name: string, phone: string, subscriptionTier: SubscriptionTier }) => Promise<void>;
   logout: () => Promise<void>;
   upgradeToPro: () => void;
   updateUserData: (data: Partial<User>) => Promise<void>;
-  addCourse: (course: Course) => void;
-  updateCourse: (course: Course) => void;
-  deleteCourse: (id: string) => void;
+  addCourse: (course: Course) => Promise<void>;
+  updateCourse: (course: Course) => Promise<void>;
+  deleteCourse: (id: string) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -38,47 +35,59 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isLoading, setIsLoading] = useState(true);
   const [courses, setCourses] = useState<Course[]>([]);
 
+  // Sync courses from Firestore in real-time
   useEffect(() => {
-    const storedCourses = localStorage.getItem('nursy_courses');
-    if (storedCourses) {
-      setCourses(JSON.parse(storedCourses));
-    } else {
-      setCourses(defaultCourses);
-      localStorage.setItem('nursy_courses', JSON.stringify(defaultCourses));
-    }
+    if (!db) return;
+
+    const unsubscribe = onSnapshot(collection(db, "courses"), (snapshot) => {
+      if (snapshot.empty) {
+        console.log("Firestore: Seeding default courses...");
+        const batch = writeBatch(db);
+        defaultCourses.forEach((c) => {
+          const ref = doc(collection(db, "courses"), c.id);
+          batch.set(ref, c);
+        });
+        batch.commit();
+      } else {
+        const cloudCourses: Course[] = [];
+        snapshot.forEach((doc) => {
+          cloudCourses.push({ id: doc.id, ...doc.data() } as Course);
+        });
+        setCourses(cloudCourses);
+      }
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  const addCourse = (course: Course) => {
-    const updatedCourses = [...courses, course];
-    setCourses(updatedCourses);
-    localStorage.setItem('nursy_courses', JSON.stringify(updatedCourses));
-  };
-
-  const updateCourse = (course: Course) => {
-    const updatedCourses = courses.map(c => c.id === course.id ? course : c);
-    setCourses(updatedCourses);
-    localStorage.setItem('nursy_courses', JSON.stringify(updatedCourses));
-  };
-
-  const deleteCourse = (id: string) => {
-    const updatedCourses = courses.filter(c => c.id !== id);
-    setCourses(updatedCourses);
-    localStorage.setItem('nursy_courses', JSON.stringify(updatedCourses));
+  const addAdminNotification = async (type: 'enrollment' | 'payment' | 'support', message: string, userName: string) => {
+    if (!db) return;
+    try {
+      await addDoc(collection(db, "admin_notifications"), {
+        type,
+        message,
+        userName,
+        timestamp: new Date().toISOString(),
+        read: false
+      });
+    } catch (e) {
+      console.error("Failed to push admin notification", e);
+    }
   };
 
   const syncUserToCloud = async (userData: User) => {
     if (!db || !userData.id) return;
     try {
-      console.log("Cloud Sync: Saving student info...", userData.id);
       await setDoc(doc(db, "users", userData.id), {
           ...userData,
           lastSeen: new Date().toISOString()
       }, { merge: true });
     } catch (e) {
-      console.error("Cloud Sync Error:", e);
+      console.error("User Sync Error:", e);
     }
   };
 
+  // Auth Listener
   useEffect(() => {
     if (!auth) {
       setIsLoading(false);
@@ -87,30 +96,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        let baseUser: User = {
-          id: firebaseUser.uid,
-          name: firebaseUser.displayName || 'طالب جديد',
-          email: firebaseUser.email || '',
-          phone: firebaseUser.phoneNumber || '',
-          subscriptionTier: firebaseUser.email === 'toji123oodo@gmail.com' ? 'pro' : 'free'
-        };
-        
         try {
           const docRef = doc(db, "users", firebaseUser.uid);
           const docSnap = await getDoc(docRef);
           
+          let baseUser: User;
           if (docSnap.exists()) {
-            const cloudData = docSnap.data() as User;
-            baseUser = { ...baseUser, ...cloudData };
-            setUser(baseUser);
+            baseUser = { id: firebaseUser.uid, ...docSnap.data() } as User;
           } else {
-            // New user detection (e.g. fresh Google Login)
+            baseUser = {
+              id: firebaseUser.uid,
+              name: firebaseUser.displayName || 'طالب جديد',
+              email: firebaseUser.email || '',
+              phone: firebaseUser.phoneNumber || '',
+              subscriptionTier: firebaseUser.email === 'toji123oodo@gmail.com' ? 'pro' : 'free'
+            };
             await syncUserToCloud(baseUser);
-            setUser(baseUser);
           }
-        } catch (error) {
-          console.error("Firestore Auth Sync Error:", error);
           setUser(baseUser);
+        } catch (error) {
+          console.error("Auth Sync Error:", error);
         } finally {
           setIsLoading(false);
         }
@@ -142,38 +147,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     await syncUserToCloud(newUser);
     setUser(newUser);
+    addAdminNotification('enrollment', `قام ${name} بإنشاء حساب جديد بالبريد الإلكتروني.`, name);
   };
 
   const loginWithGoogle = async (): Promise<void> => {
     const result = await signInWithPopup(auth, googleProvider);
     const firebaseUser = result.user;
     
-    // Explicitly sync for first-time Google users
-    const baseUser: User = {
-      id: firebaseUser.uid,
-      name: firebaseUser.displayName || 'طالب جوجل',
-      email: firebaseUser.email || '',
-      phone: firebaseUser.phoneNumber || '',
-      subscriptionTier: firebaseUser.email === 'toji123oodo@gmail.com' ? 'pro' : 'free'
-    };
+    const docRef = doc(db, "users", firebaseUser.uid);
+    const docSnap = await getDoc(docRef);
     
-    await syncUserToCloud(baseUser);
-  };
-
-  const loginWithGoogleMock = async (): Promise<void> => {};
-  const loginWithPhoneMock = async (phone: string): Promise<void> => {};
-
-  const registerPhoneUser = async (uid: string | null, data: { name: string, phone: string, subscriptionTier: SubscriptionTier }) => {
-    if (!uid) return;
-    const newUser: User = {
-        id: uid,
-        name: data.name,
-        email: auth.currentUser?.email || '',
-        phone: data.phone,
-        subscriptionTier: data.subscriptionTier
-    };
-    await syncUserToCloud(newUser);
-    setUser(newUser);
+    if (!docSnap.exists()) {
+        const baseUser: User = {
+          id: firebaseUser.uid,
+          name: firebaseUser.displayName || 'طالب جوجل',
+          email: firebaseUser.email || '',
+          phone: firebaseUser.phoneNumber || '',
+          subscriptionTier: firebaseUser.email === 'toji123oodo@gmail.com' ? 'pro' : 'free'
+        };
+        await syncUserToCloud(baseUser);
+        addAdminNotification('enrollment', `قام ${baseUser.name} بالتسجيل عبر جوجل.`, baseUser.name);
+        setUser(baseUser);
+    } else {
+        setUser({ id: firebaseUser.uid, ...docSnap.data() } as User);
+    }
   };
 
   const logout = async () => {
@@ -202,6 +199,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     await syncUserToCloud(updatedUser);
   };
 
+  const addCourse = async (course: Course) => {
+    await setDoc(doc(db, "courses", course.id), course);
+  };
+
+  const updateCourse = async (course: Course) => {
+    await setDoc(doc(db, "courses", course.id), course, { merge: true });
+  };
+
+  const deleteCourse = async (id: string) => {
+    await deleteDoc(doc(db, "courses", id));
+  };
+
   return (
     <AppContext.Provider value={{ 
         user, 
@@ -210,9 +219,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         login, 
         signup,
         loginWithGoogle, 
-        loginWithGoogleMock,
-        loginWithPhoneMock, 
-        registerPhoneUser,
         logout, 
         upgradeToPro, 
         updateUserData,

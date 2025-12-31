@@ -9,10 +9,19 @@ import {
   Filter, MoreHorizontal, Plus, Save, X, 
   ChevronRight, Layout, BarChart3, Settings, 
   Eye, Video, FileText, Music, Image as ImageIcon,
-  Zap
+  Zap, Bell, BellRing, MessageSquare, CreditCard, UserCog
 } from 'lucide-react';
-import { collection, onSnapshot, doc, setDoc, deleteDoc, query, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, doc, setDoc, deleteDoc, query, orderBy, limit, writeBatch, addDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+
+interface AdminNotification {
+  id: string;
+  type: 'enrollment' | 'payment' | 'support';
+  message: string;
+  userName: string;
+  timestamp: string;
+  read: boolean;
+}
 
 export const Admin: React.FC = () => {
   const { courses, addCourse, updateCourse, deleteCourse } = useApp();
@@ -21,14 +30,26 @@ export const Admin: React.FC = () => {
   const [notification, setNotification] = useState<{type: 'success' | 'error', text: string} | null>(null);
   const [isDataLoading, setIsDataLoading] = useState(true);
   const [allUsers, setAllUsers] = useState<User[]>([]);
+  const [adminNotifications, setAdminNotifications] = useState<AdminNotification[]>([]);
+  const [showNotifications, setShowNotifications] = useState(false);
   
   // States for Modals
   const [isCourseModalOpen, setIsCourseModalOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  
+  // New User Form State
+  const [newUser, setNewUser] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    role: 'student' as 'admin' | 'student',
+    subscriptionTier: 'free' as SubscriptionTier
+  });
 
-  // Fetch Users from Firestore
+  // Fetch Users
   useEffect(() => {
     setIsDataLoading(true);
     const q = query(collection(db, "users"), orderBy("name", "asc"));
@@ -39,12 +60,32 @@ export const Admin: React.FC = () => {
       });
       setAllUsers(users);
       setIsDataLoading(false);
-    }, (error) => {
-      console.error("Firestore Error:", error);
-      setIsDataLoading(false);
     });
     return () => unsubscribe();
   }, []);
+
+  // Fetch Real-time Notifications for Admin
+  useEffect(() => {
+    const q = query(collection(db, "admin_notifications"), orderBy("timestamp", "desc"), limit(20));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const notes: AdminNotification[] = [];
+      snapshot.forEach((doc) => {
+        notes.push({ id: doc.id, ...doc.data() } as AdminNotification);
+      });
+      setAdminNotifications(notes);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const unreadCount = adminNotifications.filter(n => !n.read).length;
+
+  const markAllAsRead = async () => {
+    const batch = writeBatch(db);
+    adminNotifications.filter(n => !n.read).forEach(n => {
+      batch.update(doc(db, "admin_notifications", n.id), { read: true });
+    });
+    await batch.commit();
+  };
 
   const showNotification = (type: 'success' | 'error', text: string) => {
     setNotification({ type, text });
@@ -60,28 +101,45 @@ export const Admin: React.FC = () => {
       totalStudents: allUsers.length,
       activePro: activeSubs.length,
       income: totalIncome,
-      newToday: allUsers.filter(u => {
-          // Simple check for users synced today (mocking with lastSeen if available)
-          const lastSeen = (u as any).lastSeen ? new Date((u as any).lastSeen) : null;
-          return lastSeen && lastSeen.toDateString() === now.toDateString();
-      }).length
     };
   }, [allUsers]);
 
-  // Handle User Update
   const handleUpdateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingUser) return;
     try {
         await setDoc(doc(db, "users", editingUser.id), editingUser, { merge: true });
-        showNotification('success', 'تم تحديث بيانات الطالب بنجاح');
+        showNotification('success', 'تم تحديث البيانات بنجاح');
         setIsUserModalOpen(false);
     } catch (err) {
-        showNotification('error', 'فشل تحديث البيانات');
+        showNotification('error', 'فشل التحديث');
     }
   };
 
-  // Filtered Users
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newUser.name || (!newUser.email && !newUser.phone)) {
+      showNotification('error', 'يرجى إكمال البيانات الأساسية');
+      return;
+    }
+    try {
+        // In a real app, you'd also create a Firebase Auth user. 
+        // For this demo, we add the profile to Firestore.
+        const userRef = doc(collection(db, "users"));
+        await setDoc(userRef, {
+            ...newUser,
+            id: userRef.id,
+            joinedAt: new Date().toISOString(),
+            completedLessons: []
+        });
+        showNotification('success', 'تمت إضافة الطالب بنجاح');
+        setIsAddUserModalOpen(false);
+        setNewUser({ name: '', email: '', phone: '', role: 'student', subscriptionTier: 'free' });
+    } catch (err) {
+        showNotification('error', 'فشل إضافة الطالب');
+    }
+  };
+
   const filteredUsers = allUsers.filter(u => 
     (u.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
     (u.email || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -107,12 +165,17 @@ export const Admin: React.FC = () => {
         {/* Header Section */}
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
             <div className="flex items-center gap-4">
-                <div className="p-4 bg-brand-gold/10 rounded-3xl border border-brand-gold/20">
+                <div className="p-4 bg-brand-gold/10 rounded-3xl border border-brand-gold/20 relative group cursor-pointer" onClick={() => { setShowNotifications(!showNotifications); if(unreadCount > 0) markAllAsRead(); }}>
                     <ShieldAlert size={32} className="text-brand-gold" />
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full border-2 border-brand-main animate-bounce">
+                        {unreadCount}
+                      </span>
+                    )}
                 </div>
                 <div>
                     <h1 className="text-3xl font-black text-white">إدارة المنصة</h1>
-                    <p className="text-brand-muted text-sm">أهلاً بك يا أدمن، إليك ملخص النشاط اليوم</p>
+                    <p className="text-brand-muted text-sm">أهلاً بك يا أدمن، البيانات يتم تحديثها لحظياً</p>
                 </div>
             </div>
             
@@ -121,8 +184,59 @@ export const Admin: React.FC = () => {
                 <TabButton id="users" label="الطلاب" icon={Users} />
                 <TabButton id="courses" label="الكورسات" icon={BookOpen} />
                 <TabButton id="analytics" label="الإحصائيات" icon={BarChart3} />
+                
+                {/* Notifications Button */}
+                <button 
+                  onClick={() => setShowNotifications(!showNotifications)}
+                  className={`p-4 rounded-2xl transition-all relative ${showNotifications ? 'bg-brand-gold text-brand-main' : 'bg-brand-card text-brand-muted'}`}
+                >
+                  {unreadCount > 0 ? <BellRing size={20} className="animate-pulse" /> : <Bell size={20} />}
+                </button>
             </div>
         </header>
+
+        {/* Notifications Sidebar/Overlay */}
+        {showNotifications && (
+          <div className="fixed inset-y-0 left-0 w-80 md:w-96 bg-brand-card border-r border-white/10 z-[150] shadow-2xl animate-fade-in-right flex flex-col">
+            <div className="p-6 border-b border-white/10 flex items-center justify-between">
+              <h3 className="text-xl font-black text-white flex items-center gap-2">
+                <Bell size={20} className="text-brand-gold" /> الإشعارات
+              </h3>
+              <button onClick={() => setShowNotifications(false)} className="text-brand-muted hover:text-white p-2">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {adminNotifications.length === 0 ? (
+                <div className="text-center py-20 text-brand-muted">
+                  <Bell size={48} className="mx-auto mb-4 opacity-20" />
+                  <p>لا توجد تنبيهات جديدة</p>
+                </div>
+              ) : (
+                adminNotifications.map((note) => (
+                  <div key={note.id} className={`p-4 rounded-2xl border transition-all ${note.read ? 'bg-white/5 border-white/5' : 'bg-brand-gold/5 border-brand-gold/20 shadow-glow'}`}>
+                    <div className="flex items-start gap-3">
+                      <div className={`p-2 rounded-xl shrink-0 ${
+                        note.type === 'enrollment' ? 'bg-blue-500/10 text-blue-500' :
+                        note.type === 'payment' ? 'bg-green-500/10 text-green-500' : 'bg-purple-500/10 text-purple-500'
+                      }`}>
+                        {note.type === 'enrollment' ? <UserPlus size={18} /> : 
+                         note.type === 'payment' ? <CreditCard size={18} /> : <MessageSquare size={18} />}
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-white mb-1">{note.message}</p>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] text-brand-muted font-mono">{new Date(note.timestamp).toLocaleString('ar-EG')}</span>
+                          {!note.read && <span className="w-2 h-2 bg-brand-gold rounded-full"></span>}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
 
         {notification && (
             <div className={`fixed top-6 left-1/2 -translate-x-1/2 z-[100] px-8 py-4 rounded-2xl shadow-2xl animate-fade-in-up border backdrop-blur-md ${
@@ -135,83 +249,71 @@ export const Admin: React.FC = () => {
             </div>
         )}
 
-        {/* Overview Tab */}
+        {/* Tab Content Rendering */}
         {activeTab === 'overview' && (
             <div className="space-y-8 animate-fade-in">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <div className="bg-brand-card border border-white/5 p-8 rounded-3xl relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform"><Users size={80} /></div>
+                        <div className="absolute top-0 right-0 p-4 opacity-10"><Users size={80} /></div>
                         <p className="text-brand-muted text-sm font-bold mb-2">إجمالي الطلاب</p>
                         <h3 className="text-4xl font-black text-white">{stats.totalStudents}</h3>
-                        <div className="mt-4 flex items-center gap-2 text-green-400 text-xs font-bold">
-                            <TrendingUp size={14} /> <span>+12% هذا الشهر</span>
-                        </div>
                     </div>
                     <div className="bg-brand-card border border-white/5 p-8 rounded-3xl relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform"><UserCheck size={80} /></div>
+                        <div className="absolute top-0 right-0 p-4 opacity-10"><UserCheck size={80} /></div>
                         <p className="text-brand-muted text-sm font-bold mb-2">المشتركين PRO</p>
                         <h3 className="text-4xl font-black text-green-400">{stats.activePro}</h3>
-                        <div className="mt-4 flex items-center gap-2 text-brand-gold text-xs font-bold">
-                            <Activity size={14} /> <span>{Math.round((stats.activePro/stats.totalStudents)*100)}% من الإجمالي</span>
-                        </div>
                     </div>
                     <div className="bg-brand-card border border-white/5 p-8 rounded-3xl relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform"><DollarSign size={80} /></div>
-                        <p className="text-brand-muted text-sm font-bold mb-2">الدخل الشهري</p>
+                        <div className="absolute top-0 right-0 p-4 opacity-10"><DollarSign size={80} /></div>
+                        <p className="text-brand-muted text-sm font-bold mb-2">الدخل الشهري المتوقع</p>
                         <h3 className="text-4xl font-black text-brand-gold">{stats.income} <span className="text-sm">ج.م</span></h3>
-                        <div className="mt-4 flex items-center gap-2 text-green-400 text-xs font-bold">
-                            <TrendingUp size={14} /> <span>نمو مستقر</span>
-                        </div>
-                    </div>
-                    <div className="bg-brand-card border border-white/5 p-8 rounded-3xl relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform"><UserPlus size={80} /></div>
-                        <p className="text-brand-muted text-sm font-bold mb-2">طلاب جدد (اليوم)</p>
-                        <h3 className="text-4xl font-black text-purple-400">{stats.newToday}</h3>
-                        <div className="mt-4 flex items-center gap-2 text-brand-muted text-xs font-bold">
-                            <RefreshCw size={14} /> <span>تحديث لحظي</span>
-                        </div>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    {/* Quick Activation Card */}
-                    <div className="bg-brand-card border border-white/5 p-8 rounded-3xl">
-                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
-                            {/* Fixed: Added Zap to imports to resolve component reference */}
-                            <Zap className="text-brand-gold" size={24} />
-                            تفعيل سريع للطلاب
-                        </h3>
-                        <div className="flex flex-col md:flex-row gap-4">
-                            <input 
-                                type="text" 
-                                placeholder="ابحث برقم الهاتف أو الإيميل..."
-                                value={searchTerm}
-                                onChange={e => setSearchTerm(e.target.value)}
-                                className="flex-1 bg-brand-main border border-white/10 rounded-2xl px-6 py-4 text-white outline-none focus:border-brand-gold transition-all"
-                            />
-                            <button className="bg-brand-gold text-brand-main font-black px-10 py-4 rounded-2xl hover:bg-brand-goldHover shadow-glow transition-all">
-                                تفعيل الآن
-                            </button>
-                        </div>
-                        <p className="mt-4 text-xs text-brand-muted">سيتم تفعيل الاشتراك لمدة 30 يوماً تلقائياً للطالب المختار.</p>
-                    </div>
+                   <div className="bg-brand-card border border-white/5 p-8 rounded-3xl">
+                      <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
+                          <Zap className="text-brand-gold" size={24} />
+                          تفعيل سريع للطلاب
+                      </h3>
+                      <div className="flex flex-col md:flex-row gap-4">
+                          <input 
+                              type="text" 
+                              placeholder="ابحث برقم الهاتف أو الإيميل..."
+                              value={searchTerm}
+                              onChange={e => setSearchTerm(e.target.value)}
+                              className="flex-1 bg-brand-main border border-white/10 rounded-2xl px-6 py-4 text-white outline-none focus:border-brand-gold transition-all"
+                          />
+                          <button 
+                              onClick={() => {
+                                 const target = allUsers.find(u => u.phone === searchTerm || u.email === searchTerm);
+                                 if (target) {
+                                    setEditingUser(target);
+                                    setIsUserModalOpen(true);
+                                 } else {
+                                    showNotification('error', 'الطالب غير موجود');
+                                 }
+                              }}
+                              className="bg-brand-gold text-brand-main font-black px-10 py-4 rounded-2xl hover:bg-brand-goldHover shadow-glow transition-all"
+                          >
+                              بحث وتفعيل
+                          </button>
+                      </div>
+                   </div>
 
-                    {/* Quick Stats Summary */}
-                    <div className="bg-brand-card border border-white/5 p-8 rounded-3xl flex flex-col justify-center">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <h3 className="text-xl font-bold text-white mb-2">أداء المحتوى</h3>
-                                <p className="text-brand-muted text-sm">عدد الكورسات المتاحة حالياً: {courses.length}</p>
-                            </div>
-                            <div className="p-4 bg-brand-gold/20 rounded-2xl">
-                                <BookOpen size={32} className="text-brand-gold" />
-                            </div>
-                        </div>
-                        <div className="mt-6 w-full bg-brand-main h-3 rounded-full overflow-hidden">
-                            <div className="bg-brand-gold h-full w-[75%] rounded-full shadow-glow"></div>
-                        </div>
-                        <p className="mt-3 text-xs text-brand-muted text-center">باقي 25% من سعة السيرفر لهذا الشهر</p>
-                    </div>
+                   {/* Quick Logs */}
+                   <div className="bg-brand-card border border-white/5 p-8 rounded-3xl">
+                      <h3 className="text-xl font-bold text-white mb-6">آخر النشاطات</h3>
+                      <div className="space-y-4">
+                        {adminNotifications.slice(0, 4).map(note => (
+                          <div key={note.id} className="flex items-center gap-3 text-sm">
+                            <span className="w-2 h-2 rounded-full bg-brand-gold"></span>
+                            <span className="text-white font-bold">{note.userName}</span>
+                            <span className="text-brand-muted">{note.message}</span>
+                          </div>
+                        ))}
+                      </div>
+                   </div>
                 </div>
             </div>
         )}
@@ -220,15 +322,20 @@ export const Admin: React.FC = () => {
         {activeTab === 'users' && (
             <div className="bg-brand-card border border-white/5 rounded-3xl overflow-hidden animate-fade-in shadow-2xl">
                 <div className="p-8 border-b border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
-                    <div>
-                        <h3 className="text-2xl font-black text-white">إدارة الطلاب</h3>
-                        <p className="text-brand-muted text-sm">عرض وتحرير بيانات الطلاب والتحكم في الاشتراكات</p>
+                    <div className="flex items-center gap-4">
+                        <h3 className="text-2xl font-black text-white">قائمة الطلاب</h3>
+                        <button 
+                            onClick={() => setIsAddUserModalOpen(true)}
+                            className="bg-brand-gold text-brand-main px-4 py-2 rounded-xl text-sm font-black flex items-center gap-2 hover:bg-brand-goldHover transition-all shadow-glow"
+                        >
+                            <Plus size={16} /> إضافة طالب جديد
+                        </button>
                     </div>
                     <div className="relative w-full md:w-96">
                         <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-brand-muted" size={20} />
                         <input 
                             type="text" 
-                            placeholder="ابحث عن اسم، هاتف، أو بريد..."
+                            placeholder="ابحث بالاسم، الإيميل أو الهاتف..."
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
                             className="w-full bg-brand-main border border-white/10 rounded-2xl pr-12 pl-6 py-4 text-white outline-none focus:border-brand-gold transition-all"
@@ -237,14 +344,15 @@ export const Admin: React.FC = () => {
                 </div>
 
                 <div className="overflow-x-auto">
-                    <table className="w-full text-right border-collapse">
+                    <table className="w-full text-right">
                         <thead>
                             <tr className="bg-brand-main/50 text-brand-muted text-xs font-black uppercase tracking-widest">
                                 <th className="px-8 py-6">الطالب</th>
-                                <th className="px-8 py-6">معلومات التواصل</th>
-                                <th className="px-8 py-6">نوع الاشتراك</th>
+                                <th className="px-8 py-6">التواصل</th>
+                                <th className="px-8 py-6">الرتبة</th>
+                                <th className="px-8 py-6">الباقة</th>
                                 <th className="px-8 py-6">الحالة</th>
-                                <th className="px-8 py-6">الإجراءات</th>
+                                <th className="px-8 py-6">تحكم</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-white/5">
@@ -252,51 +360,40 @@ export const Admin: React.FC = () => {
                                 <tr key={u.id} className="hover:bg-white/5 transition-colors group">
                                     <td className="px-8 py-6">
                                         <div className="flex items-center gap-4">
-                                            <div className="w-12 h-12 rounded-2xl bg-brand-gold/10 flex items-center justify-center text-brand-gold font-bold text-xl border border-brand-gold/20">
-                                                {u.name.charAt(0)}
+                                            <div className="w-10 h-10 rounded-full bg-brand-gold/10 flex items-center justify-center text-brand-gold font-bold">
+                                                {u.name?.charAt(0)}
                                             </div>
-                                            <div>
-                                                <p className="text-white font-bold">{u.name}</p>
-                                                <p className="text-brand-muted text-xs">منذ: {new Date().toLocaleDateString('ar-EG')}</p>
-                                            </div>
+                                            <span className="text-white font-bold">{u.name}</span>
                                         </div>
                                     </td>
                                     <td className="px-8 py-6">
-                                        <p className="text-white text-sm font-mono">{u.email || 'لا يوجد بريد'}</p>
-                                        <p className="text-brand-muted text-xs font-mono">{u.phone}</p>
+                                        <p className="text-white text-xs">{u.email}</p>
+                                        <p className="text-brand-muted text-xs">{u.phone}</p>
                                     </td>
                                     <td className="px-8 py-6">
-                                        <span className={`px-4 py-1.5 rounded-full text-[10px] font-black tracking-wider border ${
-                                            u.subscriptionTier === 'pro' 
-                                            ? 'bg-green-500/10 text-green-500 border-green-500/20' 
-                                            : 'bg-white/5 text-brand-muted border-white/10'
-                                        }`}>
-                                            {u.subscriptionTier === 'pro' ? 'PREMIUM (PRO)' : 'FREE STUDENT'}
+                                        <span className={`px-2 py-1 rounded-lg text-[10px] font-black ${u.role === 'admin' ? 'bg-red-500/10 text-red-500' : 'bg-blue-500/10 text-blue-400'}`}>
+                                            {u.role === 'admin' ? 'أدمن' : 'طالب'}
+                                        </span>
+                                    </td>
+                                    <td className="px-8 py-6">
+                                        <span className={`px-3 py-1 rounded-full text-[10px] font-black ${u.subscriptionTier === 'pro' ? 'bg-green-500/10 text-green-500' : 'bg-white/5 text-brand-muted'}`}>
+                                            {u.subscriptionTier === 'pro' ? 'PREMIUM' : 'FREE'}
                                         </span>
                                     </td>
                                     <td className="px-8 py-6">
                                         {u.subscriptionTier === 'pro' && u.subscriptionExpiry && new Date(u.subscriptionExpiry) > new Date() ? (
-                                            <div className="flex items-center gap-2 text-green-500 text-xs font-bold">
-                                                <CheckCircle size={14} /> نشط
-                                            </div>
+                                            <CheckCircle className="text-green-500" size={18} />
                                         ) : (
-                                            <div className="flex items-center gap-2 text-brand-muted text-xs font-bold">
-                                                <XCircle size={14} /> غير مفعل
-                                            </div>
+                                            <XCircle className="text-brand-muted" size={18} />
                                         )}
                                     </td>
                                     <td className="px-8 py-6">
-                                        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button 
-                                                onClick={() => { setEditingUser(u); setIsUserModalOpen(true); }}
-                                                className="p-3 bg-white/5 hover:bg-brand-gold hover:text-brand-main rounded-xl transition-all"
-                                            >
-                                                <Edit size={16} />
-                                            </button>
-                                            <button className="p-3 bg-white/5 hover:bg-red-500 hover:text-white rounded-xl transition-all">
-                                                <Trash2 size={16} />
-                                            </button>
-                                        </div>
+                                        <button 
+                                            onClick={() => { setEditingUser(u); setIsUserModalOpen(true); }}
+                                            className="p-2 bg-white/5 hover:bg-brand-gold hover:text-brand-main rounded-lg transition-all"
+                                        >
+                                            <Edit size={16} />
+                                        </button>
                                     </td>
                                 </tr>
                             ))}
@@ -306,54 +403,89 @@ export const Admin: React.FC = () => {
             </div>
         )}
 
-        {/* Courses Tab (Simplified Preview) */}
-        {activeTab === 'courses' && (
-            <div className="space-y-6 animate-fade-in">
-                <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-2xl font-black text-white">إدارة المحتوى</h3>
-                    <button className="bg-brand-gold text-brand-main font-black px-8 py-3 rounded-2xl flex items-center gap-2 shadow-glow">
-                        <Plus size={20} /> كورس جديد
-                    </button>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {courses.map(course => (
-                        <div key={course.id} className="bg-brand-card border border-white/5 rounded-3xl overflow-hidden group hover:border-brand-gold/30 transition-all">
-                             <div className="h-40 relative">
-                                <img src={course.image} className="w-full h-full object-cover opacity-60" />
-                                <div className="absolute inset-0 bg-gradient-to-t from-brand-card to-transparent"></div>
-                                <div className="absolute top-4 right-4 bg-brand-main/80 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold text-brand-gold">
-                                    {course.subject}
-                                </div>
-                             </div>
-                             <div className="p-6">
-                                <h4 className="text-xl font-bold text-white mb-2">{course.title}</h4>
-                                <p className="text-brand-muted text-sm mb-6 flex items-center gap-2"><Users size={14} /> 120 طالب مسجل</p>
-                                <div className="flex gap-3">
-                                    <button className="flex-1 bg-white/5 hover:bg-brand-gold hover:text-brand-main py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2">
-                                        <Edit size={16} /> تعديل
-                                    </button>
-                                    <button className="p-3 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl transition-all">
-                                        <Trash2 size={16} />
-                                    </button>
-                                </div>
-                             </div>
+        {/* Add User Modal */}
+        {isAddUserModalOpen && (
+            <div className="fixed inset-0 z-[200] bg-brand-main/80 backdrop-blur-xl flex items-center justify-center p-4">
+                <div className="bg-brand-card border border-white/10 p-10 rounded-[2.5rem] w-full max-w-lg shadow-2xl relative animate-scale-up">
+                    <button onClick={() => setIsAddUserModalOpen(false)} className="absolute top-6 left-6 text-brand-muted hover:text-white"><X size={24}/></button>
+                    <h3 className="text-2xl font-black text-white mb-8 flex items-center gap-3">
+                        <UserPlus className="text-brand-gold" /> إضافة طالب جديد
+                    </h3>
+                    
+                    <form onSubmit={handleCreateUser} className="space-y-6">
+                        <div>
+                            <label className="block text-xs text-brand-muted font-bold mb-2">اسم الطالب</label>
+                            <input 
+                                className="w-full bg-brand-main border border-white/10 rounded-2xl p-4 text-white" 
+                                placeholder="الاسم بالكامل"
+                                value={newUser.name} 
+                                onChange={e => setNewUser({...newUser, name: e.target.value})} 
+                            />
                         </div>
-                    ))}
+                        <div className="grid grid-cols-2 gap-4">
+                             <div>
+                                <label className="block text-xs text-brand-muted font-bold mb-2">البريد الإلكتروني</label>
+                                <input 
+                                    className="w-full bg-brand-main border border-white/10 rounded-2xl p-4 text-white" 
+                                    placeholder="example@mail.com"
+                                    value={newUser.email} 
+                                    onChange={e => setNewUser({...newUser, email: e.target.value})} 
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs text-brand-muted font-bold mb-2">رقم الهاتف</label>
+                                <input 
+                                    className="w-full bg-brand-main border border-white/10 rounded-2xl p-4 text-white" 
+                                    placeholder="01XXXXXXXXX"
+                                    value={newUser.phone} 
+                                    onChange={e => setNewUser({...newUser, phone: e.target.value})} 
+                                />
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs text-brand-muted font-bold mb-2">الرتبة</label>
+                                <select 
+                                    className="w-full bg-brand-main border border-white/10 rounded-2xl p-4 text-white"
+                                    value={newUser.role}
+                                    onChange={e => setNewUser({...newUser, role: e.target.value as 'admin' | 'student'})}
+                                >
+                                    <option value="student">طالب</option>
+                                    <option value="admin">أدمن</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-xs text-brand-muted font-bold mb-2">الباقة</label>
+                                <select 
+                                    className="w-full bg-brand-main border border-white/10 rounded-2xl p-4 text-white"
+                                    value={newUser.subscriptionTier}
+                                    onChange={e => setNewUser({...newUser, subscriptionTier: e.target.value as SubscriptionTier})}
+                                >
+                                    <option value="free">FREE</option>
+                                    <option value="pro">PRO</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button type="submit" className="w-full bg-brand-gold text-brand-main font-black py-5 rounded-2xl shadow-glow hover:bg-brand-goldHover transition-all flex items-center justify-center gap-3">
+                             حفظ البيانات
+                        </button>
+                    </form>
                 </div>
             </div>
         )}
 
-        {/* User Edit Modal */}
+        {/* Edit User Modal */}
         {isUserModalOpen && editingUser && (
             <div className="fixed inset-0 z-[200] bg-brand-main/80 backdrop-blur-xl flex items-center justify-center p-4">
                 <div className="bg-brand-card border border-white/10 p-10 rounded-[2.5rem] w-full max-w-lg shadow-2xl relative animate-scale-up">
                     <button onClick={() => setIsUserModalOpen(false)} className="absolute top-6 left-6 text-brand-muted hover:text-white"><X size={24}/></button>
-                    <h3 className="text-2xl font-black text-white mb-8">تعديل حساب طالب</h3>
+                    <h3 className="text-2xl font-black text-white mb-8 flex items-center gap-3">
+                        <UserCog className="text-brand-gold" /> تعديل بيانات الطالب
+                    </h3>
                     
                     <form onSubmit={handleUpdateUser} className="space-y-6">
                         <div>
-                            <label className="block text-xs text-brand-muted font-bold mb-2 mr-2">الاسم بالكامل</label>
+                            <label className="block text-xs text-brand-muted font-bold mb-2">اسم الطالب</label>
                             <input 
                                 className="w-full bg-brand-main border border-white/10 rounded-2xl p-4 text-white" 
                                 value={editingUser.name} 
@@ -362,9 +494,20 @@ export const Admin: React.FC = () => {
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-xs text-brand-muted font-bold mb-2 mr-2">نوع الباقة</label>
+                                <label className="block text-xs text-brand-muted font-bold mb-2">الرتبة</label>
                                 <select 
-                                    className="w-full bg-brand-main border border-white/10 rounded-2xl p-4 text-white appearance-none"
+                                    className="w-full bg-brand-main border border-white/10 rounded-2xl p-4 text-white"
+                                    value={editingUser.role || 'student'}
+                                    onChange={e => setEditingUser({...editingUser, role: e.target.value as 'admin' | 'student'})}
+                                >
+                                    <option value="student">طالب</option>
+                                    <option value="admin">أدمن</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-xs text-brand-muted font-bold mb-2">الباقة</label>
+                                <select 
+                                    className="w-full bg-brand-main border border-white/10 rounded-2xl p-4 text-white"
                                     value={editingUser.subscriptionTier}
                                     onChange={e => setEditingUser({...editingUser, subscriptionTier: e.target.value as SubscriptionTier})}
                                 >
@@ -372,17 +515,17 @@ export const Admin: React.FC = () => {
                                     <option value="pro">PRO</option>
                                 </select>
                             </div>
-                            <div>
-                                <label className="block text-xs text-brand-muted font-bold mb-2 mr-2">تاريخ الانتهاء</label>
-                                <input 
-                                    type="date"
-                                    className="w-full bg-brand-main border border-white/10 rounded-2xl p-4 text-white"
-                                    value={editingUser.subscriptionExpiry ? new Date(editingUser.subscriptionExpiry).toISOString().split('T')[0] : ''}
-                                    onChange={e => setEditingUser({...editingUser, subscriptionExpiry: new Date(e.target.value).toISOString()})}
-                                />
-                            </div>
                         </div>
-                        <button type="submit" className="w-full bg-brand-gold text-brand-main font-black py-5 rounded-2xl shadow-glow hover:bg-brand-goldHover transition-all flex items-center justify-center gap-3 mt-4">
+                        <div>
+                            <label className="block text-xs text-brand-muted font-bold mb-2">تاريخ انتهاء الاشتراك</label>
+                            <input 
+                                type="date"
+                                className="w-full bg-brand-main border border-white/10 rounded-2xl p-4 text-white"
+                                value={editingUser.subscriptionExpiry ? new Date(editingUser.subscriptionExpiry).toISOString().split('T')[0] : ''}
+                                onChange={e => setEditingUser({...editingUser, subscriptionExpiry: new Date(e.target.value).toISOString()})}
+                            />
+                        </div>
+                        <button type="submit" className="w-full bg-brand-gold text-brand-main font-black py-5 rounded-2xl shadow-glow hover:bg-brand-goldHover transition-all flex items-center justify-center gap-3">
                             <Save size={20} /> حفظ التعديلات
                         </button>
                     </form>

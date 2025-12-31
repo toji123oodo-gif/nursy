@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Play, CheckCircle, Star, ArrowLeft, Clock, BookOpen, Shield, Award, Skull, Activity, Microscope, Stethoscope, BedDouble, User, Filter } from 'lucide-react';
+import { Play, CheckCircle, Star, ArrowLeft, Clock, BookOpen, Shield, Award, Skull, Activity, Microscope, Stethoscope, BedDouble, User, Filter, Zap, ChevronDown, Sparkles, GraduationCap, MessageCircle, Briefcase } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 const getCourseIcon = (subject: string) => {
@@ -20,21 +21,17 @@ export const Landing: React.FC = () => {
   const [selectedSubject, setSelectedSubject] = useState('All');
 
   useEffect(() => {
-    // Simulate data fetching delay for visual effect
     const timer = setTimeout(() => {
         setIsLoading(false);
-    }, 1000);
-
+    }, 800);
     return () => clearTimeout(timer);
   }, []);
 
-  // Compute unique subjects from courses
   const subjects = useMemo(() => {
     const unique = Array.from(new Set(courses.map(c => c.subject)));
     return ['All', ...unique];
   }, [courses]);
 
-  // Filter courses based on selection
   const filteredCourses = useMemo(() => {
     if (selectedSubject === 'All') return courses;
     return courses.filter(c => c.subject === selectedSubject);
@@ -43,246 +40,264 @@ export const Landing: React.FC = () => {
   return (
     <div className="pb-20">
       
-      {/* Hero Section */}
-      <section className="relative min-h-[90vh] flex items-center overflow-hidden">
-        {/* Background Image with heavy overlay */}
+      {/* Refined Welcome/Hero Section */}
+      <section className="relative min-h-screen flex items-center overflow-hidden">
+        {/* Cinematic Background */}
         <div className="absolute inset-0 z-0">
             <img 
-                src="https://images.unsplash.com/photo-1576091160550-2187d80aeff2?q=80&w=2000&auto=format&fit=crop" 
-                alt="Background" 
-                className="w-full h-full object-cover opacity-30"
+                src="https://images.unsplash.com/photo-1516549655169-df83a0774514?q=80&w=2400&auto=format&fit=crop" 
+                alt="Premium Nursing Education" 
+                className="w-full h-full object-cover opacity-30 scale-105 animate-[fadeIn_2s_ease-out]"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-brand-main via-brand-main/90 to-brand-main/70"></div>
-            <div className="absolute inset-0 bg-gradient-to-t from-brand-main via-transparent to-transparent"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-brand-main via-brand-main/90 to-transparent"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-brand-main via-brand-main/40 to-transparent"></div>
+            
+            {/* Animated particles / blobs */}
+            <div className="absolute top-1/4 right-1/4 w-[500px] h-[500px] bg-brand-gold/5 rounded-full blur-[150px] animate-float"></div>
+            <div className="absolute bottom-1/4 left-1/3 w-[300px] h-[300px] bg-blue-500/5 rounded-full blur-[120px] animate-float" style={{ animationDelay: '2s' }}></div>
         </div>
         
-        <div className="container mx-auto px-6 relative z-10 pt-10">
-          <div className="flex flex-col md:flex-row items-center gap-12">
+        <div className="container mx-auto px-6 relative z-10">
+          <div className="flex flex-col lg:flex-row items-center gap-16">
             
-            <div className="md:w-1/2 text-center md:text-right">
-              <div className="inline-flex items-center gap-2 bg-brand-gold/10 text-brand-gold px-4 py-2 rounded-full text-sm font-bold mb-8 border border-brand-gold/20 backdrop-blur-sm animate-fade-in-up">
-                  <Star size={16} fill="currentColor" />
-                  <span>المنصة الأولى لطلاب التمريض</span>
+            <div className="lg:w-3/5 text-right">
+              <div className="inline-flex items-center gap-3 glass text-brand-gold px-6 py-2.5 rounded-full text-sm font-black mb-10 border border-brand-gold/20 shadow-glow animate-fade-in-up">
+                  <div className="p-1 bg-brand-gold text-brand-main rounded-full"><Sparkles size={14} /></div>
+                  <span className="tracking-widest uppercase text-[10px] md:text-xs">المنصة الأولى لطلاب التمريض في مصر</span>
               </div>
               
-              <h1 className="text-5xl md:text-7xl font-black mb-8 leading-tight tracking-tight text-white">
-                Nursy.. <br/>
-                <span className="text-transparent bg-clip-text bg-gradient-to-l from-brand-gold to-yellow-200">بوابتك للتميز</span>
+              <h1 className="text-6xl md:text-8xl font-black mb-8 leading-[1.05] tracking-tighter text-white animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+                Nursy<span className="text-brand-gold">.</span> <br/>
+                <span className="text-transparent bg-clip-text bg-gradient-to-l from-brand-gold via-yellow-300 to-white">
+                  طريقك للقمة <br/>في التمريض
+                </span>
               </h1>
               
-              <p className="text-brand-muted text-lg md:text-xl mb-10 max-w-2xl mx-auto md:mx-0 leading-relaxed font-light">
-                اشتراك شهري شامل بـ <span className="text-brand-gold font-bold">50 ج.م فقط</span>. احصل على جميع الكورسات، الامتحانات، والملازم في مكان واحد.
+              <p className="text-brand-muted text-xl md:text-2xl mb-12 max-w-2xl leading-relaxed font-light animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
+                شرح حصري لمناهج كليات التمريض والمعاهد الفنية. تعلم بأحدث التقنيات مع نخبة من أفضل الأساتذة وبأقل تكلفة اشتراك في مصر.
               </p>
               
-              <div className="flex flex-col sm:flex-row gap-5 justify-center md:justify-start">
-                <Link to="/dashboard" className="bg-brand-gold text-brand-main text-lg font-bold py-4 px-10 rounded-xl hover:bg-brand-goldHover transition-all transform hover:-translate-y-1 shadow-glow flex items-center justify-center gap-3">
-                  <span>اشترك الآن</span>
-                  <ArrowLeft size={22} strokeWidth={3} />
+              <div className="flex flex-col sm:flex-row gap-6 justify-start animate-fade-in-up" style={{ animationDelay: '0.6s' }}>
+                <Link to="/dashboard" className="bg-brand-gold text-brand-main text-xl font-black py-5 px-12 rounded-2xl hover:bg-brand-goldHover transition-all transform hover:-translate-y-2 hover:scale-105 shadow-[0_20px_40px_rgba(251,191,36,0.3)] flex items-center justify-center gap-4 group">
+                  <span>ابدأ التعلم الآن</span>
+                  <ArrowLeft size={24} strokeWidth={3} className="group-hover:-translate-x-2 transition-transform" />
                 </Link>
-                <button className="group px-10 py-4 rounded-xl border border-white/10 hover:border-brand-gold/50 hover:bg-brand-card/50 transition-all flex items-center justify-center gap-3 text-white">
-                  <span>تصفح المواد</span>
-                  <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-brand-gold group-hover:text-brand-main transition-colors">
-                    <Play size={14} fill="currentColor" />
+                <button className="glass group px-12 py-5 rounded-2xl border border-white/10 hover:border-brand-gold/40 hover:bg-white/5 transition-all flex items-center justify-center gap-4 text-white font-bold text-lg">
+                  <span>جولة في المنصة</span>
+                  <div className="w-10 h-10 rounded-full bg-brand-gold text-brand-main flex items-center justify-center group-hover:scale-110 transition-transform shadow-glow">
+                    <Play size={16} fill="currentColor" />
                   </div>
                 </button>
               </div>
               
-              {/* Stats */}
-              <div className="mt-16 flex items-center justify-center md:justify-start gap-8 border-t border-white/5 pt-8">
-                  <div>
-                      <h4 className="text-3xl font-black text-white">50 ج.م</h4>
-                      <p className="text-sm text-brand-muted">اشتراك شهري</p>
+              <div className="mt-20 flex flex-wrap items-center justify-start gap-12 animate-fade-in-up" style={{ animationDelay: '0.8s' }}>
+                  <div className="group cursor-default">
+                      <h4 className="text-4xl font-black text-white group-hover:text-brand-gold transition-colors">50 <span className="text-lg">ج.م</span></h4>
+                      <p className="text-xs text-brand-muted font-bold uppercase tracking-widest mt-1">سعر رمزي شهرياً</p>
                   </div>
-                  <div className="w-px h-12 bg-white/10"></div>
-                  <div>
-                      <h4 className="text-3xl font-black text-white">{courses.length}+</h4>
-                      <p className="text-sm text-brand-muted">مواد شاملة</p>
+                  <div className="w-px h-12 bg-white/10 hidden sm:block"></div>
+                  <div className="group cursor-default">
+                      <h4 className="text-4xl font-black text-white group-hover:text-brand-gold transition-colors">150+</h4>
+                      <p className="text-xs text-brand-muted font-bold uppercase tracking-widest mt-1">فيديو عالي الجودة</p>
                   </div>
-                  <div className="w-px h-12 bg-white/10"></div>
-                  <div>
-                      <h4 className="text-3xl font-black text-white">30</h4>
-                      <p className="text-sm text-brand-muted">يوم صلاحية</p>
+                  <div className="w-px h-12 bg-white/10 hidden sm:block"></div>
+                  <div className="group cursor-default">
+                      <h4 className="text-4xl font-black text-white group-hover:text-brand-gold transition-colors">5000+</h4>
+                      <p className="text-xs text-brand-muted font-bold uppercase tracking-widest mt-1">طالب مشترك</p>
                   </div>
               </div>
             </div>
 
-            {/* Hero Visual */}
-            <div className="md:w-1/2 relative hidden md:block">
-                <div className="relative w-full aspect-square max-w-[550px] mx-auto">
-                    <div className="absolute inset-0 bg-brand-gold/20 blur-[100px] rounded-full animate-pulse"></div>
-                    <img 
-                        src="https://images.unsplash.com/photo-1584515933487-779824d29309?q=80&w=1000&auto=format&fit=crop" 
-                        alt="Nursy Student" 
-                        className="relative z-10 rounded-3xl shadow-2xl rotate-3 border border-white/10 object-cover w-full h-full grayscale-[0.2] hover:grayscale-0 transition-all duration-700"
-                    />
+            {/* Visual Floating Elements */}
+            <div className="lg:w-2/5 relative hidden lg:block perspective-1000 animate-fade-in" style={{ animationDelay: '1s' }}>
+                <div className="relative w-full aspect-square max-w-[500px] mx-auto group">
+                    <div className="absolute inset-0 bg-brand-gold/10 blur-[100px] rounded-full animate-pulse group-hover:bg-brand-gold/20 transition-all duration-1000"></div>
                     
-                    {/* Floating Badge */}
-                    <div className="absolute -bottom-8 -left-8 bg-brand-card/90 backdrop-blur-md p-5 rounded-2xl border border-white/10 shadow-2xl z-20 animate-bounce duration-[4000ms]">
-                        <div className="flex items-center gap-4">
-                            <div className="bg-green-500/20 p-3 rounded-full">
-                                <Shield className="text-green-500" size={28} />
+                    <div className="relative z-10 rounded-[3rem] overflow-hidden border border-white/10 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] transform -rotate-3 group-hover:rotate-0 transition-all duration-1000 bg-brand-card">
+                         <img 
+                            src="https://images.unsplash.com/photo-1584432810601-6c7f27d2362b?q=80&w=1200&auto=format&fit=crop" 
+                            alt="Professional Healthcare Learning" 
+                            className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-brand-main via-transparent to-transparent"></div>
+                    </div>
+                    
+                    {/* Floating Achievement Card */}
+                    <div className="absolute -bottom-6 -left-12 glass p-6 rounded-3xl border border-white/20 shadow-2xl z-20 animate-float">
+                        <div className="flex items-center gap-5">
+                            <div className="bg-brand-gold p-4 rounded-2xl shadow-glow">
+                                <Award className="text-brand-main" size={32} />
                             </div>
-                            <div>
-                                <p className="font-bold text-white text-lg">مناهج معتمدة</p>
-                                <p className="text-xs text-brand-muted">شرح يطابق الكلية</p>
+                            <div className="text-right">
+                                <p className="font-black text-white text-xl">شهادة إتمام</p>
+                                <p className="text-xs text-brand-muted font-bold">معتمدة من أكاديمية نيرسي</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Floating Stats Card */}
+                    <div className="absolute top-10 -right-10 glass p-5 rounded-3xl border border-white/20 shadow-2xl z-20 animate-float" style={{ animationDelay: '1.5s' }}>
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center text-green-500">
+                                <Activity size={24} />
+                            </div>
+                            <div className="text-right">
+                                <p className="text-[10px] text-brand-muted font-bold">تحصيلك الدراسي</p>
+                                <p className="font-black text-white">ممتاز 98%</p>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-
+          </div>
+          
+          {/* Scroll Down Indicator */}
+          <div className="absolute bottom-10 left-1/2 -translate-x-1/2 animate-bounce-slow cursor-pointer" onClick={() => window.scrollTo({ top: window.innerHeight, behavior: 'smooth' })}>
+            <div className="glass p-3 rounded-full border border-white/10">
+                <ChevronDown size={24} className="text-brand-gold" />
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Featured Courses */}
-      <section className="py-24 relative">
+      {/* Featured Courses Section */}
+      <section className="py-32 relative">
         <div className="container mx-auto px-6">
-          <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
-            <div>
-                <h2 className="text-3xl md:text-4xl font-black text-white mb-3">المواد الدراسية</h2>
-                <p className="text-brand-muted text-lg">جميع هذه المواد متاحة ضمن اشتراكك</p>
+          <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-8">
+            <div className="text-right">
+                <div className="flex items-center gap-2 text-brand-gold font-bold mb-4 uppercase tracking-widest text-sm">
+                    <div className="w-8 h-0.5 bg-brand-gold"></div>
+                    المحتوى التعليمي
+                </div>
+                <h2 className="text-4xl md:text-5xl font-black text-white mb-4">اكتشف كورسـاتك</h2>
+                <p className="text-brand-muted text-lg max-w-xl">مواد الكلية مشروحة بالتفصيل وبأبسط الطرق الممكنة.</p>
             </div>
 
             {/* Subject Filters */}
-            <div className="flex flex-wrap gap-2 justify-end">
+            <div className="flex flex-wrap gap-3 justify-end glass p-2 rounded-2xl border border-white/5">
                 {subjects.map(subject => (
                     <button
                         key={subject}
                         onClick={() => setSelectedSubject(subject)}
-                        className={`px-5 py-2.5 rounded-full text-sm font-bold transition-all border flex items-center gap-2 ${
+                        className={`px-6 py-3 rounded-xl text-sm font-black transition-all border flex items-center gap-3 ${
                             selectedSubject === subject
-                            ? 'bg-brand-gold text-brand-main border-brand-gold shadow-glow'
-                            : 'bg-white/5 text-brand-muted border-white/10 hover:bg-white/10 hover:text-white'
+                            ? 'bg-brand-gold text-brand-main border-brand-gold shadow-glow scale-105'
+                            : 'text-brand-muted border-transparent hover:bg-white/5 hover:text-white'
                         }`}
                     >
-                        {subject !== 'All' && getCourseIcon(subject)}
+                        {subject !== 'All' && <div className={`${selectedSubject === subject ? 'text-brand-main' : 'text-brand-gold'}`}>{getCourseIcon(subject)}</div>}
                         {subject === 'All' ? 'الكل' : subject}
                     </button>
                 ))}
             </div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
             {isLoading ? (
-               // Loading Skeleton
                [1, 2, 3].map((_, i) => (
-                   <div key={i} className="bg-brand-card rounded-2xl overflow-hidden border border-white/5">
-                        <div className="h-56 bg-white/5 animate-pulse relative overflow-hidden">
-                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12 animate-[shimmer_1.5s_infinite]"></div>
-                        </div>
-                        <div className="p-6">
-                            <div className="h-7 bg-white/5 rounded w-3/4 mb-4 animate-pulse"></div>
-                            <div className="flex items-center gap-2 mb-6">
-                                <div className="w-5 h-5 rounded-full bg-white/5 animate-pulse shrink-0"></div>
-                                <div className="h-4 bg-white/5 rounded w-1/3 animate-pulse"></div>
-                            </div>
-                            
-                            <div className="grid grid-cols-2 gap-4 mb-6">
-                                <div className="h-10 bg-white/5 rounded animate-pulse"></div>
-                                <div className="h-10 bg-white/5 rounded animate-pulse"></div>
-                            </div>
-
-                            <div className="flex justify-between items-center border-t border-white/5 pt-4">
-                                <div className="space-y-2">
-                                    <div className="h-3 bg-white/5 rounded w-12 animate-pulse"></div>
-                                    <div className="h-8 bg-white/5 rounded w-20 animate-pulse"></div>
-                                </div>
-                                <div className="w-12 h-12 rounded-full bg-white/5 animate-pulse"></div>
-                            </div>
-                        </div>
-                   </div>
+                   <div key={i} className="bg-brand-card rounded-[2.5rem] overflow-hidden border border-white/5 h-[500px] animate-pulse"></div>
                ))
             ) : (
-                filteredCourses.map((course) => (
-                <Link to={`/course/${course.id}`} key={course.id} className="block group bg-[#112240] rounded-2xl overflow-hidden border border-white/5 hover:border-brand-gold/50 transition-all duration-300 hover:shadow-[0_0_30px_rgba(251,191,36,0.15)] hover:-translate-y-2 cursor-pointer relative">
-                    
-                    {/* Image Area */}
-                    <div className="relative h-48 overflow-hidden">
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#112240] to-transparent z-10 opacity-80"></div>
-                        <img src={course.image} alt={course.title} className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700 opacity-80 group-hover:opacity-100" />
+                filteredCourses.map((course) => {
+                const discount = course.originalPrice ? Math.round(((course.originalPrice - course.price) / course.originalPrice) * 100) : 0;
+                
+                return (
+                <Link to={`/course/${course.id}`} key={course.id} className="block group relative animate-fade-in-up">
+                    <div className="bg-brand-card rounded-[2.5rem] overflow-hidden border border-white/5 hover:border-brand-gold/50 transition-all duration-700 shadow-2xl hover:shadow-[0_30px_60px_rgba(0,0,0,0.5)] h-full flex flex-col">
                         
-                        {/* Subject Badge */}
-                        <div className="absolute top-4 right-4 z-20 bg-black/40 backdrop-blur-md text-white text-[10px] font-bold px-3 py-1 rounded-full border border-white/10 flex items-center gap-1.5">
-                            {getCourseIcon(course.subject)}
-                            {course.subject}
-                        </div>
-                    </div>
-
-                    {/* Content */}
-                    <div className="p-5 relative z-20 -mt-10">
-                        <h3 className="text-xl font-bold text-white mb-1 leading-tight group-hover:text-brand-gold transition-colors">{course.title}</h3>
-                        
-                        <div className="flex items-center gap-2 text-brand-muted/80 text-xs mb-4">
-                            <User size={12} />
-                            <span>{course.instructor}</span>
-                        </div>
-
-                        {/* Divider */}
-                        <div className="h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent my-4"></div>
-
-                        {/* Metadata */}
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center gap-4 text-xs font-medium text-gray-400">
-                                <div className="flex items-center gap-1.5 bg-white/5 px-2 py-1 rounded-lg">
-                                    <BookOpen size={12} className="text-brand-gold" />
-                                    <span>{course.lessons.length} دروس</span>
-                                </div>
-                                <div className="flex items-center gap-1.5 bg-white/5 px-2 py-1 rounded-lg">
-                                    <Clock size={12} className="text-brand-gold" />
-                                    <span>15 ساعة</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Price Row */}
-                        <div className="flex items-end justify-between">
-                            <div className="flex flex-col">
-                                <span className="text-[10px] text-brand-muted uppercase tracking-wider mb-0.5">السعر</span>
-                                <div className="flex items-baseline gap-2">
-                                    <span className="text-2xl font-black text-brand-gold drop-shadow-sm">{course.price} <span className="text-sm font-bold">ج.م</span></span>
-                                    {course.originalPrice && (
-                                        <span className="text-xs text-white/20 line-through decoration-white/20">{course.originalPrice}</span>
-                                    )}
+                        {/* Image Area */}
+                        <div className="relative h-64 overflow-hidden shrink-0">
+                            <div className="absolute inset-0 bg-gradient-to-t from-brand-card via-transparent to-transparent z-10 opacity-60"></div>
+                            <img src={course.image} alt={course.title} className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-[2000ms]" />
+                            
+                            {/* Badges */}
+                            <div className="absolute top-6 right-6 z-20">
+                                <div className="glass text-white text-[10px] font-black px-4 py-2 rounded-full border border-white/20 flex items-center gap-2 backdrop-blur-xl">
+                                    {getCourseIcon(course.subject)}
+                                    {course.subject}
                                 </div>
                             </div>
                             
-                            <button className="w-10 h-10 rounded-full bg-brand-gold text-brand-main flex items-center justify-center shadow-[0_0_10px_rgba(251,191,36,0.3)] group-hover:shadow-[0_0_20px_rgba(251,191,36,0.5)] transition-all duration-300 transform group-hover:rotate-[-45deg]">
-                                <ArrowLeft size={20} />
-                            </button>
+                            {discount > 0 && (
+                                <div className="absolute top-6 left-6 z-20 bg-red-600 text-white text-[10px] font-black px-3 py-1.5 rounded-full shadow-xl animate-heartbeat">
+                                    -{discount}%
+                                </div>
+                            )}
+
+                            {/* Floating Instructor */}
+                            <div className="absolute bottom-6 right-6 z-20 flex items-center gap-3 bg-brand-main/80 backdrop-blur-xl px-4 py-2 rounded-2xl border border-white/10 shadow-xl">
+                                 <div className="w-8 h-8 rounded-full bg-brand-gold flex items-center justify-center text-brand-main shadow-glow">
+                                    <User size={16} strokeWidth={3} />
+                                 </div>
+                                 <span className="text-white font-black text-xs">{course.instructor}</span>
+                            </div>
+                        </div>
+
+                        {/* Content Body */}
+                        <div className="p-8 flex-1 flex flex-col">
+                            <h3 className="text-2xl font-black text-white mb-4 group-hover:text-brand-gold transition-colors duration-300 line-clamp-2">
+                                {course.title}
+                            </h3>
+                            
+                            <div className="flex items-center gap-6 text-[12px] font-bold text-brand-muted mb-8">
+                                <div className="flex items-center gap-2">
+                                    <BookOpen size={16} className="text-brand-gold" />
+                                    <span>{course.lessons.length} محاضرة</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Clock size={16} className="text-brand-gold" />
+                                    <span>محتوى شامل</span>
+                                </div>
+                            </div>
+
+                            <div className="mt-auto pt-6 border-t border-white/5 flex items-center justify-between">
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] text-brand-muted font-black uppercase tracking-widest mb-1 opacity-50">تكلفة الاشتراك</span>
+                                    <div className="flex items-baseline gap-2">
+                                        <span className="text-3xl font-black text-white group-hover:text-brand-gold transition-colors">{course.price}</span>
+                                        <span className="text-sm font-bold text-brand-muted">ج.م</span>
+                                    </div>
+                                </div>
+                                
+                                <div className="w-14 h-14 rounded-2xl bg-brand-main border border-white/10 text-brand-gold flex items-center justify-center group-hover:bg-brand-gold group-hover:text-brand-main transition-all duration-500 shadow-inner group-hover:shadow-glow">
+                                    <ArrowLeft size={28} strokeWidth={3} className="group-hover:-translate-x-1 transition-transform" />
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </Link>
-                ))
-            )}
-            
-            {!isLoading && filteredCourses.length === 0 && (
-                <div className="col-span-full flex flex-col items-center justify-center py-16 text-center border border-dashed border-white/10 rounded-2xl bg-white/5">
-                    <Filter className="text-brand-muted mb-4 opacity-50" size={48} />
-                    <p className="text-white font-bold text-lg mb-2">لا توجد مواد في هذا القسم</p>
-                    <p className="text-brand-muted text-sm">جرب اختيار قسم آخر لتصفح المواد المتاحة.</p>
-                </div>
+                )})
             )}
           </div>
           
+          <div className="mt-20 text-center">
+              <button className="glass px-10 py-4 rounded-2xl border border-white/10 text-white font-black text-sm hover:border-brand-gold/40 hover:bg-white/5 transition-all">
+                  عرض جميع المواد الدراسية
+              </button>
+          </div>
         </div>
       </section>
 
-      {/* Why Nursy - Dark Features */}
-      <section className="py-20 bg-brand-main border-t border-white/5">
+      {/* Trust Section */}
+      <section className="py-24 bg-brand-card/30 relative overflow-hidden border-y border-white/5">
         <div className="container mx-auto px-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="text-center mb-16">
+                <h2 className="text-3xl font-black text-white mb-4">ليه Nursy هي اختيارك الأول؟</h2>
+                <div className="w-20 h-1 bg-brand-gold mx-auto rounded-full"></div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
                 {[
-                    { title: "أقوى المحاضرين", desc: "نخبة من دكاترة كليات التمريض والطب لشرح المواد العلمية.", icon: Award },
-                    { title: "جودة سينمائية", desc: "نستخدم معدات تصوير 4K وصوت محيطي لتجربة تعليمية ممتعة.", icon: Play },
-                    { title: "تدريب عملي", desc: "فيديوهات محاكاة للمهارات التمريضية والعملية داخل المستشفيات.", icon: CheckCircle }
+                    { title: "مناهج الكلية", desc: "شرح يطابق المنهج الدراسي المصري بنسبة 100% لتضمن التفوق.", icon: GraduationCap },
+                    { title: "دعم فني 24/7", desc: "فريق دعم متاح دايماً للرد على استفساراتك ومساعدتك في تفعيل حسابك.", icon: MessageCircle },
+                    { title: "تطوير مهني", desc: "مش بس دراسة، بنعلمك المهارات العملية اللي هتحتاجها في الشغل.", icon: Briefcase }
                 ].map((item, idx) => (
-                    <div key={idx} className="bg-gradient-to-br from-brand-card to-brand-main p-8 rounded-2xl border border-white/5 hover:border-brand-gold/30 transition-all group">
-                        <div className="w-16 h-16 bg-brand-card rounded-2xl flex items-center justify-center mb-6 group-hover:bg-brand-gold transition-colors duration-300 shadow-lg">
-                            <item.icon className="text-brand-gold group-hover:text-brand-main" size={32} />
+                    <div key={idx} className="bg-brand-main/50 p-10 rounded-3xl border border-white/5 hover:border-brand-gold/20 transition-all group relative overflow-hidden">
+                        <div className="absolute -top-10 -right-10 w-32 h-32 bg-brand-gold/5 rounded-full blur-3xl group-hover:bg-brand-gold/10 transition-all"></div>
+                        <div className="w-20 h-20 bg-brand-card rounded-2xl flex items-center justify-center mb-8 border border-white/10 group-hover:border-brand-gold transition-all duration-500 group-hover:-rotate-6">
+                            <item.icon className="text-brand-gold" size={40} />
                         </div>
-                        <h3 className="text-xl font-bold mb-3 text-white">{item.title}</h3>
-                        <p className="text-brand-muted leading-relaxed">{item.desc}</p>
+                        <h3 className="text-2xl font-black mb-4 text-white group-hover:text-brand-gold transition-colors">{item.title}</h3>
+                        <p className="text-brand-muted leading-relaxed text-lg font-light">{item.desc}</p>
                     </div>
                 ))}
             </div>

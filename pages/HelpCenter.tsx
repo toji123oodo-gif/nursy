@@ -1,5 +1,8 @@
+
 import React, { useState } from 'react';
 import { ChevronDown, ChevronUp, Send, Mail, HelpCircle, CheckCircle } from 'lucide-react';
+import { collection, addDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 
 const faqs = [
   {
@@ -33,11 +36,23 @@ export const HelpCenter: React.FC = () => {
     setOpenIndex(openIndex === index ? null : index);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSent(true);
-    setFormData({ name: '', email: '', message: '' });
-    // Reset success message after 3 seconds
+    if (db) {
+        try {
+            await addDoc(collection(db, "admin_notifications"), {
+                type: 'support',
+                message: `وصلتك رسالة دعم جديدة من ${formData.name}: ${formData.message.substring(0, 50)}...`,
+                userName: formData.name,
+                timestamp: new Date().toISOString(),
+                read: false
+            });
+            setIsSent(true);
+            setFormData({ name: '', email: '', message: '' });
+        } catch (e) {
+            console.error("Failed to send support notification", e);
+        }
+    }
     setTimeout(() => setIsSent(false), 5000);
   };
 

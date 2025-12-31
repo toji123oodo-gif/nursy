@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Lock, Play, Star, Clock, AlertCircle, CheckCircle, XCircle, FileText, HelpCircle, Download, File, Activity, Unlock, Brain, RotateCw, Bot, Send, Sparkles, X, Headphones, Image as ImageIcon, FileType, Music, Pause, Volume2, VolumeX, Maximize2, BookOpen } from 'lucide-react';
+import { Lock, Play, Star, Clock, AlertCircle, CheckCircle, XCircle, FileText, HelpCircle, Download, File, Activity, Unlock, Brain, RotateCw, Bot, Send, Sparkles, X, Headphones, Image as ImageIcon, FileType, Music, Pause, Volume2, VolumeX, Maximize2, BookOpen, ChevronRight, List, FileDown } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { Link } from 'react-router-dom';
 import { ContentItem } from '../types';
@@ -153,7 +153,6 @@ const AiChatWidget: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         setIsThinking(true);
 
         try {
-            // Fixed: Solely use process.env.API_KEY as per coding guidelines for Gemini API.
             const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
             const response = await ai.models.generateContent({
                 model: 'gemini-3-flash-preview',
@@ -193,13 +192,14 @@ const AiChatWidget: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 };
 
 export const Dashboard: React.FC = () => {
-  const { user, courses, upgradeToPro } = useApp();
+  const { user, courses, upgradeToPro, updateUserData } = useApp();
   const [activeCourse, setActiveCourse] = useState(courses[0]); 
   const [activeLesson, setActiveLesson] = useState(activeCourse.lessons[0]);
   const [activeContent, setActiveContent] = useState<ContentItem | null>(activeLesson.contents?.[0] || null);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [activeTab, setActiveTab] = useState<'content' | 'quiz' | 'flashcards'>('content');
+  const [activeTab, setActiveTab] = useState<'content' | 'quiz' | 'resources'>('content');
   const [showAiChat, setShowAiChat] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   useEffect(() => {
     if (activeLesson.contents?.length > 0) {
@@ -214,54 +214,259 @@ export const Dashboard: React.FC = () => {
     return index < 2; 
   };
 
+  const isLessonCompleted = (lessonId: string) => {
+    return user?.completedLessons?.includes(lessonId);
+  };
+
+  const toggleLessonCompletion = async (lessonId: string) => {
+    if (!user) return;
+    const currentCompleted = user.completedLessons || [];
+    let updatedCompleted: string[];
+    
+    if (currentCompleted.includes(lessonId)) {
+        updatedCompleted = currentCompleted.filter(id => id !== lessonId);
+    } else {
+        updatedCompleted = [...currentCompleted, lessonId];
+    }
+    
+    await updateUserData({ completedLessons: updatedCompleted });
+  };
+
+  const handleDownload = (item: ContentItem) => {
+    if (user?.subscriptionTier !== 'pro') return;
+    window.open(item.url, '_blank');
+  };
+
   if (!user) return null;
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto relative min-h-screen">
       {user.subscriptionTier === 'pro' && !showAiChat && (
-          <button onClick={() => setShowAiChat(true)} className="fixed bottom-6 left-6 z-40 bg-brand-gold text-brand-main p-4 rounded-full shadow-glow">
+          <button onClick={() => setShowAiChat(true)} className="fixed bottom-6 left-6 z-40 bg-brand-gold text-brand-main p-4 rounded-full shadow-glow transform hover:scale-110 transition-transform">
               <Bot size={28} />
           </button>
       )}
       {showAiChat && <AiChatWidget onClose={() => setShowAiChat(false)} />}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-            <div className="flex bg-brand-card p-1 rounded-xl border border-white/5 w-fit">
-                <button onClick={() => setActiveTab('content')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'content' ? 'bg-brand-gold text-brand-main' : 'text-brand-muted'}`}>المحتوى</button>
+      <div className="flex flex-col lg:flex-row gap-8">
+        {/* Main Content Area */}
+        <div className="flex-1 space-y-6">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="flex bg-brand-card p-1 rounded-xl border border-white/5">
+                    <button 
+                        onClick={() => setActiveTab('content')} 
+                        className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'content' ? 'bg-brand-gold text-brand-main shadow-glow' : 'text-brand-muted hover:text-white'}`}
+                    >
+                        المحتوى الدراسي
+                    </button>
+                    <button 
+                        onClick={() => setActiveTab('resources')} 
+                        className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'resources' ? 'bg-brand-gold text-brand-main shadow-glow' : 'text-brand-muted hover:text-white'}`}
+                    >
+                        المصادر
+                    </button>
+                    <button 
+                        onClick={() => setActiveTab('quiz')} 
+                        className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'quiz' ? 'bg-brand-gold text-brand-main shadow-glow' : 'text-brand-muted hover:text-white'}`}
+                    >
+                        اختبار قصير
+                    </button>
+                </div>
+                
+                <div className="text-right">
+                    <h2 className="text-2xl font-black text-white">{activeLesson.title}</h2>
+                    <p className="text-brand-muted text-sm">{activeCourse.title} • {activeCourse.instructor}</p>
+                </div>
             </div>
             
             {activeTab === 'content' && activeContent ? (
-                <div className="animate-fade-in">
+                <div className="animate-fade-in space-y-6">
                     {activeContent.type === 'video' && (
-                        <div className="relative bg-black rounded-2xl overflow-hidden aspect-video">
-                            <iframe className="w-full h-full" src={activeContent.url} frameBorder="0" allowFullScreen></iframe>
-                            <Watermark userPhone={user.email} />
+                        <div className="relative bg-black rounded-3xl overflow-hidden aspect-video shadow-2xl ring-1 ring-white/10 group">
+                            {activeContent.url ? (
+                                <iframe 
+                                    className="w-full h-full" 
+                                    src={`${activeContent.url}?autoplay=0&rel=0&modestbranding=1`} 
+                                    title={activeContent.title}
+                                    frameBorder="0" 
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                    allowFullScreen
+                                ></iframe>
+                            ) : (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center text-brand-muted">
+                                    <AlertCircle size={48} className="mb-4 opacity-20" />
+                                    <p className="font-bold">عذراً، هذا الفيديو غير متوفر حالياً</p>
+                                </div>
+                            )}
+                            <Watermark userPhone={user.phone || user.email} />
+                            
+                            {/* Overlay info */}
+                            <div className="absolute top-4 left-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="bg-black/60 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 flex items-center gap-2">
+                                    <Play size={14} fill="currentColor" className="text-brand-gold" />
+                                    <span className="text-xs font-bold text-white">{activeContent.title}</span>
+                                </div>
+                            </div>
                         </div>
                     )}
-                    {activeContent.type === 'audio' && <CustomAudioPlayer url={activeContent.url} title={activeContent.title} userPhone={user.email} />}
-                    {(activeContent.type === 'pdf' || activeContent.type === 'document') && <DocumentViewer url={activeContent.url} type={activeContent.type} userPhone={user.email} />}
+                    {activeContent.type === 'audio' && <CustomAudioPlayer url={activeContent.url} title={activeContent.title} userPhone={user.phone || user.email} />}
+                    {(activeContent.type === 'pdf' || activeContent.type === 'document') && <DocumentViewer url={activeContent.url} type={activeContent.type} userPhone={user.phone || user.email} />}
+                    
+                    {/* Content Meta */}
+                    <div className="bg-brand-card border border-white/5 p-6 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-xl bg-brand-gold/10 flex items-center justify-center text-brand-gold">
+                                <BookOpen size={24} />
+                            </div>
+                            <div>
+                                <h4 className="text-white font-bold">{activeContent.title}</h4>
+                                <p className="text-brand-muted text-xs">تم الرفع بواسطة: {activeCourse.instructor}</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3 w-full md:w-auto">
+                             <button 
+                                onClick={() => toggleLessonCompletion(activeLesson.id)}
+                                className={`flex-1 md:flex-initial flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold text-sm transition-all border ${
+                                    isLessonCompleted(activeLesson.id) 
+                                    ? 'bg-green-500/10 text-green-500 border-green-500/30' 
+                                    : 'bg-white/5 text-white border-white/5 hover:bg-white/10'
+                                }`}
+                             >
+                                {isLessonCompleted(activeLesson.id) ? (
+                                    <>
+                                        <CheckCircle size={18} /> تم الإكمال
+                                    </>
+                                ) : (
+                                    <>
+                                        <RotateCw size={18} /> تمييز كمكتمل
+                                    </>
+                                )}
+                             </button>
+                             <button className="p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all text-brand-muted hover:text-white">
+                                <Download size={20} />
+                             </button>
+                        </div>
+                    </div>
                 </div>
-            ) : <div className="p-20 text-center text-brand-muted">اختر درساً للبدء</div>}
+            ) : activeTab === 'resources' ? (
+                <div className="animate-fade-in space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {activeLesson.contents?.filter(c => c.type === 'pdf' || c.type === 'document').length > 0 ? (
+                            activeLesson.contents
+                                .filter(c => c.type === 'pdf' || c.type === 'document')
+                                .map((item) => (
+                                    <div key={item.id} className="bg-brand-card border border-white/5 p-6 rounded-3xl flex items-center justify-between group hover:border-brand-gold/30 transition-all shadow-xl">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-12 h-12 rounded-2xl bg-brand-gold/10 flex items-center justify-center text-brand-gold shadow-glow">
+                                                <FileText size={24} />
+                                            </div>
+                                            <div>
+                                                <h4 className="text-white font-bold text-sm">{item.title}</h4>
+                                                <p className="text-brand-muted text-[10px] font-mono mt-1">{item.fileSize || '2.4 MB'} • {item.type.toUpperCase()}</p>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="relative group/tooltip">
+                                            <button 
+                                                onClick={() => handleDownload(item)}
+                                                disabled={user.subscriptionTier !== 'pro'}
+                                                className={`p-3 rounded-xl transition-all flex items-center gap-2 ${
+                                                    user.subscriptionTier === 'pro' 
+                                                    ? 'bg-brand-gold text-brand-main hover:scale-110 shadow-glow' 
+                                                    : 'bg-white/5 text-brand-muted cursor-not-allowed'
+                                                }`}
+                                            >
+                                                {user.subscriptionTier === 'pro' ? <FileDown size={20} /> : <Lock size={20} />}
+                                            </button>
+                                            
+                                            {user.subscriptionTier !== 'pro' && (
+                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-brand-main border border-brand-gold/30 text-brand-gold text-[10px] font-black rounded-lg opacity-0 group-hover/tooltip:opacity-100 transition-opacity whitespace-nowrap shadow-2xl pointer-events-none">
+                                                    هذه الميزة متاحة لمشتركي PRO فقط
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))
+                        ) : (
+                            <div className="col-span-full py-20 text-center bg-brand-card/30 rounded-3xl border border-dashed border-white/10">
+                                <FileText size={48} className="mx-auto mb-4 opacity-10" />
+                                <p className="text-brand-muted font-bold">لا توجد ملفات مرفقة لهذا الدرس</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            ) : activeTab === 'content' ? (
+                <div className="p-24 text-center text-brand-muted bg-brand-card/30 rounded-3xl border border-dashed border-white/5">
+                    <Bot size={48} className="mx-auto mb-4 opacity-20" />
+                    <p className="font-bold text-lg">اختر درساً من القائمة لبدء التعلم</p>
+                    <p className="text-sm mt-2">جميع المواد متاحة للمشتركين PRO</p>
+                </div>
+            ) : (
+                <div className="p-24 text-center text-brand-muted bg-brand-card/30 rounded-3xl border border-dashed border-white/5 animate-fade-in">
+                    <Sparkles size={48} className="mx-auto mb-4 text-brand-gold opacity-50" />
+                    <h3 className="text-xl font-bold text-white mb-2">قسم الاختبارات القصير</h3>
+                    <p className="max-w-md mx-auto">سيتم إضافة اختبارات تفاعلية بعد كل درس قريباً لتقييم مستواك الدراسي.</p>
+                </div>
+            )}
         </div>
 
-        <div className="space-y-4">
-            <div className="bg-brand-card rounded-2xl border border-white/5 overflow-hidden shadow-lg">
-                <div className="p-4 bg-black/20 border-b border-white/5">
-                    <h3 className="font-bold text-white text-sm">فهرس الكورس</h3>
+        {/* Sidebar / Playlist */}
+        <div className="w-full lg:w-80 shrink-0">
+            <div className="bg-brand-card rounded-3xl border border-white/5 overflow-hidden shadow-2xl sticky top-28">
+                <div className="p-6 bg-white/5 border-b border-white/5 flex items-center justify-between">
+                    <h3 className="font-black text-white flex items-center gap-2">
+                        <List size={18} className="text-brand-gold" />
+                        محتويات الكورس
+                    </h3>
+                    <span className="text-[10px] font-bold bg-brand-gold text-brand-main px-2 py-0.5 rounded-full">
+                        {activeCourse.lessons.length} دروس
+                    </span>
                 </div>
-                {activeCourse.lessons.map((lesson, idx) => (
-                    <button
-                        key={lesson.id}
-                        onClick={() => isLessonAccessible(idx) ? setActiveLesson(lesson) : setShowUpgradeModal(true)}
-                        className={`w-full flex items-center gap-3 p-4 border-b border-white/5 last:border-0 text-right ${activeLesson.id === lesson.id ? 'bg-brand-gold/5' : ''}`}
-                    >
-                        <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 font-bold bg-brand-main text-brand-gold">
-                            {isLessonAccessible(idx) ? (idx + 1) : <Lock size={14} />}
-                        </div>
-                        <p className={`text-sm font-bold ${activeLesson.id === lesson.id ? 'text-brand-gold' : 'text-white'}`}>{lesson.title}</p>
-                    </button>
-                ))}
+                <div className="max-h-[60vh] overflow-y-auto">
+                    {activeCourse.lessons.map((lesson, idx) => {
+                        const accessible = isLessonAccessible(idx);
+                        const isActive = activeLesson.id === lesson.id;
+                        const completed = isLessonCompleted(lesson.id);
+                        
+                        return (
+                            <button
+                                key={lesson.id}
+                                onClick={() => accessible ? setActiveLesson(lesson) : setShowUpgradeModal(true)}
+                                className={`w-full flex items-center gap-4 p-5 border-b border-white/5 last:border-0 text-right transition-all group relative ${
+                                    isActive ? 'bg-brand-gold/10' : 'hover:bg-white/5'
+                                } ${completed ? 'border-r-4 border-r-green-500/50' : ''}`}
+                            >
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 font-black text-sm transition-all ${
+                                    isActive ? 'bg-brand-gold text-brand-main shadow-glow' : 
+                                    completed ? 'bg-green-500/10 text-green-500' : 'bg-brand-main text-brand-muted group-hover:text-white'
+                                }`}>
+                                    {completed ? <CheckCircle size={16} /> : accessible ? (idx + 1) : <Lock size={14} className="text-brand-muted" />}
+                                </div>
+                                <div className="flex-1">
+                                    <p className={`text-sm font-bold transition-colors ${
+                                        isActive ? 'text-brand-gold' : 
+                                        completed ? 'text-green-400' : 'text-white'
+                                    }`}>{lesson.title}</p>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <Clock size={10} className="text-brand-muted" />
+                                        <span className="text-[10px] text-brand-muted font-bold">{lesson.duration || '45:00'}</span>
+                                        {completed && <span className="text-[9px] text-green-500/70 font-black mr-2">مكتمل</span>}
+                                    </div>
+                                </div>
+                                {isActive && <ChevronRight size={16} className="text-brand-gold" />}
+                            </button>
+                        );
+                    })}
+                </div>
+                
+                {user.subscriptionTier === 'free' && (
+                    <div className="p-6 bg-brand-gold/10 border-t border-brand-gold/20">
+                        <p className="text-[10px] font-bold text-brand-gold mb-3 text-center uppercase tracking-widest">التطوير للباقة الكاملة</p>
+                        <Link to="/wallet" className="block w-full bg-brand-gold text-brand-main text-center font-bold py-3 rounded-xl shadow-glow hover:bg-brand-goldHover transition-all">
+                            اشترك الآن
+                        </Link>
+                    </div>
+                )}
             </div>
         </div>
       </div>

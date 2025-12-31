@@ -17,6 +17,7 @@ export interface Lesson {
   title: string;
   isLocked: boolean; 
   contents: ContentItem[]; 
+  duration?: string;
 }
 
 export interface Course {
@@ -35,8 +36,10 @@ export interface User {
   name: string;
   email: string;
   phone: string;
+  role?: 'admin' | 'student';
   subscriptionTier: SubscriptionTier;
   subscriptionExpiry?: string; 
   lastSeen?: string; 
   joinedAt?: string;
+  completedLessons?: string[]; // مصفوفة تحتوي على معرفات الدروس المكتملة
 }

@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState } from 'react';
 import { 
   Camera, 
@@ -14,6 +15,8 @@ import {
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { Link } from 'react-router-dom';
+import { collection, addDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 
 type PaymentMethod = 'vodafone' | 'instapay';
 
@@ -42,8 +45,21 @@ export const Wallet: React.FC = () => {
   const waMessage = `مرحباً، لقد قمت بتحويل مبلغ ${amount} جنيه للاشتراك الشهري عبر (${selectedMethod === 'vodafone' ? 'فودافون كاش' : 'انستا باي'}). مرفق صورة الإيصال للطلب ${orderId}. البريد الإلكتروني: ${user?.email}`;
   const waLink = `https://wa.me/${waNumber}?text=${encodeURIComponent(waMessage)}`;
 
-  const handleSendClick = () => {
+  const handleSendClick = async () => {
     setShowSuccessMessage(true);
+    if (db && user) {
+        try {
+            await addDoc(collection(db, "admin_notifications"), {
+                type: 'payment',
+                message: `قام ${user.name} بطلب تفعيل اشتراك (${orderId}) عبر واتساب.`,
+                userName: user.name,
+                timestamp: new Date().toISOString(),
+                read: false
+            });
+        } catch (e) {
+            console.error("Failed to notify admin about payment request", e);
+        }
+    }
     setTimeout(() => setShowSuccessMessage(false), 10000);
   };
 
