@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { LogIn, GraduationCap, AlertCircle, Smartphone, Mail, Unlock, Loader2, Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { LogIn, GraduationCap, AlertCircle, Smartphone, Mail, Unlock, Loader2, Eye, EyeOff, ArrowLeft, Info } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import firebase from 'firebase/compat/app';
 import { auth } from '../firebase';
@@ -57,10 +57,17 @@ export const Login: React.FC = () => {
       await loginWithGoogle();
       navigate('/dashboard');
     } catch (err: any) {
+      console.error("Google Auth Error:", err);
       if (err.code === 'auth/unauthorized-domain') {
-        setError('هذا النطاق غير مصرح به في إعدادات Firebase.');
+        setError('هذا النطاق غير مصرح به في Firebase. يرجى إضافته في الإعدادات.');
+      } else if (err.code === 'auth/operation-not-allowed') {
+        setError('تسجيل دخول جوجل غير مفعل في Firebase Console.');
+      } else if (err.code === 'auth/popup-closed-by-user') {
+        setError('تم إغلاق نافذة تسجيل الدخول قبل الإكمال.');
+      } else if (err.code === 'auth/cancelled-popup-request') {
+        setError('تم إلغاء الطلب، يرجى المحاولة مرة أخرى.');
       } else {
-        setError('فشل تسجيل الدخول باستخدام جوجل.');
+        setError(`فشل تسجيل الدخول: ${err.message || 'خطأ غير معروف'}`);
       }
       setIsSubmitting(false);
     }
@@ -77,6 +84,7 @@ export const Login: React.FC = () => {
   const requestOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setError('');
     setupRecaptcha();
     const formattedPhone = `+20${phoneNumber.startsWith('0') ? phoneNumber.substring(1) : phoneNumber}`;
     try {
@@ -85,7 +93,7 @@ export const Login: React.FC = () => {
       setPhoneStep('otp');
       setIsSubmitting(false);
     } catch (err: any) {
-      setError('خطأ في إرسال كود التحقق.');
+      setError('خطأ في إرسال كود التحقق. تأكد من تفعيل Phone Auth.');
       setIsSubmitting(false);
     }
   };
@@ -134,8 +142,16 @@ export const Login: React.FC = () => {
               </div>
 
               {error && (
-                <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl text-xs font-bold mb-6 flex items-center gap-3">
-                  <AlertCircle size={18} /> {error}
+                <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl text-[11px] font-bold mb-6 flex flex-col gap-2">
+                  <div className="flex items-center gap-3">
+                    <AlertCircle size={16} /> {error}
+                  </div>
+                  {error.includes('غير مفعل') && (
+                    <div className="mt-1 p-2 bg-white/5 rounded-lg flex items-start gap-2">
+                      <Info size={12} className="mt-0.5 text-brand-gold" />
+                      <span className="text-[9px] text-brand-muted font-normal">تأكد من تفعيل خيار Google في Firebase Console -> Authentication -> Sign-in method</span>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -199,7 +215,7 @@ export const Login: React.FC = () => {
                 <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-brand-card px-4 text-[10px] text-brand-muted font-bold uppercase tracking-widest">أو</span>
               </div>
 
-              <button onClick={handleGoogleLogin} disabled={isSubmitting} className="w-full bg-white text-gray-900 font-bold py-4 rounded-xl flex items-center justify-center gap-3 hover:bg-gray-100 transition-all active:scale-95">
+              <button onClick={handleGoogleLogin} disabled={isSubmitting} className="w-full bg-white text-gray-900 font-bold py-4 rounded-xl flex items-center justify-center gap-3 hover:bg-gray-100 transition-all active:scale-95 disabled:opacity-50">
                 {isSubmitting ? <Loader2 className="animate-spin text-gray-400" /> : <><GoogleIcon /> الدخول بحساب Google</>}
               </button>
             </>
