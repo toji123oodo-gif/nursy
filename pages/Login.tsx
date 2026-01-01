@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { LogIn, GraduationCap, AlertCircle, Smartphone, Mail, Unlock, Loader2, Sparkles, Send, Info, CheckCircle2, Eye, EyeOff, ChevronRight, KeyRound, ArrowLeft } from 'lucide-react';
+import { LogIn, GraduationCap, AlertCircle, Smartphone, Mail, Unlock, Loader2, Sparkles, Send, Info, CheckCircle2, Eye, EyeOff, ChevronRight, KeyRound, ArrowLeft, Zap } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult, sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '../firebase';
@@ -68,7 +68,8 @@ export const Login: React.FC = () => {
     try {
       await login(email, password);
       setIsSuccess(true);
-      setTimeout(() => navigate('/dashboard'), 1000);
+      // Fast transition: 600ms is perfect for feedback without waiting
+      setTimeout(() => navigate('/dashboard'), 600);
     } catch (err: any) {
       setError({ message: 'البريد الإلكتروني أو كلمة المرور غير صحيحة' });
       setIsSubmitting(false);
@@ -98,7 +99,7 @@ export const Login: React.FC = () => {
     try {
       await loginWithGoogle();
       setIsSuccess(true);
-      setTimeout(() => navigate('/dashboard'), 1000);
+      setTimeout(() => navigate('/dashboard'), 600);
     } catch (err: any) {
       if (err.code !== 'auth/popup-closed-by-user') {
         setError({ message: 'فشل تسجيل الدخول باستخدام جوجل.' });
@@ -145,7 +146,7 @@ export const Login: React.FC = () => {
     try {
       await confirmationResult.confirm(otpCode);
       setIsSuccess(true);
-      setTimeout(() => navigate('/dashboard'), 1000);
+      setTimeout(() => navigate('/dashboard'), 600);
     } catch (err: any) {
       setError({ message: 'كود التحقق غير صحيح.' });
       setIsSubmitting(false);
@@ -154,18 +155,20 @@ export const Login: React.FC = () => {
 
   if (isSuccess) {
       return (
-          <div className="min-h-[90vh] flex items-center justify-center p-6">
-              <div className="bg-brand-card border border-white/10 p-12 rounded-[3.5rem] text-center animate-scale-up shadow-2xl relative overflow-hidden group">
+          <div className="min-h-[90vh] flex items-center justify-center p-6 bg-brand-main">
+              <div className="bg-brand-card border border-brand-gold/20 p-12 rounded-[3.5rem] text-center animate-scale-up shadow-[0_0_100px_rgba(251,191,36,0.1)] relative overflow-hidden group">
                   <div className="absolute inset-0 bg-brand-gold/5 animate-pulse"></div>
                   <div className="relative z-10">
                       <div className="w-24 h-24 bg-green-500/20 rounded-3xl flex items-center justify-center mx-auto mb-8 text-green-500 shadow-glow animate-bounce-slow">
-                          <CheckCircle2 size={56} />
+                          <CheckCircle2 size={56} className="animate-pulse" />
                       </div>
                       <h2 className="text-4xl font-black text-white mb-4 tracking-tighter">مرحباً بك مجدداً!</h2>
-                      <p className="text-brand-muted text-lg">جاري تجهيز مساحة العمل الخاصة بك...</p>
+                      <p className="text-brand-muted text-lg flex items-center justify-center gap-2">
+                         <Zap size={18} className="text-brand-gold" /> جاري فتح مساحة العمل...
+                      </p>
                       <div className="mt-10 flex justify-center">
-                          <div className="w-24 h-1.5 bg-white/5 rounded-full overflow-hidden">
-                              <div className="h-full bg-brand-gold animate-shimmer w-full"></div>
+                          <div className="w-48 h-1 bg-white/5 rounded-full overflow-hidden">
+                              <div className="h-full bg-brand-gold animate-[shimmer_0.6s_infinite] w-full origin-right"></div>
                           </div>
                       </div>
                   </div>
@@ -253,6 +256,7 @@ export const Login: React.FC = () => {
                         <input
                             type="email"
                             required
+                            autoFocus
                             value={email}
                             onChange={(e) => { setEmail(e.target.value); if(error.message) setError({message:''}); }}
                             className="w-full bg-brand-main/40 border border-white/10 rounded-2xl px-14 py-5 text-white text-base focus:border-brand-gold focus:ring-1 focus:ring-brand-gold/30 outline-none transition-all duration-300"
@@ -297,15 +301,15 @@ export const Login: React.FC = () => {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className={`w-full bg-brand-gold text-brand-main font-black py-6 rounded-[1.8rem] shadow-glow hover:bg-brand-goldHover transition-all flex items-center justify-center gap-4 group/btn overflow-hidden relative ${isSubmitting ? 'opacity-90 cursor-wait' : 'hover:scale-[1.02] active:scale-95'}`}
+                    className={`w-full bg-brand-gold text-brand-main font-black py-6 rounded-[1.8rem] shadow-glow hover:bg-brand-goldHover transition-all flex items-center justify-center gap-4 group/btn overflow-hidden relative ${isSubmitting ? 'opacity-90 cursor-wait' : 'hover:scale-[1.01] active:scale-95'}`}
                   >
                     <div className="absolute inset-0 bg-white/20 transform -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700"></div>
                     {isSubmitting ? (
-                       <ButtonLoader label="جاري التحقق..." />
+                       <ButtonLoader label="جاري الدخول..." />
                     ) : (
                       <>
-                        <span className="text-xl">دخول للمنصة</span>
-                        <LogIn size={24} strokeWidth={3} className="group-hover:translate-x-[-6px] transition-transform" />
+                        <span className="text-xl">دخول فوري</span>
+                        <LogIn size={24} strokeWidth={3} className="group-hover:translate-x-[-4px] transition-transform" />
                       </>
                     )}
                   </button>
@@ -322,6 +326,7 @@ export const Login: React.FC = () => {
                           <input
                             type="tel"
                             required
+                            autoFocus
                             value={phoneNumber}
                             onChange={(e) => { setPhoneNumber(e.target.value); if(error.message) setError({message:''}); }}
                             className="w-full bg-brand-main/40 border border-white/10 rounded-2xl px-6 py-5 pl-24 text-white text-3xl font-mono font-black tracking-widest focus:border-brand-gold outline-none transition-all shadow-inner"
@@ -337,10 +342,10 @@ export const Login: React.FC = () => {
                       <button
                         type="submit"
                         disabled={isSubmitting}
-                        className={`w-full bg-brand-gold text-brand-main font-black py-6 rounded-[1.8rem] shadow-glow hover:bg-brand-goldHover transition-all flex items-center justify-center gap-4 group/btn overflow-hidden relative ${isSubmitting ? 'opacity-90 cursor-wait' : 'hover:scale-[1.02] active:scale-95'}`}
+                        className={`w-full bg-brand-gold text-brand-main font-black py-6 rounded-[1.8rem] shadow-glow hover:bg-brand-goldHover transition-all flex items-center justify-center gap-4 group/btn overflow-hidden relative ${isSubmitting ? 'opacity-90 cursor-wait' : 'hover:scale-[1.01] active:scale-95'}`}
                       >
                         <div className="absolute inset-0 bg-white/20 transform -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700"></div>
-                        {isSubmitting ? <ButtonLoader label="إرسال الرمز..." /> : (
+                        {isSubmitting ? <ButtonLoader label="طلب الكود..." /> : (
                             <>
                                 <span className="text-xl">إرسال كود التحقق</span>
                                 <Send size={24} strokeWidth={3} className="rotate-[-15deg] group-hover:rotate-0 transition-transform" />
@@ -353,11 +358,12 @@ export const Login: React.FC = () => {
                       <div className="text-center space-y-6">
                         <div className="inline-flex items-center gap-2 bg-brand-gold/10 px-4 py-2 rounded-full border border-brand-gold/30">
                             <KeyRound size={14} className="text-brand-gold" />
-                            <span className="text-[10px] text-brand-gold font-black uppercase tracking-widest">أدخل الكود المكون من 6 أرقام</span>
+                            <span className="text-[10px] text-brand-gold font-black uppercase tracking-widest">تحقق من الرسائل القصيرة</span>
                         </div>
                         <input
                           type="text"
                           required
+                          autoFocus
                           value={otpCode}
                           onChange={(e) => { setOtpCode(e.target.value); if(error.message) setError({message:''}); }}
                           className="w-full bg-brand-main border-2 border-brand-gold/40 rounded-[2.5rem] px-4 py-8 text-center text-white text-5xl font-mono font-black tracking-[0.3em] focus:border-brand-gold focus:ring-4 focus:ring-brand-gold/20 outline-none transition-all shadow-glow"
@@ -369,7 +375,7 @@ export const Login: React.FC = () => {
                       <button 
                         type="submit" 
                         disabled={isSubmitting} 
-                        className={`w-full bg-brand-gold text-brand-main font-black py-6 rounded-[1.8rem] shadow-glow hover:bg-brand-goldHover transition-all flex items-center justify-center gap-4 group/btn overflow-hidden relative ${isSubmitting ? 'opacity-90 cursor-wait' : 'hover:scale-[1.02] active:scale-95'}`}
+                        className={`w-full bg-brand-gold text-brand-main font-black py-6 rounded-[1.8rem] shadow-glow hover:bg-brand-goldHover transition-all flex items-center justify-center gap-4 group/btn overflow-hidden relative ${isSubmitting ? 'opacity-90 cursor-wait' : 'hover:scale-[1.01] active:scale-95'}`}
                       >
                         <div className="absolute inset-0 bg-white/20 transform -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700"></div>
                         {isSubmitting ? <ButtonLoader label="جاري التحقق..." /> : <span className="text-xl">تأكيد ودخول</span>}
@@ -388,13 +394,13 @@ export const Login: React.FC = () => {
 
               <div className="relative my-12">
                 <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/10"></div></div>
-                <div className="relative flex justify-center text-sm"><span className="px-6 bg-brand-card text-brand-muted font-black text-[11px] uppercase tracking-[0.3em]">أو المتابعة عبر</span></div>
+                <div className="relative flex justify-center text-sm"><span className="px-6 bg-brand-card text-brand-muted font-black text-[11px] uppercase tracking-[0.3em]">أو</span></div>
               </div>
 
               <button 
                 onClick={handleGoogleLogin} 
                 disabled={isSubmitting} 
-                className={`w-full bg-white text-gray-900 font-black py-5 rounded-[1.8rem] flex items-center justify-center gap-4 shadow-xl hover:bg-gray-50 hover:scale-[1.02] transition-all active:scale-95 disabled:opacity-50 ${isSubmitting ? 'cursor-wait' : ''}`}
+                className={`w-full bg-white text-gray-900 font-black py-5 rounded-[1.8rem] flex items-center justify-center gap-4 shadow-xl hover:bg-gray-50 hover:scale-[1.01] transition-all active:scale-95 disabled:opacity-50 ${isSubmitting ? 'cursor-wait' : ''}`}
               >
                 {isSubmitting ? <div className="w-6 h-6 border-2 border-gray-300 border-t-gray-900 rounded-full animate-spin"></div> : <><GoogleIcon /><span className="text-base">Google Account</span></>}
               </button>
@@ -408,7 +414,7 @@ export const Login: React.FC = () => {
                         <Mail size={40} />
                     </div>
                     <h3 className="text-2xl font-black text-white">تحقق من بريدك!</h3>
-                    <p className="text-brand-muted leading-relaxed">أرسلنا لك رابطاً لاستعادة كلمة المرور. يرجى مراجعة بريدك الوارد (والبريد المزعج).</p>
+                    <p className="text-brand-muted leading-relaxed">أرسلنا لك رابطاً لاستعادة كلمة المرور.</p>
                     <button 
                       onClick={() => { setView('login'); setResetSent(false); }}
                       className="w-full bg-white/5 border border-white/10 text-white font-bold py-4 rounded-2xl hover:bg-white/10 transition-all"
@@ -423,6 +429,7 @@ export const Login: React.FC = () => {
                         <input
                             type="email"
                             required
+                            autoFocus
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             className="w-full bg-brand-main/40 border border-white/10 rounded-2xl px-6 py-5 text-white text-base focus:border-brand-gold outline-none transition-all shadow-inner"
@@ -433,7 +440,7 @@ export const Login: React.FC = () => {
                     <button
                         type="submit"
                         disabled={isSubmitting}
-                        className={`w-full bg-brand-gold text-brand-main font-black py-6 rounded-[1.8rem] shadow-glow hover:bg-brand-goldHover transition-all flex items-center justify-center gap-4 group/btn overflow-hidden relative ${isSubmitting ? 'opacity-90 cursor-wait' : 'hover:scale-[1.02] active:scale-95'}`}
+                        className={`w-full bg-brand-gold text-brand-main font-black py-6 rounded-[1.8rem] shadow-glow hover:bg-brand-goldHover transition-all flex items-center justify-center gap-4 group/btn overflow-hidden relative ${isSubmitting ? 'opacity-90 cursor-wait' : 'hover:scale-[1.01] active:scale-95'}`}
                     >
                         <div className="absolute inset-0 bg-white/20 transform -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700"></div>
                         {isSubmitting ? <ButtonLoader label="جاري الإرسال..." /> : <span className="text-xl">إرسال رابط الاستعادة</span>}
@@ -443,7 +450,7 @@ export const Login: React.FC = () => {
                       onClick={() => setView('login')}
                       className="w-full text-brand-muted text-sm font-bold hover:text-white transition-colors flex items-center justify-center gap-2 group"
                     >
-                      <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> تذكرت كلمة المرور؟ عد للدخول
+                      <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> عد للدخول
                     </button>
                  </form>
                )}
@@ -453,13 +460,18 @@ export const Login: React.FC = () => {
           <div className="mt-12 text-center border-t border-white/5 pt-8">
             <p className="text-brand-muted text-base font-medium">
                 ليس لديك حساب؟ {' '}
-                <Link to="/signup" className="text-brand-gold font-black hover:text-white transition-colors border-b-2 border-brand-gold/20 hover:border-white">انضم إلينا الآن</Link>
+                <Link to="/signup" className="text-brand-gold font-black hover:text-white transition-colors border-b-2 border-brand-gold/20 hover:border-white">سجل الآن</Link>
             </p>
           </div>
         </div>
       </div>
       
       <style>{`
+        @keyframes shimmer {
+          0% { transform: scaleX(0); }
+          50% { transform: scaleX(1); }
+          100% { transform: scaleX(0); }
+        }
         @keyframes shake {
           0%, 100% { transform: translateX(0); }
           25% { transform: translateX(-8px); }
