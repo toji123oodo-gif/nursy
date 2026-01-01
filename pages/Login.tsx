@@ -149,7 +149,7 @@ export const Login: React.FC = () => {
                   {error.includes('غير مفعل') && (
                     <div className="mt-1 p-2 bg-white/5 rounded-lg flex items-start gap-2">
                       <Info size={12} className="mt-0.5 text-brand-gold" />
-                      <span className="text-[9px] text-brand-muted font-normal">تأكد من تفعيل خيار Google في Firebase Console -> Authentication -> Sign-in method</span>
+                      <span className="text-[9px] text-brand-muted font-normal">تأكد من تفعيل خيار Google في Firebase Console &rarr; Authentication &rarr; Sign-in method</span>
                     </div>
                   )}
                 </div>
