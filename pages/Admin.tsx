@@ -14,8 +14,7 @@ import {
   Layers, Video, FileDown, ExternalLink, Copy, Check,
   AlertCircle, Download, Filter, Clock, ArrowUpRight, Activity,
   MessageCircle, Globe, HardDrive, Calendar, MousePointer2,
-  // Fix: Adding missing icon imports used in the management tips section
-  HelpCircle, Sparkles
+  HelpCircle, Sparkles, User as UserIcon
 } from 'lucide-react';
 import { db } from '../firebase';
 
@@ -111,6 +110,15 @@ export const Admin: React.FC = () => {
         ...editingUser,
         subscriptionTier: tier,
         subscriptionExpiry: expiry as any
+    });
+  };
+
+  const toggleUserRole = (role: 'student' | 'admin') => {
+    if (!editingUser) return;
+    if (role === 'admin' && !window.confirm('تحذير أمان: هل أنت متأكد من ترقية هذا المستخدم إلى "مدير"؟ سيكون له صلاحيات كاملة للتحكم في المنصة.')) return;
+    setEditingUser({
+      ...editingUser,
+      role: role
     });
   };
 
@@ -356,7 +364,10 @@ export const Admin: React.FC = () => {
                           <div className="flex items-center gap-5">
                             <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-brand-gold/30 to-brand-gold/10 border border-brand-gold/20 flex items-center justify-center text-brand-gold font-black text-xl shadow-lg">{u.name?.charAt(0) || 'S'}</div>
                             <div>
-                                <div className="font-black text-white text-base mb-1">{u.name}</div>
+                                <div className="font-black text-white text-base mb-1 flex items-center gap-2">
+                                  {u.name}
+                                  {u.role === 'admin' && <ShieldAlert size={14} className="text-red-500" />}
+                                </div>
                                 <div className="text-[10px] text-brand-muted font-mono opacity-50 tracking-tighter">{u.id}</div>
                             </div>
                           </div>
@@ -374,9 +385,16 @@ export const Admin: React.FC = () => {
                           </div>
                         </td>
                         <td className="px-8 py-6">
-                          <span className={`px-4 py-1.5 rounded-full text-[10px] font-black border transition-all ${u.subscriptionTier === 'pro' ? 'bg-green-500/10 text-green-500 border-green-500/20 shadow-[0_0_15px_rgba(34,197,94,0.1)]' : 'bg-white/5 text-brand-muted border-white/10'}`}>
-                            {u.subscriptionTier === 'pro' ? 'PREMIUM MEMBER' : 'FREE STUDENT'}
-                          </span>
+                          <div className="flex flex-col gap-2">
+                            <span className={`px-4 py-1.5 rounded-full text-[10px] font-black border transition-all ${u.subscriptionTier === 'pro' ? 'bg-green-500/10 text-green-500 border-green-500/20 shadow-[0_0_15px_rgba(34,197,94,0.1)]' : 'bg-white/5 text-brand-muted border-white/10'}`}>
+                              {u.subscriptionTier === 'pro' ? 'PREMIUM MEMBER' : 'FREE STUDENT'}
+                            </span>
+                            {u.role === 'admin' && (
+                              <span className="px-4 py-1.5 rounded-full text-[10px] font-black bg-red-500/10 text-red-500 border border-red-500/20 self-start flex items-center gap-1">
+                                <ShieldAlert size={10} /> ADMIN
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-8 py-6 text-left space-x-3 space-x-reverse opacity-0 group-hover:opacity-100 transition-all">
                           <button onClick={() => {setEditingUser(u); setIsUserModalOpen(true);}} className="p-3 bg-brand-gold text-brand-main rounded-xl shadow-xl hover:scale-110 active:scale-95 transition-all"><Edit size={20}/></button>
@@ -676,12 +694,26 @@ export const Admin: React.FC = () => {
                         </div>
                     </div>
                     <div className="space-y-4">
-                        <label className="text-[10px] text-brand-muted font-black uppercase tracking-[0.3em] block pr-2">آخر جهاز مستخدم</label>
-                        <div className="w-full bg-brand-main border border-white/10 rounded-2xl px-6 py-4 flex items-center gap-3 text-brand-gold">
-                            <Monitor size={18} />
-                            <span className="text-sm font-black">{editingUser.lastDevice || 'غير معروف'}</span>
+                        <label className="text-[10px] text-brand-muted font-black uppercase tracking-[0.3em] block pr-2">رتبة الصلاحية</label>
+                        <div className="flex bg-brand-main p-1.5 rounded-2xl border border-white/10">
+                            <button onClick={() => toggleUserRole('student')} className={`flex-1 py-4 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${(!editingUser.role || editingUser.role === 'student') ? 'bg-white/10 text-white border border-white/10' : 'text-brand-muted hover:text-white'}`}>
+                              <UserIcon size={14} /> طالب
+                            </button>
+                            <button onClick={() => toggleUserRole('admin')} className={`flex-1 py-4 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${editingUser.role === 'admin' ? 'bg-red-500/20 text-red-400 border border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.1)]' : 'text-brand-muted hover:text-white'}`}>
+                              <ShieldAlert size={14} /> مدير (Admin)
+                            </button>
                         </div>
                     </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-8">
+                  <div className="space-y-4">
+                      <label className="text-[10px] text-brand-muted font-black uppercase tracking-[0.3em] block pr-2">آخر جهاز مستخدم</label>
+                      <div className="w-full bg-brand-main border border-white/10 rounded-2xl px-6 py-4 flex items-center gap-3 text-brand-gold">
+                          <Monitor size={18} />
+                          <span className="text-sm font-black">{editingUser.lastDevice || 'غير معروف'}</span>
+                      </div>
+                  </div>
                 </div>
 
                 {editingUser.subscriptionTier === 'pro' && (
