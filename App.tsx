@@ -12,7 +12,6 @@ import { Admin } from './pages/Admin';
 import { Profile } from './pages/Profile';
 import { HelpCenter } from './pages/HelpCenter';
 import { CourseDetail } from './pages/CourseDetail';
-import { LoadingScreen } from './components/LoadingScreen';
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -29,13 +28,6 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 };
 
 const AppContent: React.FC = () => {
-  const { isLoading } = useApp();
-
-  // Global Loading State
-  if (isLoading) {
-    return <LoadingScreen />;
-  }
-
   return (
     <Layout>
        <Routes>
@@ -78,8 +70,6 @@ const AppContent: React.FC = () => {
             } 
           />
           
-          {/* Legacy redirects */}
-          <Route path="/welcome" element={<Navigate to="/dashboard" replace />} />
           <Route path="*" element={<Navigate to="/" replace />} />
        </Routes>
     </Layout>

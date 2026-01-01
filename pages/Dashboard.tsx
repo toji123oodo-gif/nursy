@@ -1,210 +1,50 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Lock, Play, Star, Clock, AlertCircle, CheckCircle, XCircle, FileText, HelpCircle, Download, File, Activity, Unlock, Brain, RotateCw, Bot, Send, Sparkles, X, Headphones, Image as ImageIcon, FileType, Music, Pause, Volume2, VolumeX, Maximize2, BookOpen, ChevronRight, List, FileDown } from 'lucide-react';
+import { Lock, Play, Star, Clock, AlertCircle, CheckCircle, XCircle, FileText, HelpCircle, Download, File, Activity, Unlock, Brain, RotateCw, Bot, Send, Sparkles, X, Headphones, Image as ImageIcon, FileType, Music, Pause, Volume2, VolumeX, Maximize2, BookOpen, ChevronRight, List, FileDown, Layout, ChevronLeft, ChevronDown, MonitorPlay } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { Link } from 'react-router-dom';
 import { ContentItem } from '../types';
-import { GoogleGenAI } from "@google/genai";
 
 const Watermark: React.FC<{ userPhone: string }> = ({ userPhone }) => {
   const [position, setPosition] = useState({ top: 10, left: 10 });
-  const [opacity, setOpacity] = useState(0.4);
 
   useEffect(() => {
     const interval = setInterval(() => {
       setPosition({
-        top: Math.random() * 70 + 10,
-        left: Math.random() * 70 + 10,
+        top: Math.random() * 80 + 10,
+        left: Math.random() * 80 + 10,
       });
-      setOpacity(0.2 + Math.random() * 0.3);
-    }, 3000);
-
+    }, 4000);
     return () => clearInterval(interval);
   }, []);
 
   return (
     <div
-      className="absolute pointer-events-none z-50 text-white/20 font-mono select-none whitespace-nowrap transition-all duration-1000 text-sm md:text-lg"
-      style={{
-        top: `${position.top}%`,
-        left: `${position.left}%`,
-        opacity: opacity,
-        transform: 'translate(-50%, -50%) rotate(-15deg)',
-      }}
+      className="absolute pointer-events-none z-50 text-white/5 md:text-white/10 font-black select-none transition-all duration-1000 text-[10px] md:text-base"
+      style={{ top: `${position.top}%`, left: `${position.left}%`, transform: 'rotate(-15deg)' }}
     >
-      {userPhone}
+      NURSY - {userPhone}
     </div>
   );
 };
 
-const CustomAudioPlayer: React.FC<{ url: string, title: string, userPhone: string }> = ({ url, title, userPhone }) => {
-    const audioRef = useRef<HTMLAudioElement>(null);
-    const [isPlaying, setIsPlaying] = useState(false);
-    const [currentTime, setCurrentTime] = useState(0);
-    const [duration, setDuration] = useState(0);
-
-    const togglePlay = () => {
-        if (audioRef.current) {
-            if (isPlaying) audioRef.current.pause();
-            else audioRef.current.play();
-            setIsPlaying(!isPlaying);
-        }
-    };
-
-    const handleTimeUpdate = () => {
-        if (audioRef.current) {
-            setCurrentTime(audioRef.current.currentTime);
-        }
-    };
-
-    const handleLoadedMetadata = () => {
-        if (audioRef.current) {
-            setDuration(audioRef.current.duration);
-        }
-    };
-
-    const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const time = Number(e.target.value);
-        if (audioRef.current) {
-            audioRef.current.currentTime = time;
-            setCurrentTime(time);
-        }
-    };
-
-    const formatTime = (time: number) => {
-        const minutes = Math.floor(time / 60);
-        const seconds = Math.floor(time % 60);
-        return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-    };
-
-    return (
-        <div className="bg-brand-card p-6 rounded-2xl border border-white/10 shadow-xl relative overflow-hidden group">
-            <audio 
-                ref={audioRef} 
-                src={url} 
-                onTimeUpdate={handleTimeUpdate}
-                onLoadedMetadata={handleLoadedMetadata}
-                onEnded={() => setIsPlaying(false)}
-            />
-
-            <div className="relative z-10 flex flex-col items-center gap-6">
-                <div className="w-24 h-24 rounded-full bg-brand-main border-4 border-brand-gold/30 flex items-center justify-center shadow-[0_0_20px_rgba(251,191,36,0.2)]">
-                    <Music size={40} className={`text-brand-gold ${isPlaying ? 'animate-spin' : ''}`} />
-                </div>
-                
-                <div className="text-center">
-                    <h3 className="text-white font-bold text-lg mb-1">{title}</h3>
-                </div>
-
-                <div className="w-full flex items-center gap-3">
-                    <span className="text-xs text-brand-muted font-mono">{formatTime(currentTime)}</span>
-                    <input 
-                        type="range" 
-                        min="0" 
-                        max={duration || 0} 
-                        value={currentTime} 
-                        onChange={handleSeek}
-                        className="flex-1 h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-brand-gold"
-                    />
-                    <span className="text-xs text-brand-muted font-mono">{formatTime(duration)}</span>
-                </div>
-
-                <button 
-                    onClick={togglePlay}
-                    className="w-14 h-14 rounded-full bg-brand-gold text-brand-main flex items-center justify-center hover:scale-105 transition-transform shadow-glow"
-                >
-                    {isPlaying ? <Pause size={24} fill="currentColor" /> : <Play size={24} fill="currentColor" className="ml-1" />}
-                </button>
-            </div>
-            <Watermark userPhone={userPhone} />
-        </div>
-    );
-};
-
-const DocumentViewer: React.FC<{ url: string, type: 'pdf' | 'document', userPhone: string }> = ({ url, type, userPhone }) => {
-    const viewerUrl = `https://docs.google.com/gview?url=${encodeURIComponent(url)}&embedded=true`;
-    return (
-        <div className="relative w-full h-[600px] bg-white rounded-2xl overflow-hidden border border-white/10 shadow-xl">
-             <iframe src={viewerUrl} className="w-full h-full" frameBorder="0"></iframe>
-             <Watermark userPhone={userPhone} />
-        </div>
-    );
-};
-
-const AiChatWidget: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-    const [messages, setMessages] = useState<{sender: 'bot'|'user', text: string}[]>([
-        { sender: 'bot', text: 'مرحباً بك! أنا مساعدك الذكي في Nursy. كيف يمكنني مساعدتك اليوم؟' }
-    ]);
-    const [input, setInput] = useState('');
-    const [isThinking, setIsThinking] = useState(false);
-    const scrollRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        if (scrollRef.current) {
-            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-        }
-    }, [messages, isThinking]);
-
-    const handleSend = async () => {
-        if (!input.trim() || isThinking) return;
-        const userQuery = input.trim();
-        setMessages(prev => [...prev, { sender: 'user', text: userQuery }]);
-        setInput('');
-        setIsThinking(true);
-
-        try {
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-            const response = await ai.models.generateContent({
-                model: 'gemini-3-flash-preview',
-                contents: userQuery,
-                config: {
-                    systemInstruction: "أنت مساعد ذكي لمنصة Nursy التعليمية لطلاب التمريض.",
-                    temperature: 0.7,
-                }
-            });
-            setMessages(prev => [...prev, { sender: 'bot', text: response.text || "عذراً، حدث خطأ." }]);
-        } catch (err) {
-            setMessages(prev => [...prev, { sender: 'bot', text: "خطأ في الاتصال بالذكاء الاصطناعي." }]);
-        } finally {
-            setIsThinking(false);
-        }
-    };
-
-    return (
-        <div className="fixed bottom-24 left-4 md:left-8 w-[90%] md:w-96 bg-brand-card border border-brand-gold/50 rounded-2xl shadow-2xl overflow-hidden z-40 flex flex-col h-[450px]">
-             <div className="bg-brand-gold p-3 flex justify-between items-center text-brand-main">
-                <span className="font-bold flex items-center gap-2"><Bot size={18} /> Nursy AI</span>
-                <button onClick={onClose}><X size={16} /></button>
-            </div>
-            <div ref={scrollRef} className="flex-1 p-4 overflow-y-auto space-y-3 bg-brand-main">
-                {messages.map((m, i) => (
-                    <div key={i} className={`p-3 rounded-2xl text-sm max-w-[85%] ${m.sender === 'user' ? 'bg-brand-gold/20 text-brand-gold mr-auto' : 'bg-white/5 text-white ml-auto'}`}>
-                        {m.text}
-                    </div>
-                ))}
-            </div>
-            <div className="p-3 bg-brand-card border-t border-white/5 flex gap-2">
-                <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSend()} className="flex-1 bg-brand-main rounded-full px-4 py-2 text-sm text-white border border-white/10 outline-none" placeholder="اسألني أي شيء..." />
-                <button onClick={handleSend} disabled={isThinking} className="w-10 h-10 rounded-full bg-brand-gold text-brand-main flex items-center justify-center"><Send size={18} /></button>
-            </div>
-        </div>
-    );
-};
-
 export const Dashboard: React.FC = () => {
-  const { user, courses, upgradeToPro, updateUserData } = useApp();
+  const { user, courses, updateUserData } = useApp();
   const [activeCourse, setActiveCourse] = useState(courses[0]); 
   const [activeLesson, setActiveLesson] = useState(activeCourse.lessons[0]);
   const [activeContent, setActiveContent] = useState<ContentItem | null>(activeLesson.contents?.[0] || null);
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [activeTab, setActiveTab] = useState<'content' | 'quiz' | 'resources'>('content');
-  const [showAiChat, setShowAiChat] = useState(false);
+  const [activeTab, setActiveTab] = useState<'content' | 'resources'>('content');
+  const [showPlaylist, setShowPlaylist] = useState(false);
 
   useEffect(() => {
     if (activeLesson.contents?.length > 0) {
         setActiveContent(activeLesson.contents[0]);
     } else {
         setActiveContent(null);
+    }
+    // Smooth scroll to top on mobile lesson change
+    if (window.innerWidth < 1024) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [activeLesson]);
 
@@ -220,219 +60,196 @@ export const Dashboard: React.FC = () => {
   const toggleLessonCompletion = async (lessonId: string) => {
     if (!user) return;
     const currentCompleted = user.completedLessons || [];
-    let updatedCompleted: string[];
-    
-    if (currentCompleted.includes(lessonId)) {
-        updatedCompleted = currentCompleted.filter(id => id !== lessonId);
-    } else {
-        updatedCompleted = [...currentCompleted, lessonId];
-    }
-    
+    const updatedCompleted = currentCompleted.includes(lessonId)
+        ? currentCompleted.filter(id => id !== lessonId)
+        : [...currentCompleted, lessonId];
     await updateUserData({ completedLessons: updatedCompleted });
-  };
-
-  const handleDownload = (item: ContentItem) => {
-    if (user?.subscriptionTier !== 'pro') return;
-    window.open(item.url, '_blank');
   };
 
   if (!user) return null;
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto relative min-h-screen">
-      {user.subscriptionTier === 'pro' && !showAiChat && (
-          <button onClick={() => setShowAiChat(true)} className="fixed bottom-6 left-6 z-40 bg-brand-gold text-brand-main p-4 rounded-full shadow-glow transform hover:scale-110 transition-transform">
-              <Bot size={28} />
-          </button>
-      )}
-      {showAiChat && <AiChatWidget onClose={() => setShowAiChat(false)} />}
+    <div className="min-h-screen px-0 md:px-8 py-0 md:py-8 pb-32">
+      <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-0 md:gap-8">
+        
+        {/* Main Content Side */}
+        <div className="flex-1 space-y-4 md:space-y-6">
+            
+            {/* Video Player - Edge to edge on mobile */}
+            {activeTab === 'content' && activeContent && activeContent.type === 'video' ? (
+                <div className="relative aspect-video bg-black md:rounded-[2.5rem] overflow-hidden shadow-2xl border-b md:border border-white/10 group ring-4 ring-black">
+                    <iframe 
+                        className="w-full h-full" 
+                        src={`${activeContent.url}?modestbranding=1&rel=0`} 
+                        title={activeContent.title}
+                        frameBorder="0" 
+                        allowFullScreen
+                    ></iframe>
+                    <Watermark userPhone={user.phone || user.email} />
+                </div>
+            ) : null}
 
-      <div className="flex flex-col lg:flex-row gap-8">
-        {/* Main Content Area */}
-        <div className="flex-1 space-y-6">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-                <div className="flex bg-brand-card p-1 rounded-xl border border-white/5">
+            {/* Lesson Title & Info - Padding only on mobile */}
+            <div className="px-6 md:px-0 space-y-4">
+                <div className="bg-brand-card/30 md:bg-brand-card/50 border border-white/5 p-5 md:p-8 rounded-[2rem] md:rounded-[3rem] flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div className="w-full">
+                        <div className="flex items-center gap-2 text-brand-gold text-[10px] font-black uppercase mb-2">
+                            <MonitorPlay size={14} /> {activeCourse.title}
+                        </div>
+                        <h2 className="text-2xl md:text-3xl font-black text-white leading-tight">{activeLesson.title}</h2>
+                    </div>
+                    <div className="flex bg-brand-main p-1.5 rounded-2xl border border-white/5 w-full md:w-auto shadow-inner">
+                        <button onClick={() => setActiveTab('content')} className={`flex-1 md:flex-none px-8 py-3 rounded-xl text-xs font-black transition-all ${activeTab === 'content' ? 'bg-brand-gold text-brand-main shadow-glow' : 'text-brand-muted hover:text-white'}`}>الدرس</button>
+                        <button onClick={() => setActiveTab('resources')} className={`flex-1 md:flex-none px-8 py-3 rounded-xl text-xs font-black transition-all ${activeTab === 'resources' ? 'bg-brand-gold text-brand-main shadow-glow' : 'text-brand-muted hover:text-white'}`}>الملفات</button>
+                    </div>
+                </div>
+
+                {activeTab === 'resources' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fade-in-up">
+                      {activeLesson.contents?.filter(c => c.type === 'pdf' || c.type === 'document').map(item => (
+                          <div key={item.id} className="bg-brand-card/50 border border-white/5 p-6 rounded-[2rem] flex items-center justify-between hover:border-brand-gold/30 transition-all shadow-xl group">
+                              <div className="flex items-center gap-4">
+                                  <div className="p-4 bg-brand-gold/10 rounded-2xl text-brand-gold group-hover:scale-110 transition-transform"><FileText size={24} /></div>
+                                  <div>
+                                      <h4 className="text-white font-black text-sm">{item.title}</h4>
+                                      <p className="text-brand-muted text-[10px] font-mono mt-1 opacity-60">{item.fileSize || '2.0 MB'}</p>
+                                  </div>
+                              </div>
+                              <button 
+                                  onClick={() => user.subscriptionTier === 'pro' && window.open(item.url)}
+                                  className={`p-4 rounded-2xl transition-all shadow-lg ${user.subscriptionTier === 'pro' ? 'bg-brand-gold text-brand-main active:scale-90' : 'bg-white/5 text-brand-muted cursor-not-allowed'}`}
+                              >
+                                  {user.subscriptionTier === 'pro' ? <FileDown size={22} /> : <Lock size={22} />}
+                              </button>
+                          </div>
+                      ))}
+                  </div>
+                )}
+
+                {/* Completion CTA */}
+                <div className="bg-brand-card/50 p-6 md:p-8 rounded-[2.5rem] md:rounded-[3rem] border border-white/5 flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl">
+                    <div className="flex items-center gap-5 w-full md:w-auto">
+                        <div className={`p-4 rounded-2xl shrink-0 shadow-lg ${isLessonCompleted(activeLesson.id) ? 'bg-green-500/20 text-green-500 shadow-green-500/10' : 'bg-brand-gold/20 text-brand-gold shadow-brand-gold/10'}`}>
+                            {isLessonCompleted(activeLesson.id) ? <CheckCircle size={28} /> : <Star size={28} />}
+                        </div>
+                        <div>
+                            <h4 className="text-white font-black text-lg leading-tight">حالة الدرس</h4>
+                            <p className="text-brand-muted text-xs mt-1">{isLessonCompleted(activeLesson.id) ? 'أحسنت! لقد أتممت هذا الدرس بنجاح' : 'هذا الدرس لم يكتمل، حدده عند الانتهاء'}</p>
+                        </div>
+                    </div>
                     <button 
-                        onClick={() => setActiveTab('content')} 
-                        className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'content' ? 'bg-brand-gold text-brand-main shadow-glow' : 'text-brand-muted hover:text-white'}`}
+                        onClick={() => toggleLessonCompletion(activeLesson.id)}
+                        className={`w-full md:w-auto px-10 py-4.5 rounded-[1.5rem] md:rounded-2xl font-black text-sm md:text-base transition-all transform active:scale-95 shadow-xl ${
+                            isLessonCompleted(activeLesson.id) 
+                            ? 'bg-green-500/10 text-green-500 border border-green-500/20' 
+                            : 'bg-brand-gold text-brand-main shadow-glow'
+                        }`}
                     >
-                        المحتوى الدراسي
-                    </button>
-                    <button 
-                        onClick={() => setActiveTab('resources')} 
-                        className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'resources' ? 'bg-brand-gold text-brand-main shadow-glow' : 'text-brand-muted hover:text-white'}`}
-                    >
-                        المصادر
-                    </button>
-                    <button 
-                        onClick={() => setActiveTab('quiz')} 
-                        className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'quiz' ? 'bg-brand-gold text-brand-main shadow-glow' : 'text-brand-muted hover:text-white'}`}
-                    >
-                        اختبار قصير
+                        {isLessonCompleted(activeLesson.id) ? 'إلغاء المكتمل' : 'تمييز كمكتمل'}
                     </button>
                 </div>
-                
-                <div className="text-right">
-                    <h2 className="text-2xl font-black text-white">{activeLesson.title}</h2>
-                    <p className="text-brand-muted text-sm">{activeCourse.title} • {activeCourse.instructor}</p>
+
+                {/* Mobile Floating Lesson Selector */}
+                <div className="lg:hidden">
+                    <button 
+                      onClick={() => setShowPlaylist(true)}
+                      className="w-full bg-brand-gold/10 border border-brand-gold/20 p-6 rounded-[2rem] flex items-center justify-between text-brand-gold font-black active:scale-95 transition-all shadow-glow"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="bg-brand-gold text-brand-main p-2 rounded-lg"><List size={18} /></div>
+                        <span>عرض قائمة الدروس</span>
+                      </div>
+                      <span className="text-[10px] bg-brand-gold/20 px-3 py-1 rounded-full uppercase tracking-widest">{activeCourse.lessons.length} درس</span>
+                    </button>
                 </div>
             </div>
-            
-            {activeTab === 'content' && activeContent ? (
-                <div className="animate-fade-in space-y-6">
-                    {activeContent.type === 'video' && (
-                        <div className="relative bg-black rounded-3xl overflow-hidden aspect-video shadow-2xl ring-1 ring-white/10 group">
-                            {activeContent.url ? (
-                                <iframe 
-                                    className="w-full h-full" 
-                                    src={`${activeContent.url}?autoplay=0&rel=0&modestbranding=1`} 
-                                    title={activeContent.title}
-                                    frameBorder="0" 
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                                    allowFullScreen
-                                ></iframe>
-                            ) : (
-                                <div className="absolute inset-0 flex flex-col items-center justify-center text-brand-muted">
-                                    <AlertCircle size={48} className="mb-4 opacity-20" />
-                                    <p className="font-bold">عذراً، هذا الفيديو غير متوفر حالياً</p>
-                                </div>
-                            )}
-                            <Watermark userPhone={user.phone || user.email} />
-                        </div>
-                    )}
-                    {activeContent.type === 'audio' && <CustomAudioPlayer url={activeContent.url} title={activeContent.title} userPhone={user.phone || user.email} />}
-                    {(activeContent.type === 'pdf' || activeContent.type === 'document') && <DocumentViewer url={activeContent.url} type={activeContent.type} userPhone={user.phone || user.email} />}
-                    
-                    {/* Content Meta */}
-                    <div className="bg-brand-card border border-white/5 p-6 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4">
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-xl bg-brand-gold/10 flex items-center justify-center text-brand-gold">
-                                <BookOpen size={24} />
-                            </div>
-                            <div>
-                                <h4 className="text-white font-bold">{activeContent.title}</h4>
-                                <p className="text-brand-muted text-xs">تم الرفع بواسطة: {activeCourse.instructor}</p>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-3 w-full md:w-auto">
-                             <button 
-                                onClick={() => toggleLessonCompletion(activeLesson.id)}
-                                className={`flex-1 md:flex-initial flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold text-sm transition-all border ${
-                                    isLessonCompleted(activeLesson.id) 
-                                    ? 'bg-green-500/10 text-green-500 border-green-500/30' 
-                                    : 'bg-white/5 text-white border-white/5 hover:bg-white/10'
-                                }`}
-                             >
-                                {isLessonCompleted(activeLesson.id) ? (
-                                    <>
-                                        <CheckCircle size={18} /> تم الإكمال
-                                    </>
-                                ) : (
-                                    <>
-                                        <RotateCw size={18} /> تمييز كمكتمل
-                                    </>
-                                )}
-                             </button>
-                             <button className="p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all text-brand-muted hover:text-white">
-                                <Download size={20} />
-                             </button>
-                        </div>
-                    </div>
-                </div>
-            ) : activeTab === 'resources' ? (
-                <div className="animate-fade-in space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {activeLesson.contents?.filter(c => c.type === 'pdf' || c.type === 'document').length > 0 ? (
-                            activeLesson.contents
-                                .filter(c => c.type === 'pdf' || c.type === 'document')
-                                .map((item) => (
-                                    <div key={item.id} className="bg-brand-card border border-white/5 p-6 rounded-3xl flex items-center justify-between group hover:border-brand-gold/30 transition-all shadow-xl">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-12 h-12 rounded-2xl bg-brand-gold/10 flex items-center justify-center text-brand-gold">
-                                                <FileText size={24} />
-                                            </div>
-                                            <div>
-                                                <h4 className="text-white font-bold text-sm">{item.title}</h4>
-                                                <p className="text-brand-muted text-[10px] font-mono mt-1">{item.fileSize || '2.4 MB'} • {item.type.toUpperCase()}</p>
-                                            </div>
-                                        </div>
-                                        
-                                        <button 
-                                            onClick={() => handleDownload(item)}
-                                            disabled={user.subscriptionTier !== 'pro'}
-                                            className={`p-3 rounded-xl transition-all ${
-                                                user.subscriptionTier === 'pro' 
-                                                ? 'bg-brand-gold text-brand-main hover:scale-110' 
-                                                : 'bg-white/5 text-brand-muted cursor-not-allowed'
-                                            }`}
-                                        >
-                                            {user.subscriptionTier === 'pro' ? <FileDown size={20} /> : <Lock size={20} />}
-                                        </button>
-                                    </div>
-                                ))
-                        ) : (
-                            <div className="col-span-full py-20 text-center bg-brand-card/30 rounded-3xl border border-dashed border-white/10">
-                                <FileText size={48} className="mx-auto mb-4 opacity-10" />
-                                <p className="text-brand-muted font-bold">لا توجد ملفات مرفقة لهذا الدرس</p>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            ) : (
-                <div className="p-24 text-center text-brand-muted bg-brand-card/30 rounded-3xl border border-dashed border-white/5">
-                    <p className="font-bold text-lg">اختر درساً من القائمة لبدء التعلم</p>
-                </div>
-            )}
         </div>
 
-        {/* Sidebar / Playlist */}
-        <div className="w-full lg:w-80 shrink-0">
-            <div className="bg-brand-card rounded-3xl border border-white/5 overflow-hidden shadow-2xl sticky top-28">
-                <div className="p-6 bg-white/5 border-b border-white/5">
-                    <h3 className="font-black text-white flex items-center gap-2">
-                        <List size={18} className="text-brand-gold" />
-                        محتويات الكورس
-                    </h3>
+        {/* Desktop Sidebar Playlist */}
+        <div className="hidden lg:block w-96 shrink-0">
+            <div className="bg-brand-card rounded-[3rem] border border-white/5 overflow-hidden sticky top-28 shadow-[0_40px_80px_-20px_rgba(0,0,0,0.5)]">
+                <div className="p-8 bg-white/5 border-b border-white/5 flex items-center justify-between">
+                    <h3 className="text-white text-xl font-black flex items-center gap-3"><List size={22} className="text-brand-gold" /> قائمة الدروس</h3>
+                    <div className="w-8 h-8 rounded-full bg-brand-gold/10 flex items-center justify-center text-[10px] font-black text-brand-gold border border-brand-gold/20">
+                      {activeCourse.lessons.length}
+                    </div>
                 </div>
-
-                <div className="max-h-[60vh] overflow-y-auto">
+                <div className="max-h-[65vh] overflow-y-auto custom-scrollbar no-scrollbar py-2">
                     {activeCourse.lessons.map((lesson, idx) => {
                         const accessible = isLessonAccessible(idx);
-                        const isActive = activeLesson.id === lesson.id;
-                        
+                        const active = activeLesson.id === lesson.id;
+                        const completed = isLessonCompleted(lesson.id);
                         return (
-                            <button
+                            <button 
                                 key={lesson.id}
-                                onClick={() => accessible ? setActiveLesson(lesson) : setShowUpgradeModal(true)}
-                                className={`w-full flex items-center gap-4 p-5 border-b border-white/5 last:border-0 text-right transition-all ${
-                                    isActive ? 'bg-brand-gold/10' : 'hover:bg-white/5'
-                                }`}
+                                onClick={() => accessible && setActiveLesson(lesson)}
+                                className={`w-full flex items-center gap-5 p-6 border-b border-white/5 last:border-0 transition-all text-right ${active ? 'bg-brand-gold/10' : 'hover:bg-white/5'} ${!accessible ? 'opacity-40 cursor-not-allowed' : ''}`}
                             >
-                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 font-black text-sm transition-all ${
-                                    isActive ? 'bg-brand-gold text-brand-main' : 'bg-brand-main text-brand-muted'
+                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-base shrink-0 transition-all shadow-lg ${
+                                    active ? 'bg-brand-gold text-brand-main' : completed ? 'bg-green-500/20 text-green-500 shadow-green-500/5' : 'bg-brand-main text-brand-muted'
                                 }`}>
-                                    {accessible ? (idx + 1) : <Lock size={14} />}
+                                    {accessible ? completed ? <CheckCircle size={22} /> : (idx + 1) : <Lock size={20} />}
                                 </div>
                                 <div className="flex-1">
-                                    <p className={`text-sm font-bold ${isActive ? 'text-brand-gold' : 'text-white'}`}>{lesson.title}</p>
-                                    <div className="flex items-center gap-2 mt-1">
-                                        <Clock size={10} className="text-brand-muted" />
-                                        <span className="text-[10px] text-brand-muted font-bold">{lesson.duration || '45:00'}</span>
+                                    <p className={`text-sm md:text-base font-black transition-colors ${active ? 'text-brand-gold' : 'text-white'}`}>{lesson.title}</p>
+                                    <div className="flex items-center gap-2 mt-1.5">
+                                        <Clock size={12} className="text-brand-muted" />
+                                        <span className="text-[10px] text-brand-muted font-bold tracking-wider">{lesson.duration || '40:00'}</span>
                                     </div>
                                 </div>
-                                {isActive && <ChevronRight size={16} className="text-brand-gold" />}
+                                {active && <ChevronLeft size={20} className="text-brand-gold animate-bounce-x" />}
                             </button>
                         );
                     })}
                 </div>
-                
-                {user.subscriptionTier === 'free' && (
-                    <div className="p-6 bg-brand-gold/10">
-                        <Link to="/wallet" className="block w-full bg-brand-gold text-brand-main text-center font-bold py-3 rounded-xl hover:bg-brand-goldHover transition-all">
-                            اشترك الآن
-                        </Link>
+            </div>
+        </div>
+
+        {/* Mobile Modern Bottom Drawer for Lessons */}
+        <div className={`lg:hidden fixed inset-0 z-[150] transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${showPlaylist ? 'visible' : 'invisible'}`}>
+            <div className={`absolute inset-0 bg-brand-main/80 backdrop-blur-md transition-opacity duration-500 ${showPlaylist ? 'opacity-100' : 'opacity-0'}`} onClick={() => setShowPlaylist(false)}></div>
+            <div className={`absolute bottom-0 left-0 right-0 bg-brand-card rounded-t-[3.5rem] border-t border-white/10 shadow-[0_-20px_50px_rgba(0,0,0,0.5)] transition-transform duration-500 transform ${showPlaylist ? 'translate-y-0' : 'translate-y-full'}`}>
+                <div className="flex flex-col h-[75vh]">
+                    <div className="p-4 flex flex-col items-center">
+                        <div className="w-12 h-1.5 bg-white/10 rounded-full mb-6"></div>
+                        <div className="w-full px-4 flex items-center justify-between">
+                          <h3 className="text-2xl font-black text-white">قائمة المحاضرات</h3>
+                          <button onClick={() => setShowPlaylist(false)} className="p-3 bg-white/5 rounded-2xl text-brand-muted active:scale-90 transition-all"><X size={24} /></button>
+                        </div>
                     </div>
-                )}
+                    <div className="flex-1 overflow-y-auto px-4 pb-12 space-y-3 no-scrollbar">
+                        {activeCourse.lessons.map((lesson, idx) => {
+                            const accessible = isLessonAccessible(idx);
+                            const active = activeLesson.id === lesson.id;
+                            const completed = isLessonCompleted(lesson.id);
+                            return (
+                                <button 
+                                    key={lesson.id}
+                                    onClick={() => {
+                                        if (accessible) {
+                                            setActiveLesson(lesson);
+                                            setShowPlaylist(false);
+                                        }
+                                    }}
+                                    className={`w-full flex items-center gap-5 p-5 rounded-[2rem] border transition-all text-right active:scale-[0.98] ${active ? 'bg-brand-gold/10 border-brand-gold/30' : 'bg-white/5 border-transparent'} ${!accessible ? 'opacity-40' : ''}`}
+                                >
+                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-base shrink-0 shadow-xl ${
+                                        active ? 'bg-brand-gold text-brand-main' : completed ? 'bg-green-500/20 text-green-500 shadow-green-500/5' : 'bg-brand-main text-brand-muted'
+                                    }`}>
+                                        {accessible ? completed ? <CheckCircle size={22} /> : (idx + 1) : <Lock size={20} />}
+                                    </div>
+                                    <div className="flex-1">
+                                        <p className={`text-sm font-black transition-colors ${active ? 'text-brand-gold' : 'text-white'}`}>{lesson.title}</p>
+                                        <div className="flex items-center gap-2 mt-1">
+                                          <span className="text-[10px] text-brand-muted font-bold tracking-widest">{lesson.duration || '40:00'}</span>
+                                        </div>
+                                    </div>
+                                    {active && <div className="w-2 h-2 bg-brand-gold rounded-full shadow-glow"></div>}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
             </div>
         </div>
       </div>

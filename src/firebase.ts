@@ -1,7 +1,9 @@
-import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore'; // Import Firestore
-import { getAnalytics, isSupported } from 'firebase/analytics';
+
+// Fix: Using compat version for namespaced Firebase v8 support to resolve property access errors
+import firebase from 'firebase/compat/app';
+import 'firebase/compat/auth';
+import 'firebase/compat/firestore';
+import 'firebase/compat/analytics';
 
 // Firebase configuration provided
 const firebaseConfig = {
@@ -14,28 +16,24 @@ const firebaseConfig = {
   measurementId: "G-KJJDXK8TEC"
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Initialize Firebase using namespaced syntax for compatibility
+const app = !firebase.apps.length ? firebase.initializeApp(firebaseConfig) : firebase.app();
 
 // Initialize Auth
-const auth = getAuth(app);
+const auth = firebase.auth();
 // Set language to Arabic for SMS and ReCaptcha
 auth.languageCode = 'ar'; 
 
 // Initialize Firestore (Database)
-const db = getFirestore(app);
+const db = firebase.firestore();
 
-// Initialize Google Provider (Exported to maintain type compatibility)
-const googleProvider = new GoogleAuthProvider();
+// Initialize Google Provider
+const googleProvider = new firebase.auth.GoogleAuthProvider();
 
-// Initialize Analytics (safely)
+// Initialize Analytics safely
 let analytics: any;
-isSupported().then(yes => {
-  if (yes) {
-    analytics = getAnalytics(app);
-  }
-}).catch(err => {
-  console.warn("Firebase Analytics is not supported in this environment:", err);
-});
+if (typeof window !== 'undefined') {
+  analytics = firebase.analytics();
+}
 
 export { auth, db, googleProvider, analytics };

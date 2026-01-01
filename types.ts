@@ -40,6 +40,7 @@ export interface User {
   subscriptionTier: SubscriptionTier;
   subscriptionExpiry?: string; 
   lastSeen?: string; 
+  lastDevice?: string; // معلومات الجهاز المتصل
   joinedAt?: string;
-  completedLessons?: string[]; // مصفوفة تحتوي على معرفات الدروس المكتملة
+  completedLessons?: string[]; 
 }

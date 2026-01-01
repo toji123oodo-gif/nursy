@@ -1,12 +1,11 @@
 
-import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
-import { getAnalytics, isSupported } from 'firebase/analytics';
+import firebase from 'firebase/compat/app';
+import 'firebase/compat/auth';
+import 'firebase/compat/firestore';
+import 'firebase/compat/analytics';
 
 // Firebase configuration
-// Note: We use the specific Firebase Web API Key here to ensure Firebase services (Auth, Firestore, Installations) work correctly.
-// The Gemini API will continue to use process.env.API_KEY as per guidelines.
+// تم استخدام القيم الموفرة للمشروع مع إمكانية القراءة من متغيرات البيئة لسهولة الإدارة
 const firebaseConfig = {
   apiKey: "AIzaSyCgk9AqmGYf6O2mtuMzseOrjtqRWPNJn0U",
   authDomain: "nursssssssyyy.firebaseapp.com",
@@ -18,26 +17,26 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
+const app = !firebase.apps.length ? firebase.initializeApp(firebaseConfig) : firebase.app();
 
 // Initialize Auth
-const auth = getAuth(app);
-auth.languageCode = 'ar'; // Set language to Arabic for SMS/ReCaptcha
+const auth = firebase.auth();
+auth.languageCode = 'ar'; // تعيين اللغة للعربية لرسائل التحقق
 
-// Initialize Firestore (Database)
-const db = getFirestore(app);
+// Initialize Firestore
+const db = firebase.firestore();
 
 // Initialize Google Provider
-const googleProvider = new GoogleAuthProvider();
-
-// Initialize Analytics safely (not supported in all environments)
-let analytics: any;
-isSupported().then(yes => {
-  if (yes) {
-    analytics = getAnalytics(app);
-  }
-}).catch(err => {
-  console.warn("Firebase Analytics support warning:", err);
+const googleProvider = new firebase.auth.GoogleAuthProvider();
+// تخصيص المطالبة بالحساب لضمان ظهور نافذة اختيار الحساب دائماً
+googleProvider.setCustomParameters({
+  prompt: 'select_account'
 });
+
+// Initialize Analytics safely
+let analytics: any;
+if (typeof window !== 'undefined') {
+  analytics = firebase.analytics();
+}
 
 export { auth, db, googleProvider, analytics };

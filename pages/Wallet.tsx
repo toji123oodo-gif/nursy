@@ -24,7 +24,6 @@ import {
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { Link } from 'react-router-dom';
-import { collection, addDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 
 type PaymentMethod = 'vodafone' | 'instapay';
@@ -60,7 +59,6 @@ export const Wallet: React.FC = () => {
   const waNumber = "201093077151";
   const waMessage = `مرحباً Nursy، لقد قمت بتحويل ${amount} ج.م للاشتراك في باقة PRO.\n\nكود الطلب: ${orderId}\nالبريد: ${user?.email}\nالوسيلة: ${selectedMethod === 'vodafone' ? 'فودافون كاش' : 'انستا باي'}\n\nمرفق صورة الإيصال للتحقق.`;
   const waLink = `https://wa.me/${waNumber}?text=${encodeURIComponent(waMessage)}`;
-  // Fix: Define whatsappLink for the footer support button to handle "Cannot find name 'whatsappLink'" error.
   const whatsappLink = `https://wa.me/${waNumber}?text=${encodeURIComponent('مرحباً Nursy، أحتاج للمساعدة بخصوص...')}`;
 
   const handleSendClick = async () => {
@@ -75,7 +73,7 @@ export const Wallet: React.FC = () => {
 
     if (user && db) {
         try {
-            await addDoc(collection(db, "admin_notifications"), {
+            await db.collection("admin_notifications").add({
                 type: 'payment',
                 message: `قام ${user.name} بطلب تفعيل اشتراك (${orderId}) عبر واتساب.`,
                 userName: user.name,
