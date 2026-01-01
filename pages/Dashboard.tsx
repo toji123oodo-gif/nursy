@@ -24,7 +24,7 @@ const Watermark: React.FC<{ userPhone: string }> = ({ userPhone }) => {
 
   return (
     <div
-      className="absolute pointer-events-none z-50 text-white/20 font-mono text-sm md:text-lg select-none whitespace-nowrap"
+      className="absolute pointer-events-none z-50 text-white/20 font-mono select-none whitespace-nowrap transition-all duration-1000 text-sm md:text-lg"
       style={{
         top: `${position.top}%`,
         left: `${position.left}%`,
@@ -199,7 +199,6 @@ export const Dashboard: React.FC = () => {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'content' | 'quiz' | 'resources'>('content');
   const [showAiChat, setShowAiChat] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   useEffect(() => {
     if (activeLesson.contents?.length > 0) {
@@ -299,14 +298,6 @@ export const Dashboard: React.FC = () => {
                                 </div>
                             )}
                             <Watermark userPhone={user.phone || user.email} />
-                            
-                            {/* Overlay info */}
-                            <div className="absolute top-4 left-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <div className="bg-black/60 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 flex items-center gap-2">
-                                    <Play size={14} fill="currentColor" className="text-brand-gold" />
-                                    <span className="text-xs font-bold text-white">{activeContent.title}</span>
-                                </div>
-                            </div>
                         </div>
                     )}
                     {activeContent.type === 'audio' && <CustomAudioPlayer url={activeContent.url} title={activeContent.title} userPhone={user.phone || user.email} />}
@@ -357,7 +348,7 @@ export const Dashboard: React.FC = () => {
                                 .map((item) => (
                                     <div key={item.id} className="bg-brand-card border border-white/5 p-6 rounded-3xl flex items-center justify-between group hover:border-brand-gold/30 transition-all shadow-xl">
                                         <div className="flex items-center gap-4">
-                                            <div className="w-12 h-12 rounded-2xl bg-brand-gold/10 flex items-center justify-center text-brand-gold shadow-glow">
+                                            <div className="w-12 h-12 rounded-2xl bg-brand-gold/10 flex items-center justify-center text-brand-gold">
                                                 <FileText size={24} />
                                             </div>
                                             <div>
@@ -366,25 +357,17 @@ export const Dashboard: React.FC = () => {
                                             </div>
                                         </div>
                                         
-                                        <div className="relative group/tooltip">
-                                            <button 
-                                                onClick={() => handleDownload(item)}
-                                                disabled={user.subscriptionTier !== 'pro'}
-                                                className={`p-3 rounded-xl transition-all flex items-center gap-2 ${
-                                                    user.subscriptionTier === 'pro' 
-                                                    ? 'bg-brand-gold text-brand-main hover:scale-110 shadow-glow' 
-                                                    : 'bg-white/5 text-brand-muted cursor-not-allowed'
-                                                }`}
-                                            >
-                                                {user.subscriptionTier === 'pro' ? <FileDown size={20} /> : <Lock size={20} />}
-                                            </button>
-                                            
-                                            {user.subscriptionTier !== 'pro' && (
-                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-brand-main border border-brand-gold/30 text-brand-gold text-[10px] font-black rounded-lg opacity-0 group-hover/tooltip:opacity-100 transition-opacity whitespace-nowrap shadow-2xl pointer-events-none">
-                                                    هذه الميزة متاحة لمشتركي PRO فقط
-                                                </div>
-                                            )}
-                                        </div>
+                                        <button 
+                                            onClick={() => handleDownload(item)}
+                                            disabled={user.subscriptionTier !== 'pro'}
+                                            className={`p-3 rounded-xl transition-all ${
+                                                user.subscriptionTier === 'pro' 
+                                                ? 'bg-brand-gold text-brand-main hover:scale-110' 
+                                                : 'bg-white/5 text-brand-muted cursor-not-allowed'
+                                            }`}
+                                        >
+                                            {user.subscriptionTier === 'pro' ? <FileDown size={20} /> : <Lock size={20} />}
+                                        </button>
                                     </div>
                                 ))
                         ) : (
@@ -395,17 +378,9 @@ export const Dashboard: React.FC = () => {
                         )}
                     </div>
                 </div>
-            ) : activeTab === 'content' ? (
-                <div className="p-24 text-center text-brand-muted bg-brand-card/30 rounded-3xl border border-dashed border-white/5">
-                    <Bot size={48} className="mx-auto mb-4 opacity-20" />
-                    <p className="font-bold text-lg">اختر درساً من القائمة لبدء التعلم</p>
-                    <p className="text-sm mt-2">جميع المواد متاحة للمشتركين PRO</p>
-                </div>
             ) : (
-                <div className="p-24 text-center text-brand-muted bg-brand-card/30 rounded-3xl border border-dashed border-white/5 animate-fade-in">
-                    <Sparkles size={48} className="mx-auto mb-4 text-brand-gold opacity-50" />
-                    <h3 className="text-xl font-bold text-white mb-2">قسم الاختبارات القصير</h3>
-                    <p className="max-w-md mx-auto">سيتم إضافة اختبارات تفاعلية بعد كل درس قريباً لتقييم مستواك الدراسي.</p>
+                <div className="p-24 text-center text-brand-muted bg-brand-card/30 rounded-3xl border border-dashed border-white/5">
+                    <p className="font-bold text-lg">اختر درساً من القائمة لبدء التعلم</p>
                 </div>
             )}
         </div>
@@ -413,44 +388,36 @@ export const Dashboard: React.FC = () => {
         {/* Sidebar / Playlist */}
         <div className="w-full lg:w-80 shrink-0">
             <div className="bg-brand-card rounded-3xl border border-white/5 overflow-hidden shadow-2xl sticky top-28">
-                <div className="p-6 bg-white/5 border-b border-white/5 flex items-center justify-between">
+                <div className="p-6 bg-white/5 border-b border-white/5">
                     <h3 className="font-black text-white flex items-center gap-2">
                         <List size={18} className="text-brand-gold" />
                         محتويات الكورس
                     </h3>
-                    <span className="text-[10px] font-bold bg-brand-gold text-brand-main px-2 py-0.5 rounded-full">
-                        {activeCourse.lessons.length} دروس
-                    </span>
                 </div>
+
                 <div className="max-h-[60vh] overflow-y-auto">
                     {activeCourse.lessons.map((lesson, idx) => {
                         const accessible = isLessonAccessible(idx);
                         const isActive = activeLesson.id === lesson.id;
-                        const completed = isLessonCompleted(lesson.id);
                         
                         return (
                             <button
                                 key={lesson.id}
                                 onClick={() => accessible ? setActiveLesson(lesson) : setShowUpgradeModal(true)}
-                                className={`w-full flex items-center gap-4 p-5 border-b border-white/5 last:border-0 text-right transition-all group relative ${
+                                className={`w-full flex items-center gap-4 p-5 border-b border-white/5 last:border-0 text-right transition-all ${
                                     isActive ? 'bg-brand-gold/10' : 'hover:bg-white/5'
-                                } ${completed ? 'border-r-4 border-r-green-500/50' : ''}`}
+                                }`}
                             >
                                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 font-black text-sm transition-all ${
-                                    isActive ? 'bg-brand-gold text-brand-main shadow-glow' : 
-                                    completed ? 'bg-green-500/10 text-green-500' : 'bg-brand-main text-brand-muted group-hover:text-white'
+                                    isActive ? 'bg-brand-gold text-brand-main' : 'bg-brand-main text-brand-muted'
                                 }`}>
-                                    {completed ? <CheckCircle size={16} /> : accessible ? (idx + 1) : <Lock size={14} className="text-brand-muted" />}
+                                    {accessible ? (idx + 1) : <Lock size={14} />}
                                 </div>
                                 <div className="flex-1">
-                                    <p className={`text-sm font-bold transition-colors ${
-                                        isActive ? 'text-brand-gold' : 
-                                        completed ? 'text-green-400' : 'text-white'
-                                    }`}>{lesson.title}</p>
+                                    <p className={`text-sm font-bold ${isActive ? 'text-brand-gold' : 'text-white'}`}>{lesson.title}</p>
                                     <div className="flex items-center gap-2 mt-1">
                                         <Clock size={10} className="text-brand-muted" />
                                         <span className="text-[10px] text-brand-muted font-bold">{lesson.duration || '45:00'}</span>
-                                        {completed && <span className="text-[9px] text-green-500/70 font-black mr-2">مكتمل</span>}
                                     </div>
                                 </div>
                                 {isActive && <ChevronRight size={16} className="text-brand-gold" />}
@@ -460,9 +427,8 @@ export const Dashboard: React.FC = () => {
                 </div>
                 
                 {user.subscriptionTier === 'free' && (
-                    <div className="p-6 bg-brand-gold/10 border-t border-brand-gold/20">
-                        <p className="text-[10px] font-bold text-brand-gold mb-3 text-center uppercase tracking-widest">التطوير للباقة الكاملة</p>
-                        <Link to="/wallet" className="block w-full bg-brand-gold text-brand-main text-center font-bold py-3 rounded-xl shadow-glow hover:bg-brand-goldHover transition-all">
+                    <div className="p-6 bg-brand-gold/10">
+                        <Link to="/wallet" className="block w-full bg-brand-gold text-brand-main text-center font-bold py-3 rounded-xl hover:bg-brand-goldHover transition-all">
                             اشترك الآن
                         </Link>
                     </div>

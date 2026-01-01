@@ -129,47 +129,59 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, []);
 
   const login = async (email: string, pass: string): Promise<void> => {
-    await signInWithEmailAndPassword(auth, email, pass);
+    try {
+      await signInWithEmailAndPassword(auth, email, pass);
+    } catch (error) {
+      throw error;
+    }
   };
 
   const signup = async (email: string, pass: string, name: string, phone: string, subscriptionTier: SubscriptionTier) => {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
-    const firebaseUser = userCredential.user;
-    await updateProfile(firebaseUser, { displayName: name });
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+      const firebaseUser = userCredential.user;
+      await updateProfile(firebaseUser, { displayName: name });
 
-    const newUser: User = {
-        id: firebaseUser.uid,
-        name: name,
-        email: email,
-        phone: phone,
-        subscriptionTier: subscriptionTier
-    };
+      const newUser: User = {
+          id: firebaseUser.uid,
+          name: name,
+          email: email,
+          phone: phone,
+          subscriptionTier: subscriptionTier
+      };
 
-    await syncUserToCloud(newUser);
-    setUser(newUser);
-    addAdminNotification('enrollment', `قام ${name} بإنشاء حساب جديد بالبريد الإلكتروني.`, name);
+      await syncUserToCloud(newUser);
+      setUser(newUser);
+      addAdminNotification('enrollment', `قام ${name} bإيصال حساب جديد بالبريد الإلكتروني.`, name);
+    } catch (error) {
+      throw error;
+    }
   };
 
   const loginWithGoogle = async (): Promise<void> => {
-    const result = await signInWithPopup(auth, googleProvider);
-    const firebaseUser = result.user;
-    
-    const docRef = doc(db, "users", firebaseUser.uid);
-    const docSnap = await getDoc(docRef);
-    
-    if (!docSnap.exists()) {
-        const baseUser: User = {
-          id: firebaseUser.uid,
-          name: firebaseUser.displayName || 'طالب جوجل',
-          email: firebaseUser.email || '',
-          phone: firebaseUser.phoneNumber || '',
-          subscriptionTier: firebaseUser.email === 'toji123oodo@gmail.com' ? 'pro' : 'free'
-        };
-        await syncUserToCloud(baseUser);
-        addAdminNotification('enrollment', `قام ${baseUser.name} بالتسجيل عبر جوجل.`, baseUser.name);
-        setUser(baseUser);
-    } else {
-        setUser({ id: firebaseUser.uid, ...docSnap.data() } as User);
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const firebaseUser = result.user;
+      
+      const docRef = doc(db, "users", firebaseUser.uid);
+      const docSnap = await getDoc(docRef);
+      
+      if (!docSnap.exists()) {
+          const baseUser: User = {
+            id: firebaseUser.uid,
+            name: firebaseUser.displayName || 'طالب جوجل',
+            email: firebaseUser.email || '',
+            phone: firebaseUser.phoneNumber || '',
+            subscriptionTier: firebaseUser.email === 'toji123oodo@gmail.com' ? 'pro' : 'free'
+          };
+          await syncUserToCloud(baseUser);
+          addAdminNotification('enrollment', `قام ${baseUser.name} بالتسجيل عبر جوجل.`, baseUser.name);
+          setUser(baseUser);
+      } else {
+          setUser({ id: firebaseUser.uid, ...docSnap.data() } as User);
+      }
+    } catch (error) {
+      throw error;
     }
   };
 

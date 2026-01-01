@@ -12,13 +12,13 @@ import { Admin } from './pages/Admin';
 import { Profile } from './pages/Profile';
 import { HelpCenter } from './pages/HelpCenter';
 import { CourseDetail } from './pages/CourseDetail';
+import { LoadingScreen } from './components/LoadingScreen';
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isLoading } = useApp();
   const location = useLocation();
 
-  // If loading and no user, show nothing (transparent transition) instead of a Loader
   if (isLoading && !user) return null; 
 
   if (!user) {
@@ -29,6 +29,13 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 };
 
 const AppContent: React.FC = () => {
+  const { isLoading } = useApp();
+
+  // Global Loading State
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
+
   return (
     <Layout>
        <Routes>

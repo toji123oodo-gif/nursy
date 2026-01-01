@@ -5,7 +5,8 @@ import { getFirestore } from 'firebase/firestore';
 import { getAnalytics, isSupported } from 'firebase/analytics';
 
 // Firebase configuration
-// We use the provided hardcoded config to ensure the app initializes correctly.
+// Note: We use the specific Firebase Web API Key here to ensure Firebase services (Auth, Firestore, Installations) work correctly.
+// The Gemini API will continue to use process.env.API_KEY as per guidelines.
 const firebaseConfig = {
   apiKey: "AIzaSyCgk9AqmGYf6O2mtuMzseOrjtqRWPNJn0U",
   authDomain: "nursssssssyyy.firebaseapp.com",

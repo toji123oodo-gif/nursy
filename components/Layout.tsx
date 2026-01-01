@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Home, Wallet, Menu, X, User as UserIcon, LogOut, GraduationCap, LayoutDashboard, LogIn, UserPlus, ShieldAlert, Search, LifeBuoy, ChevronDown } from 'lucide-react';
@@ -62,7 +63,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
             {/* 2. Desktop Navigation (Center - Absolute styling for perfect centering or Flex-1) */}
             <nav className="hidden md:flex items-center justify-center flex-1 gap-1 lg:gap-2">
-              <div className="bg-brand-card/50 backdrop-blur-md border border-white/5 rounded-full p-1.5 flex items-center shadow-inner">
+              <div className="n-glass rounded-full p-1.5 flex items-center shadow-inner">
                   <NavLink to="/" icon={Home} label="الرئيسية" />
                   <NavLink to="/help" icon={LifeBuoy} label="المساعدة" />
                   {user && (

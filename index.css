@@ -1,16 +1,43 @@
-body {
-  margin: 0;
-  padding: 0;
-  font-family: 'Cairo', sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background-color: #0a192f;
-  overflow-x: hidden;
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-brand-main text-brand-text font-sans m-0 p-0 overflow-x-hidden antialiased;
+  }
+
+  #root {
+    @apply min-h-screen flex flex-col;
+  }
+
+  ::-webkit-scrollbar {
+    @apply w-2;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-brand-main;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-brand-hover rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-brand-gold;
+  }
 }
 
-/* Ensure full height for root to allow sticky footers/sidebars if needed */
-#root {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
+/* Custom functional styles used in standard utility pattern */
+.bg-glass {
+  @apply bg-brand-card/70 backdrop-blur-md border border-white/5;
+}
+
+.shadow-glow {
+  @apply shadow-[0_0_20px_rgba(251,191,36,0.15)];
+}
+
+.shadow-glow-hover:hover {
+  @apply shadow-[0_0_30px_rgba(251,191,36,0.3)];
 }
