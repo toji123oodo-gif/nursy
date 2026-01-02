@@ -9,6 +9,8 @@ interface AppContextType {
   user: User | null;
   isLoading: boolean;
   courses: Course[];
+  language: 'ar' | 'en';
+  toggleLanguage: () => void;
   login: (email: string, pass: string) => Promise<void>;
   signup: (email: string, pass: string, name: string, phone: string, subscriptionTier: SubscriptionTier) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
@@ -18,6 +20,8 @@ interface AppContextType {
   addCourse: (course: Course) => Promise<void>;
   updateCourse: (course: Course) => Promise<void>;
   deleteCourse: (id: string) => Promise<void>;
+  isExamHubOpen: boolean;
+  setExamHubOpen: (isOpen: boolean) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -26,6 +30,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [courses, setCourses] = useState<Course[]>([]);
+  const [isExamHubOpen, setExamHubOpen] = useState(false);
+  const [language, setLanguage] = useState<'ar' | 'en'>(() => {
+    return (localStorage.getItem('nursy_lang') as 'ar' | 'en') || 'ar';
+  });
+
+  useEffect(() => {
+    document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
+    document.documentElement.lang = language;
+    localStorage.setItem('nursy_lang', language);
+  }, [language]);
+
+  const toggleLanguage = () => {
+    setLanguage(prev => prev === 'ar' ? 'en' : 'ar');
+  };
 
   const getDeviceInfo = () => {
     const ua = navigator.userAgent;
@@ -40,11 +58,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     if (!db) return;
 
-    // Use a robust courses sync
     const unsubscribe = db.collection("courses").onSnapshot(
       (snapshot) => {
         if (snapshot.empty) {
-          // If Firestore is empty (first run), seed with default data
           const batch = db.batch();
           defaultCourses.forEach((c) => {
             const ref = db.collection("courses").doc(c.id);
@@ -57,8 +73,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
       },
       (error) => {
-        console.warn("Firestore Courses sync warning (Offline mode active):", error);
-        // Persistence will handle local data, but if it's the very first load and offline, use default
+        console.warn("Firestore Courses sync warning:", error);
         if (courses.length === 0) setCourses(defaultCourses);
       }
     );
@@ -74,9 +89,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           lastSeen: new Date().toISOString(),
           lastDevice: getDeviceInfo()
       }, { merge: true });
-    } catch (e) {
-      // Quietly fail as Firestore will retry automatically due to persistence
-    }
+    } catch (e) {}
   };
 
   useEffect(() => {
@@ -95,12 +108,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           if (docSnap.exists) {
             baseUser = { id: firebaseUser.uid, ...docSnap.data() } as User;
           } else {
-            // First time Google Login or similar
             baseUser = {
               id: firebaseUser.uid,
               name: firebaseUser.displayName || 'طالب جديد',
               email: firebaseUser.email || '',
-              phone: firebaseUser.phoneNumber || '',
+              phone: '',
               subscriptionTier: firebaseUser.email === 'toji123oodo@gmail.com' ? 'pro' : 'free'
             };
           }
@@ -108,15 +120,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           setUser(baseUser);
           syncUserToCloud(baseUser);
         } catch (error) {
-          console.error("User Auth context error:", error);
-          // Fallback to basic profile if Firestore times out
-          setUser({
-            id: firebaseUser.uid,
-            name: firebaseUser.displayName || 'طالب',
-            email: firebaseUser.email || '',
-            phone: '',
-            subscriptionTier: 'free'
-          });
+          setUser({ id: firebaseUser.uid, name: firebaseUser.displayName || 'طالب', email: firebaseUser.email || '', phone: '', subscriptionTier: 'free' });
         } finally {
           setIsLoading(false);
         }
@@ -150,18 +154,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (firebaseUser) {
         const docRef = db.collection("users").doc(firebaseUser.uid);
         const docSnap = await docRef.get().catch(() => null);
-        
         let baseUser: User;
         if (docSnap && docSnap.exists) {
             baseUser = { id: firebaseUser.uid, ...docSnap.data() } as User;
         } else {
-            baseUser = {
-              id: firebaseUser.uid,
-              name: firebaseUser.displayName || 'طالب جوجل',
-              email: firebaseUser.email || '',
-              phone: '',
-              subscriptionTier: firebaseUser.email === 'toji123oodo@gmail.com' ? 'pro' : 'free'
-            };
+            baseUser = { id: firebaseUser.uid, name: firebaseUser.displayName || 'طالب جوجل', email: firebaseUser.email || '', phone: '', subscriptionTier: 'free' };
         }
         setUser(baseUser);
         await syncUserToCloud(baseUser);
@@ -177,11 +174,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (user) {
       const expiryDate = new Date();
       expiryDate.setDate(expiryDate.getDate() + 30); 
-      const updatedUser: User = { 
-        ...user, 
-        subscriptionTier: 'pro',
-        subscriptionExpiry: expiryDate.toISOString()
-      };
+      const updatedUser: User = { ...user, subscriptionTier: 'pro', subscriptionExpiry: expiryDate.toISOString() };
       setUser(updatedUser);
       await syncUserToCloud(updatedUser);
     }
@@ -211,6 +204,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         user, 
         isLoading, 
         courses,
+        language,
+        toggleLanguage,
         login, 
         signup,
         loginWithGoogle, 
@@ -219,7 +214,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateUserData,
         addCourse,
         updateCourse,
-        deleteCourse
+        deleteCourse,
+        isExamHubOpen,
+        setExamHubOpen
     }}>
       {children}
     </AppContext.Provider>

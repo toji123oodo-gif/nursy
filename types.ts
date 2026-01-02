@@ -3,6 +3,20 @@ export type SubscriptionTier = 'free' | 'pro';
 
 export type ContentType = 'video' | 'audio' | 'pdf' | 'document' | 'image';
 
+export interface Question {
+  id: string;
+  text: string;
+  options: string[];
+  correctOptionIndex: number;
+  explanation?: string;
+}
+
+export interface Quiz {
+  id: string;
+  title: string;
+  questions: Question[];
+}
+
 export interface ContentItem {
   id: string;
   type: ContentType;
@@ -18,6 +32,7 @@ export interface Lesson {
   isLocked: boolean; 
   contents: ContentItem[]; 
   duration?: string;
+  quiz?: Quiz; // اختبار المحاضرة
 }
 
 export interface Course {
@@ -29,6 +44,7 @@ export interface Course {
   image: string;
   subject: string;
   lessons: Lesson[];
+  finalQuiz?: Quiz; // اختبار الفصل/الكورس الشامل
 }
 
 export interface ActivationCode {
@@ -39,6 +55,15 @@ export interface ActivationCode {
   usedAt?: string;
   createdAt: string;
   days: number;
+}
+
+export interface Exam {
+  id: string;
+  title: string;
+  code: string;
+  date: string;
+  time: string;
+  location: string;
 }
 
 export interface User {
@@ -53,4 +78,6 @@ export interface User {
   lastDevice?: string;
   joinedAt?: string;
   completedLessons?: string[]; 
+  completedExams?: string[];
+  quizGrades?: Record<string, number>; // تخزين درجات الاختبارات
 }
