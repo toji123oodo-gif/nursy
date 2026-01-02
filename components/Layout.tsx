@@ -5,7 +5,8 @@ import {
   Home, Wallet, User as UserIcon, LogOut, 
   GraduationCap, LayoutDashboard, LogIn, 
   ShieldAlert, LifeBuoy, ChevronDown, 
-  CreditCard, Calendar, Bell, Languages, ShieldCheck, Zap
+  CreditCard, Calendar, Bell, Languages, ShieldCheck, Zap,
+  Settings
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
@@ -28,7 +29,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     wallet: language === 'ar' ? 'المحفظة' : 'Wallet',
     help: language === 'ar' ? 'المساعدة' : 'Help',
     login: language === 'ar' ? 'دخول' : 'Login',
-    admin: language === 'ar' ? 'لوحة الإدارة' : 'Admin Panel',
+    admin: language === 'ar' ? 'الإدارة' : 'Admin',
   };
 
   useEffect(() => {
@@ -70,7 +71,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           }`}>
             
             {/* Logo */}
-            <Link to="/" className={`flex items-center gap-2 group shrink-0 ${language === 'ar' ? 'order-last' : 'order-first'}`}>
+            <Link id="nav-logo" to="/" className={`flex items-center gap-2 group shrink-0 ${language === 'ar' ? 'order-last' : 'order-first'}`}>
               <h1 className="font-black text-sm md:text-2xl text-white tracking-tighter">Nursy<span className="text-brand-gold">.</span></h1>
               <div className="bg-brand-gold p-1.5 rounded-xl shadow-lg group-hover:rotate-12 transition-transform">
                   <GraduationCap className="text-brand-main h-4 w-4 md:h-6 md:w-6" />
@@ -82,17 +83,17 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                 <NavLink to="/" icon={Home} label={t.home} />
                 {user && <NavLink to="/dashboard" icon={LayoutDashboard} label={t.dashboard} />}
                 
-                {/* Admin Specialized Button */}
+                {/* Refined Admin Specialized Button */}
                 {isAdmin && (
                   <Link to="/admin" className="admin-access-btn group/admin">
                     <div className="admin-pulse-ring"></div>
                     <div className="admin-btn-shimmer"></div>
-                    <ShieldCheck size={16} className="text-brand-gold group-hover/admin:rotate-12 transition-transform" />
-                    <span className="relative z-10">{t.admin}</span>
+                    <Settings size={14} className="md:size-4 text-brand-gold group-hover/admin:rotate-90 transition-transform duration-700" />
+                    <span className="relative z-10 whitespace-nowrap">{t.admin}</span>
                   </Link>
                 )}
                 
-                {user && <NavLink to="/wallet" icon={Wallet} label={t.wallet} />}
+                {user && <NavLink id="nav-wallet" to="/wallet" icon={Wallet} label={t.wallet} />}
             </nav>
 
             {/* Profile Section */}
@@ -106,6 +107,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                  <div className="flex items-center gap-2">
                     <div className="relative">
                       <button 
+                        id="nav-profile"
                         onClick={() => setIsProfileOpen(!isProfileOpen)}
                         className={`flex items-center gap-2 p-0.5 rounded-full transition-all border ${isProfileOpen ? 'bg-brand-gold/10 border-brand-gold/30' : 'bg-white/5 border-transparent'}`}
                       >
@@ -113,12 +115,12 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                             <p className="text-[10px] font-black text-white leading-tight">{user.name.split(' ')[0]}</p>
                             <p className="text-[8px] text-brand-gold font-bold uppercase tracking-widest">{isAdmin ? 'SUPER ADMIN' : user.subscriptionTier}</p>
                          </div>
-                         <div className={`w-8 h-8 rounded-full flex items-center justify-center text-brand-main shadow-lg ${isAdmin ? 'bg-gradient-to-tr from-red-600 to-brand-gold' : 'bg-brand-gold'}`}>
-                            {isAdmin ? <Zap size={14} fill="currentColor" /> : <UserIcon size={14} strokeWidth={3} />}
+                         <div className={`w-8 h-8 rounded-full flex items-center justify-center text-brand-main shadow-lg ${isAdmin ? 'bg-gradient-to-tr from-orange-500 to-brand-gold' : 'bg-brand-gold'}`}>
+                            {isAdmin ? <ShieldCheck size={14} fill="currentColor" /> : <UserIcon size={14} strokeWidth={3} />}
                          </div>
                       </button>
                     </div>
-                    <button onClick={() => setExamHubOpen(true)} className="p-2 text-brand-muted hover:text-brand-gold hover:bg-brand-gold/10 rounded-full transition-all">
+                    <button id="nav-exams" onClick={() => setExamHubOpen(true)} className="p-2 text-brand-muted hover:text-brand-gold hover:bg-brand-gold/10 rounded-full transition-all">
                       <Calendar size={18} />
                     </button>
                  </div>
