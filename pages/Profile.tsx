@@ -5,9 +5,60 @@ import {
   User as UserIcon, Phone, Calendar, Shield, Edit2, LogOut, CheckCircle, Save, X, 
   Clock, Mail, Award, BookOpen, Zap, ShieldCheck, Monitor, 
   Smartphone, UserCheck, Star, Sparkles, ChevronLeft, Loader2, AlertCircle, HelpCircle,
-  ArrowRight, Target, Flame
+  ArrowRight, Target, Flame, TrendingUp, BarChart3, Medal
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+
+const ProgressRing = ({ progress, size = 120 }: { progress: number, size?: number }) => {
+  const stroke = 8;
+  const radius = (size / 2) - (stroke * 2);
+  const circumference = radius * 2 * Math.PI;
+  const offset = circumference - (progress / 100) * circumference;
+
+  return (
+    <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
+      <svg className="transform -rotate-90 transition-all duration-1000" width={size} height={size}>
+        {/* Background Track */}
+        <circle
+          className="text-white/5"
+          strokeWidth={stroke}
+          stroke="currentColor"
+          fill="transparent"
+          r={radius}
+          cx={size / 2}
+          cy={size / 2}
+        />
+        {/* Progress Fill */}
+        <circle
+          className="text-brand-gold transition-all duration-1000 ease-out"
+          strokeWidth={stroke}
+          strokeDasharray={circumference}
+          style={{ strokeDashoffset: offset }}
+          strokeLinecap="round"
+          stroke="currentColor"
+          fill="transparent"
+          r={radius}
+          cx={size / 2}
+          cy={size / 2}
+          filter="url(#glow)"
+        />
+        <defs>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+            <feMerge>
+              <feMergeNode in="coloredBlur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+        </defs>
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-3xl font-black text-white">{progress}%</span>
+        <span className="text-[8px] text-brand-gold font-black uppercase tracking-widest mt-1">Progress</span>
+      </div>
+    </div>
+  );
+};
 
 export const Profile: React.FC = () => {
   const { user, logout, updateUserData, courses } = useApp();
@@ -58,11 +109,14 @@ export const Profile: React.FC = () => {
   const stats = [
     { label: 'كورسات متاحة', val: courses.length, icon: BookOpen, color: 'text-brand-gold', bg: 'bg-brand-gold/10' },
     { label: 'دروس مكتملة', val: completedCount, icon: Award, color: 'text-green-500', bg: 'bg-green-500/10' },
-    { label: 'نسبة الإنجاز', val: `${progressPercentage}%`, icon: Target, color: 'text-blue-500', bg: 'bg-blue-500/10' }
+    { label: 'نقاط التميز', val: completedCount * 10, icon: Medal, color: 'text-blue-500', bg: 'bg-blue-500/10' }
   ];
 
   const expiryDate = user.subscriptionExpiry ? new Date(user.subscriptionExpiry) : null;
   const isExpired = expiryDate ? expiryDate < new Date() : true;
+
+  // Simulated activity data
+  const activityData = [40, 75, 50, 90, 60, 85, 100];
 
   return (
     <div className="min-h-screen bg-brand-main pb-32 pt-12">
@@ -132,21 +186,24 @@ export const Profile: React.FC = () => {
                 </div>
               </div>
 
-              {/* Quick Status */}
-              <div className="hidden xl:flex flex-col items-center gap-4 bg-brand-main/40 p-8 rounded-[3rem] border border-white/5 shadow-inner">
-                <p className="text-[10px] text-brand-muted font-black uppercase tracking-[0.3em]">نشاط الحساب</p>
-                <div className="w-24 h-24 rounded-full border-4 border-brand-gold/20 border-t-brand-gold flex items-center justify-center relative">
-                  <span className="text-2xl font-black text-white">{progressPercentage}%</span>
-                  <Flame size={16} className="absolute -top-1 text-orange-500 animate-pulse" fill="currentColor" />
+              {/* Enhanced Circular Progress Display */}
+              <div className="hidden xl:flex flex-col items-center gap-6 bg-brand-main/40 p-10 rounded-[4rem] border border-white/5 shadow-inner relative group/ring">
+                <div className="absolute inset-0 bg-brand-gold/5 blur-2xl opacity-0 group-hover/ring:opacity-100 transition-opacity"></div>
+                <ProgressRing progress={progressPercentage} size={160} />
+                <div className="text-center relative z-10">
+                   <p className="text-[10px] text-brand-gold font-black uppercase tracking-[0.3em] mb-1">Rank</p>
+                   <p className="text-white font-black text-lg flex items-center gap-2">
+                     {progressPercentage >= 80 ? 'الوحش الأكاديمي' : progressPercentage >= 40 ? 'طالب متميز' : 'طالب طموح'}
+                     <Flame size={16} className="text-orange-500 animate-pulse" fill="currentColor" />
+                   </p>
                 </div>
-                <p className="text-[10px] text-brand-gold font-bold">طالب مجتهد</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Stats Summary Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
           {stats.map((s, i) => (
             <div key={i} className="bg-brand-card p-10 rounded-[3rem] border border-white/5 shadow-2xl flex items-center gap-8 group hover:border-brand-gold/30 transition-all relative overflow-hidden">
               <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 -translate-y-12 translate-x-12 rounded-full group-hover:scale-150 transition-transform duration-700"></div>
@@ -159,6 +216,48 @@ export const Profile: React.FC = () => {
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Learning Momentum Chart Section */}
+        <div className="mb-12 animate-fade-in-up" style={{ animationDelay: '0.15s' }}>
+          <div className="bg-brand-card rounded-[3.5rem] border border-white/10 p-10 md:p-14 shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-full h-1 bg-gradient-to-r from-transparent via-brand-gold/20 to-transparent"></div>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
+              <div>
+                <h3 className="text-3xl font-black text-white flex items-center gap-4">
+                  <TrendingUp className="text-brand-gold" /> زخم المذاكرة الأسبوعي
+                </h3>
+                <p className="text-brand-muted text-sm mt-1 font-bold">تحليلات تفاعلية لمستوى إنجازك خلال آخر 7 أيام</p>
+              </div>
+              <div className="flex gap-2">
+                 <div className="px-5 py-2.5 bg-white/5 rounded-2xl border border-white/5 text-[10px] font-black text-brand-gold uppercase tracking-widest">Live Updates</div>
+              </div>
+            </div>
+
+            <div className="flex items-end justify-between gap-3 h-48 md:h-64 pt-6 px-2">
+              {activityData.map((val, i) => (
+                <div key={i} className="flex-1 flex flex-col items-center gap-4 group">
+                  <div className="w-full max-w-[40px] relative flex flex-col justify-end h-full">
+                    {/* Tooltip */}
+                    <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-brand-gold text-brand-main text-[10px] font-black px-3 py-1.5 rounded-xl opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0 shadow-glow whitespace-nowrap z-20">
+                      {val}% Achievement
+                    </div>
+                    {/* Bar */}
+                    <div 
+                      className="w-full bg-brand-gold/10 rounded-2xl relative overflow-hidden transition-all duration-700 ease-out group-hover:bg-brand-gold/20 cursor-pointer"
+                      style={{ height: `${val}%` }}
+                    >
+                      <div className="absolute bottom-0 left-0 w-full h-full bg-gradient-to-t from-brand-gold/40 via-brand-gold/20 to-transparent"></div>
+                      <div className="absolute bottom-0 left-0 w-full h-1 bg-brand-gold shadow-glow"></div>
+                    </div>
+                  </div>
+                  <span className="text-[10px] text-brand-muted font-black uppercase tracking-widest group-hover:text-white transition-colors">
+                    {['السبت', 'الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة'][i]}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">

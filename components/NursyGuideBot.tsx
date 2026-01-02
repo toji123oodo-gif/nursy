@@ -1,17 +1,16 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
-  X, ChevronLeft, Sparkles, MousePointer2, 
-  Target, Info, ArrowDown
+  X, ChevronLeft, Sparkles, Target, ArrowDown
 } from 'lucide-react';
 
 interface TourStep {
-  targetId: string; // ID العنصر اللي هنشاور عليه
+  targetId: string;
   title: string;
   message: string;
   position: 'top' | 'bottom' | 'left' | 'right';
-  path?: string; // الصفحة اللي لازم يكون فيها
+  path?: string;
 }
 
 export const NursyGuideBot: React.FC = () => {
@@ -22,7 +21,6 @@ export const NursyGuideBot: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // سيناريو الجولة التعليمية الشاملة
   const tourSteps: TourStep[] = [
     {
       targetId: 'nav-logo',
@@ -61,7 +59,6 @@ export const NursyGuideBot: React.FC = () => {
     }
   ];
 
-  // دالة لتحديث مكان الـ Spotlight والبوت
   const updateSpotlight = () => {
     const step = tourSteps[currentStep];
     const element = document.getElementById(step.targetId);
@@ -78,34 +75,33 @@ export const NursyGuideBot: React.FC = () => {
         borderRadius: '1rem'
       });
 
-      // تحديد مكان البوت بناءً على العنصر
       let bTop = rect.bottom + 20;
       let bLeft = rect.left + rect.width / 2 - 150;
 
-      if (step.position === 'top') {
-        bTop = rect.top - 250;
-      }
-
-      setBotPosition({ top: bTop, left: bLeft });
+      if (step.position === 'top') bTop = rect.top - 250;
       
-      // عمل Scroll للعنصر عشان ميبقاش بره الشاشة
+      setBotPosition({ 
+        top: Math.min(bTop, window.innerHeight - 350), 
+        left: Math.max(20, Math.min(bLeft, window.innerWidth - 340)) 
+      });
+      
       element.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   };
 
   useEffect(() => {
     if (isActive) {
-      // التأكد من أننا في الصفحة الصحيحة قبل التحديث
       const step = tourSteps[currentStep];
       if (step.path && location.pathname !== step.path) {
         navigate(step.path);
       } else {
-        updateSpotlight();
+        // تأخير بسيط للتأكد من رندر الصفحة
+        const timer = setTimeout(updateSpotlight, 100);
+        return () => clearTimeout(timer);
       }
     }
   }, [isActive, currentStep, location.pathname]);
 
-  // لإعادة الحساب عند تغيير حجم الشاشة
   useEffect(() => {
     window.addEventListener('resize', updateSpotlight);
     return () => window.removeEventListener('resize', updateSpotlight);
@@ -120,16 +116,10 @@ export const NursyGuideBot: React.FC = () => {
     }
   };
 
-  const startTour = () => {
-    setIsActive(true);
-    setCurrentStep(0);
-  };
-
-  // البوت الصغير اللي بيفضل موجود
   if (!isActive) {
     return (
       <button 
-        onClick={startTour}
+        onClick={() => { setIsActive(true); setCurrentStep(0); }}
         className="fixed bottom-6 right-6 z-[2000] group flex items-center gap-4"
       >
         <div className="bg-brand-gold text-brand-main px-6 py-3 rounded-2xl font-black text-xs shadow-glow opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0">
@@ -150,11 +140,10 @@ export const NursyGuideBot: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-[3000] overflow-hidden pointer-events-none">
-      {/* Dark Overlay with Hole (Spotlight) */}
       <div 
-        className="absolute inset-0 bg-brand-main/80 backdrop-blur-sm transition-all duration-500"
+        className="absolute inset-0 bg-brand-main/85 backdrop-blur-sm transition-all duration-500"
         style={{
-          clipPath: `polygon(
+          clipPath: spotlightStyles.top !== undefined ? `polygon(
             0% 0%, 
             0% 100%, 
             ${spotlightStyles.left}px 100%, 
@@ -165,46 +154,41 @@ export const NursyGuideBot: React.FC = () => {
             ${spotlightStyles.left}px 100%, 
             100% 100%, 
             100% 0%
-          )`
+          )` : 'none'
         }}
       ></div>
 
-      {/* Focus Box Border */}
       <div 
         className="absolute border-2 border-brand-gold shadow-glow transition-all duration-500 pointer-events-none animate-pulse"
         style={spotlightStyles}
       >
-        <div className="absolute -top-12 left-1/2 -translate-x-1/2 text-brand-gold font-black text-xs whitespace-nowrap bg-brand-main/80 px-4 py-1.5 rounded-full border border-brand-gold/30">
-          <Target className="inline mr-2" size={14} /> بص هنا يا دكتور
+        <div className="absolute -top-12 left-1/2 -translate-x-1/2 text-brand-gold font-black text-[10px] whitespace-nowrap bg-brand-main/80 px-4 py-1.5 rounded-full border border-brand-gold/30">
+          بص هنا يا دكتور
         </div>
       </div>
 
-      {/* The Speaking Bot */}
       <div 
         className="absolute w-72 md:w-80 transition-all duration-700 pointer-events-auto"
-        style={{ 
-          top: Math.min(botPosition.top, window.innerHeight - 350), 
-          left: Math.max(20, Math.min(botPosition.left, window.innerWidth - 340)) 
-        }}
+        style={{ top: botPosition.top, left: botPosition.left }}
       >
          <div className="bg-brand-card border border-brand-gold/30 rounded-[2.5rem] shadow-2xl overflow-hidden animate-scale-up">
-            <div className="bg-brand-gold p-4 flex justify-between items-center">
+            <div className="bg-brand-gold p-3 flex justify-between items-center">
               <div className="flex items-center gap-2">
-                 <Sparkles size={16} className="text-brand-main animate-pulse" />
-                 <span className="text-brand-main font-black text-xs">مساعد نيرسي الذكي</span>
+                 <Sparkles size={14} className="text-brand-main animate-pulse" />
+                 <span className="text-brand-main font-black text-[10px]">مساعد نيرسي الذكي</span>
               </div>
               <button onClick={() => setIsActive(false)} className="text-brand-main/50 hover:text-brand-main">
-                <X size={18} />
+                <X size={16} />
               </button>
             </div>
             
-            <div className="p-8 space-y-6">
-               <h4 className="text-white font-black text-xl leading-tight">{tourSteps[currentStep].title}</h4>
-               <p className="text-brand-muted text-sm leading-relaxed font-bold italic">
+            <div className="p-6 space-y-4">
+               <h4 className="text-white font-black text-lg leading-tight">{tourSteps[currentStep].title}</h4>
+               <p className="text-brand-muted text-xs leading-relaxed font-bold italic">
                  "{tourSteps[currentStep].message}"
                </p>
                
-               <div className="pt-4 flex justify-between items-center">
+               <div className="pt-2 flex justify-between items-center">
                   <div className="flex gap-1">
                      {tourSteps.map((_, i) => (
                        <div key={i} className={`h-1 rounded-full transition-all ${i === currentStep ? 'w-4 bg-brand-gold' : 'w-1 bg-white/10'}`}></div>
@@ -212,22 +196,21 @@ export const NursyGuideBot: React.FC = () => {
                   </div>
                   <button 
                     onClick={handleNext}
-                    className="bg-brand-gold text-brand-main px-6 py-3 rounded-xl font-black text-xs hover:scale-105 transition-all flex items-center gap-2"
+                    className="bg-brand-gold text-brand-main px-4 py-2 rounded-xl font-black text-[10px] hover:scale-105 transition-all flex items-center gap-2"
                   >
                     {currentStep < tourSteps.length - 1 ? 'ماشي.. كمل' : 'تمام يا وحش'} 
-                    <ChevronLeft size={16} />
+                    <ChevronLeft size={14} />
                   </button>
                </div>
             </div>
          </div>
          
-         {/* Little Bot Avatar next to bubble */}
          <div className="mt-4 flex justify-center animate-float">
-            <div className="w-16 h-16 bg-brand-card border-2 border-brand-gold rounded-2xl flex items-center justify-center shadow-glow">
+            <div className="w-14 h-14 bg-brand-card border-2 border-brand-gold rounded-2xl flex items-center justify-center shadow-glow">
                 <div className="flex flex-col items-center gap-1">
                   <div className="flex gap-2">
-                    <div className="w-2 h-2 bg-brand-gold rounded-full"></div>
-                    <div className="w-2 h-2 bg-brand-gold rounded-full"></div>
+                    <div className="w-1.5 h-1.5 bg-brand-gold rounded-full"></div>
+                    <div className="w-1.5 h-1.5 bg-brand-gold rounded-full"></div>
                   </div>
                   <div className="w-4 h-0.5 bg-brand-gold/40 rounded-full"></div>
                 </div>

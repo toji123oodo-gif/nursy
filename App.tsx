@@ -76,6 +76,8 @@ const AppContent: React.FC = () => {
           
           <Route path="*" element={<Navigate to="/" replace />} />
        </Routes>
+       
+       {/* المكونات العالمية التي تظهر للمستخدم المسجل فقط */}
        {user && (
          <>
            <ExamHub />
