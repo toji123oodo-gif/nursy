@@ -4,9 +4,11 @@ import { User, SubscriptionTier, Course } from '../types';
 import { courses as defaultCourses } from '../data/courses';
 import firebase from 'firebase/compat/app';
 import { auth, googleProvider, db } from '../firebase';
+import { jwtUtils } from '../utils/jwt';
 
 interface AppContextType {
   user: User | null;
+  token: string | null;
   isLoading: boolean;
   courses: Course[];
   language: 'ar' | 'en';
@@ -28,6 +30,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(jwtUtils.getToken());
   const [isLoading, setIsLoading] = useState(true);
   const [courses, setCourses] = useState<Course[]>([]);
   const [isExamHubOpen, setExamHubOpen] = useState(false);
@@ -92,11 +95,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch (e) {}
   };
 
+  /**
+   * JWT Initialization Effect
+   */
   useEffect(() => {
-    if (!auth) {
+    const initAuth = async () => {
+      const storedToken = jwtUtils.getToken();
+      if (storedToken) {
+        if (jwtUtils.isExpired(storedToken)) {
+          jwtUtils.removeToken();
+          setToken(null);
+          setUser(null);
+        } else {
+          setToken(storedToken);
+          // In a real stateless JWT app, we would hydrate the user from the payload 
+          // or a lightweight profile endpoint. Here we sync with Firebase state if available.
+        }
+      }
       setIsLoading(false);
-      return;
-    }
+    };
+    initAuth();
+  }, []);
+
+  useEffect(() => {
+    if (!auth) return;
 
     const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
       if (firebaseUser) {
@@ -108,7 +130,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           if (docSnap.exists) {
             baseUser = { id: firebaseUser.uid, ...docSnap.data() } as User;
             
-            // Check for trial expiry
             if (baseUser.subscriptionTier === 'pro' && baseUser.subscriptionExpiry) {
                const now = new Date();
                const expiry = new Date(baseUser.subscriptionExpiry);
@@ -128,15 +149,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           }
           
           setUser(baseUser);
+          
+          // Generate JWT on successful Firebase Auth state change
+          const newToken = jwtUtils.sign({
+            sub: baseUser.id,
+            name: baseUser.name,
+            email: baseUser.email,
+            role: baseUser.role || 'student'
+          });
+          jwtUtils.saveToken(newToken);
+          setToken(newToken);
+
           syncUserToCloud(baseUser);
         } catch (error) {
-          setUser({ id: firebaseUser.uid, name: firebaseUser.displayName || 'طالب', email: firebaseUser.email || '', phone: '', subscriptionTier: 'free' });
-        } finally {
-          setIsLoading(false);
+          console.error("Auth hydration error", error);
         }
       } else {
-        setUser(null);
-        setIsLoading(false);
+        // If not authenticated via Firebase, check if we have a valid JWT as fallback
+        const storedToken = jwtUtils.getToken();
+        if (!storedToken || jwtUtils.isExpired(storedToken)) {
+          setUser(null);
+          setToken(null);
+          jwtUtils.removeToken();
+        }
       }
     });
 
@@ -144,7 +179,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, []);
 
   const login = async (email: string, pass: string) => {
-    await auth.signInWithEmailAndPassword(email, pass);
+    const userCredential = await auth.signInWithEmailAndPassword(email, pass);
+    // Token generation is handled in onAuthStateChanged
   };
 
   const signup = async (email: string, pass: string, name: string, phone: string) => {
@@ -153,7 +189,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (firebaseUser) {
       await firebaseUser.updateProfile({ displayName: name });
       
-      // Calculate 30 days trial expiry
       const trialExpiry = new Date();
       trialExpiry.setDate(trialExpiry.getDate() + 30);
 
@@ -173,36 +208,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const loginWithGoogle = async () => {
-    const result = await auth.signInWithPopup(googleProvider);
-    const firebaseUser = result.user;
-    if (firebaseUser) {
-        const docRef = db.collection("users").doc(firebaseUser.uid);
-        const docSnap = await docRef.get().catch(() => null);
-        let baseUser: User;
-        if (docSnap && docSnap.exists) {
-            baseUser = { id: firebaseUser.uid, ...docSnap.data() } as User;
-        } else {
-            // Google users also get 30 days trial
-            const trialExpiry = new Date();
-            trialExpiry.setDate(trialExpiry.getDate() + 30);
-            
-            baseUser = { 
-              id: firebaseUser.uid, 
-              name: firebaseUser.displayName || 'طالب جوجل', 
-              email: firebaseUser.email || '', 
-              phone: '', 
-              subscriptionTier: 'pro',
-              subscriptionExpiry: trialExpiry.toISOString(),
-              joinedAt: new Date().toISOString()
-            };
-        }
-        setUser(baseUser);
-        await syncUserToCloud(baseUser);
-    }
+    await auth.signInWithPopup(googleProvider);
   };
 
   const logout = async () => {
     await auth.signOut();
+    jwtUtils.removeToken();
+    setToken(null);
     setUser(null);
   };
 
@@ -238,6 +250,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   return (
     <AppContext.Provider value={{ 
         user, 
+        token,
         isLoading, 
         courses,
         language,

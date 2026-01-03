@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
+/* Import Link from react-router-dom */
 import { Link } from 'react-router-dom';
 import { 
   Play, CheckCircle, Star, ArrowLeft, Clock, BookOpen, Shield, Award, 
@@ -118,42 +119,57 @@ export const Landing: React.FC = () => {
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
             {filteredCourses.map((course) => (
-              <Link to={`/course/${course.id}`} key={course.id} className="group flex flex-col h-full premium-card rounded-[2.5rem] md:rounded-[3rem] overflow-hidden hover:scale-[1.01] transition-all duration-500">
+              <Link 
+                to={`/course/${course.id}`} 
+                key={course.id} 
+                className="group relative flex flex-col h-full bg-[#0d1321] rounded-[3rem] overflow-hidden border border-white/5 hover:border-brand-gold/40 hover:shadow-[0_0_60px_-15px_rgba(251,191,36,0.25)] transition-all duration-700"
+              >
                   <div className="h-64 relative overflow-hidden">
-                    <img src={course.image} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" alt={course.title} />
-                    <div className="absolute top-6 left-6 bg-[#0a192f]/80 backdrop-blur-md border border-brand-gold/30 text-brand-gold px-4 py-1.5 rounded-full font-black text-[9px] uppercase tracking-widest">
+                    <img src={course.image} className="w-full h-full object-cover grayscale-[0.2] group-hover:grayscale-0 group-hover:scale-105 transition-all duration-[1500ms]" alt={course.title} />
+                    <div className="absolute top-6 left-6 bg-brand-main/80 backdrop-blur-md border border-white/10 text-brand-gold px-4 py-1.5 rounded-full font-black text-[9px] uppercase tracking-[0.2em] z-10">
                       {course.subject}
                     </div>
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#0d1b32] via-transparent to-transparent opacity-60"></div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#0d1321] via-transparent to-transparent opacity-90"></div>
                   </div>
                   
-                  <div className="p-8 flex-1 flex flex-col">
-                    <h3 className="text-2xl font-black text-white mb-4 group-hover:text-brand-gold transition-colors duration-300 leading-tight">{course.title}</h3>
-                    
-                    <div className="flex items-center gap-5 text-brand-muted text-[10px] font-bold uppercase tracking-widest mb-8">
-                       <span className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-lg border border-white/5">
-                          <BookOpen size={13} className="text-brand-gold" /> {course.lessons.length} محاضرة
-                       </span>
-                       <span className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-lg border border-white/5">
-                          <Clock size={13} className="text-brand-gold" /> 15+ ساعة
-                       </span>
+                  <div className="p-8 md:p-10 flex-1 flex flex-col relative">
+                    {/* Floating Info Pills */}
+                    <div className="flex items-center gap-3 mb-6">
+                       <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-2xl border border-white/10 group-hover:border-brand-gold/20 transition-colors">
+                          <BookOpen size={14} className="text-brand-gold" />
+                          <span className="text-white font-bold text-[10px] uppercase tracking-wider">{course.lessons.length} Lessons</span>
+                       </div>
+                       <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-2xl border border-white/10 group-hover:border-brand-gold/20 transition-colors">
+                          <Clock size={14} className="text-brand-gold" />
+                          <span className="text-white font-bold text-[10px] uppercase tracking-wider">12+ Hours</span>
+                       </div>
                     </div>
 
-                    <div className="mt-auto flex items-center justify-between pt-6 border-t border-white/5">
-                       <div className="flex flex-col">
-                          {course.originalPrice && (
-                            <span className="text-[10px] text-brand-muted/60 font-black line-through mb-1">{course.originalPrice} ج.م</span>
-                          )}
-                          <div className="flex items-baseline gap-1">
-                            <span className="text-3xl font-black text-brand-gold tracking-tighter drop-shadow-[0_0_10px_rgba(251,191,36,0.2)]">{course.price}</span>
-                            <span className="text-[10px] font-black text-brand-gold uppercase">ج.م</span>
+                    <h3 className="text-2xl md:text-3xl font-black text-white mb-8 group-hover:text-brand-gold transition-colors duration-500 leading-[1.2] tracking-tight">
+                        {course.title}
+                    </h3>
+                    
+                    <div className="mt-auto pt-8 border-t border-white/5 flex items-end justify-between">
+                       <div className="flex flex-col gap-1">
+                          <span className="text-[10px] text-brand-muted font-black uppercase tracking-[0.2em] mb-1">Premium Access</span>
+                          <div className="flex items-baseline gap-2">
+                             <span className="text-5xl font-black text-brand-gold drop-shadow-[0_0_15px_rgba(251,191,36,0.4)] transition-all group-hover:scale-110 origin-right">
+                                {course.price}
+                             </span>
+                             <span className="text-sm font-black text-brand-gold/60 uppercase">ج.م</span>
                           </div>
+                          {course.originalPrice && (
+                             <span className="text-xs text-brand-muted/40 font-bold line-through ml-1">{course.originalPrice} EGP</span>
+                          )}
                        </div>
                        
-                       <div className="w-14 h-14 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center text-brand-gold group-hover:bg-brand-gold group-hover:text-brand-main group-hover:shadow-glow transition-all duration-500">
-                          <ArrowLeft size={22} className="group-hover:-translate-x-1 transition-transform" />
+                       <div className="w-16 h-16 bg-white/5 border border-white/10 rounded-3xl flex items-center justify-center text-brand-gold group-hover:bg-brand-gold group-hover:text-brand-main group-hover:shadow-[0_0_30px_rgba(251,191,36,0.5)] group-hover:rotate-[-10deg] transition-all duration-500">
+                          <ArrowLeft size={28} />
                        </div>
                     </div>
+
+                    {/* Decorative hover gradient */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-brand-gold/0 to-brand-gold/[0.02] opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"></div>
                   </div>
               </Link>
             ))}

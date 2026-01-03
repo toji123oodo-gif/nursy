@@ -1,5 +1,7 @@
 
 import React, { useMemo, useState, useEffect } from 'react';
+/* Import Link from react-router-dom */
+import { Link } from 'react-router-dom';
 import { 
   Camera, MessageCircle, CheckCircle, Clock, CalendarCheck, Copy, 
   Smartphone, Zap, ShieldCheck, ChevronLeft, Info, CreditCard, 
@@ -7,7 +9,6 @@ import {
   Trophy, Activity, Key, Sparkles, Gift
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { Link } from 'react-router-dom';
 import { db } from '../firebase';
 
 export const Wallet: React.FC = () => {

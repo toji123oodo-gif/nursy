@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+/* Import useLocation and useNavigate from react-router-dom */
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   X, ChevronLeft, Sparkles, Target, ArrowDown

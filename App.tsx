@@ -1,5 +1,6 @@
 
 import React from 'react';
+/* Re-write react-router-dom imports to resolve potential bundling issues */
 import { HashRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AppProvider, useApp } from './context/AppContext';
 import { Layout } from './components/Layout';
@@ -15,15 +16,19 @@ import { CourseDetail } from './pages/CourseDetail';
 import { ExamHub } from './components/ExamHub';
 import { OnboardingTour } from './components/OnboardingTour';
 import { NursyGuideBot } from './components/NursyGuideBot';
+import { jwtUtils } from './utils/jwt';
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, isLoading } = useApp();
+  const { user, token, isLoading } = useApp();
   const location = useLocation();
 
-  if (isLoading && !user) return null; 
+  if (isLoading) return null; 
 
-  if (!user) {
+  // Check both user object and JWT token validity
+  const isAuthenticated = user && token && !jwtUtils.isExpired(token);
+
+  if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 

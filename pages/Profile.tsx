@@ -7,6 +7,7 @@ import {
   Smartphone, UserCheck, Star, Sparkles, ChevronLeft, Loader2, AlertCircle, HelpCircle,
   ArrowRight, TrendingUp, Medal, Flame
 } from 'lucide-react';
+/* Import Link from react-router-dom */
 import { Link } from 'react-router-dom';
 
 const ProgressRing = ({ progress, size = 120 }: { progress: number, size?: number }) => {

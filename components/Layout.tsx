@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+/* Import Link, useLocation, and useNavigate from react-router-dom */
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   Home, Wallet, User as UserIcon, LogOut, 
