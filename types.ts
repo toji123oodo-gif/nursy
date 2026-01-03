@@ -8,6 +8,27 @@ export interface ChatAttachment {
   size?: string;
 }
 
+export interface PostAttachment {
+  type: 'pdf' | 'audio' | 'image';
+  url: string;
+  name: string;
+  size?: string;
+}
+
+export interface SocialPost {
+  id: string;
+  userId: string;
+  userName: string;
+  userRole: string;
+  isPro: boolean;
+  content: string;
+  timestamp: string;
+  likes: number;
+  commentsCount: number;
+  channelId: string;
+  attachments: PostAttachment[];
+}
+
 export interface ChatMessage {
   id: string;
   userId: string;
