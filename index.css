@@ -31,7 +31,7 @@
 
 @layer components {
   .premium-card {
-    @apply bg-brand-card/40 backdrop-blur-xl border border-white/5 shadow-2xl transition-all duration-500 hover:border-brand-gold/30 hover:shadow-glow;
+    @apply bg-[#0d1b32] backdrop-blur-xl border border-white/5 shadow-2xl transition-all duration-500 hover:border-brand-gold/30 hover:shadow-[0_0_40px_rgba(251,191,36,0.1)];
   }
   
   .glass-button {

@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { UserPlus, CheckCircle, Shield, Zap, AlertCircle, User, Mail, Smartphone, Lock, Eye, EyeOff, ArrowLeft, GraduationCap, Sparkles, Loader2, ChevronLeft } from 'lucide-react';
+import { UserPlus, CheckCircle, Shield, Zap, AlertCircle, User, Mail, Smartphone, Lock, Eye, EyeOff, ArrowLeft, GraduationCap, Sparkles, Loader2, ChevronLeft, Gift } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export const Signup: React.FC = () => {
@@ -24,7 +24,7 @@ export const Signup: React.FC = () => {
     }
 
     try {
-        await signup(formData.email, formData.password, formData.name, formData.phone, 'free');
+        await signup(formData.email, formData.password, formData.name, formData.phone);
         navigate('/dashboard');
     } catch (err: any) {
         if (err.code === 'auth/email-already-in-use') {
@@ -52,6 +52,12 @@ export const Signup: React.FC = () => {
            </Link>
            <h1 className="text-4xl md:text-5xl font-black text-white mb-3 tracking-tighter">انضم إلى نيرسي</h1>
            <p className="text-brand-muted text-lg font-bold">أكبر صرح تعليمي لطلاب التمريض في مصر</p>
+           
+           {/* Trial Gift Badge */}
+           <div className="mt-6 inline-flex items-center gap-3 bg-green-500/10 border border-green-500/30 px-6 py-2.5 rounded-full animate-bounce-slow">
+              <Gift className="text-green-500" size={18} />
+              <span className="text-green-500 font-black text-xs uppercase tracking-widest">سجل الآن واحصل على 30 يوم PRO مجاناً</span>
+           </div>
         </div>
 
         {/* Signup Form Card */}

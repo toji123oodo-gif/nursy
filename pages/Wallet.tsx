@@ -4,7 +4,7 @@ import {
   Camera, MessageCircle, CheckCircle, Clock, CalendarCheck, Copy, 
   Smartphone, Zap, ShieldCheck, ChevronLeft, Info, CreditCard, 
   QrCode, ArrowRightCircle, Shield, Loader2, AlertCircle, HelpCircle, 
-  Trophy, Activity, Key
+  Trophy, Activity, Key, Sparkles, Gift
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { Link } from 'react-router-dom';
@@ -20,6 +20,26 @@ export const Wallet: React.FC = () => {
 
   const VODAFONE_NUMBER = "01093077151";
   
+  const isTrialActive = useMemo(() => {
+    if (user?.subscriptionTier === 'pro' && user?.subscriptionExpiry) {
+      const now = new Date();
+      const expiry = new Date(user.subscriptionExpiry);
+      // If the account was created recently (within last 30 days) and tier is pro
+      return now < expiry;
+    }
+    return false;
+  }, [user]);
+
+  const daysLeft = useMemo(() => {
+    if (user?.subscriptionExpiry) {
+      const now = new Date();
+      const expiry = new Date(user.subscriptionExpiry);
+      const diff = expiry.getTime() - now.getTime();
+      return Math.ceil(diff / (1000 * 60 * 60 * 24));
+    }
+    return 0;
+  }, [user]);
+
   const handleActivateByCode = async () => {
     if (!activationCode || !db || !user) return;
     setIsProcessing(true);
@@ -64,16 +84,43 @@ export const Wallet: React.FC = () => {
     }
   };
 
-  if (user?.subscriptionTier === 'pro') {
+  // Modified View for Trial Users
+  if (isTrialActive) {
     return (
-      <div className="min-h-[80vh] flex items-center justify-center p-6">
-        <div className="bg-brand-card rounded-[4rem] p-12 max-w-lg w-full text-center border border-green-500/20 animate-scale-up">
-            <Trophy className="text-green-500 mx-auto mb-8 animate-bounce-slow" size={64} />
-            <h2 className="text-4xl font-black text-white mb-4">أنت الآن عضو PRO!</h2>
-            <p className="text-brand-muted mb-8 text-lg">استمتع بالوصول الكامل لمحتوى نيرسي.</p>
-            <Link to="/dashboard" className="w-full bg-brand-gold text-brand-main font-black py-5 rounded-2xl flex items-center justify-center gap-2 shadow-glow">
-              ابدأ المذاكرة الآن <ChevronLeft size={20}/>
-            </Link>
+      <div className="min-h-screen py-16 px-4 md:px-10 flex flex-col items-center justify-center">
+        <div className="bg-brand-card rounded-[4rem] p-12 max-w-2xl w-full text-center border border-brand-gold/20 shadow-glow relative overflow-hidden animate-scale-up">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-brand-gold/10 blur-3xl rounded-full"></div>
+            
+            <div className="w-24 h-24 bg-brand-gold/10 text-brand-gold rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner">
+               <Gift size={48} className="animate-bounce-slow" />
+            </div>
+
+            <h2 className="text-4xl md:text-5xl font-black text-white mb-4 tracking-tighter">أنت في فترة التجربة!</h2>
+            <p className="text-brand-muted mb-8 text-lg font-medium leading-relaxed">
+               لقد منحناك <span className="text-brand-gold font-black">30 يوم PRO مجاناً</span> كهدية ترحيبية. <br/>
+               استمتع بمشاهدة جميع الكورسات وتحميل الملازم.
+            </p>
+
+            <div className="bg-brand-main/50 p-6 rounded-3xl border border-white/5 mb-10 flex flex-col md:flex-row items-center justify-center gap-6">
+                <div className="text-center">
+                   <p className="text-[10px] text-brand-muted font-black uppercase tracking-widest mb-1">الأيام المتبقية</p>
+                   <p className="text-4xl font-black text-brand-gold">{daysLeft} يوم</p>
+                </div>
+                <div className="hidden md:block w-px h-12 bg-white/10"></div>
+                <div className="text-center">
+                   <p className="text-[10px] text-brand-muted font-black uppercase tracking-widest mb-1">حالة الاشتراك</p>
+                   <p className="text-lg font-black text-green-500 flex items-center gap-2"><Sparkles size={16}/> Trial PRO Active</p>
+                </div>
+            </div>
+
+            <div className="space-y-4">
+              <Link to="/dashboard" className="w-full bg-brand-gold text-brand-main font-black py-5 rounded-2xl flex items-center justify-center gap-2 shadow-glow hover:scale-[1.02] transition-all text-xl">
+                ابدأ المذاكرة الآن <ChevronLeft size={20}/>
+              </Link>
+              <button onClick={() => setSelectedMethod('vodafone')} className="w-full bg-white/5 text-white py-5 rounded-2xl font-bold hover:bg-white/10 transition-all text-sm border border-white/5">
+                تجديد الاشتراك مبكراً؟
+              </button>
+            </div>
         </div>
       </div>
     );

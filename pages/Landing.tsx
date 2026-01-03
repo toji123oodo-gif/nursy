@@ -118,26 +118,40 @@ export const Landing: React.FC = () => {
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
             {filteredCourses.map((course) => (
-              <Link to={`/course/${course.id}`} key={course.id} className="group flex flex-col h-full premium-card rounded-[3rem] overflow-hidden hover:scale-[1.02] transition-all">
+              <Link to={`/course/${course.id}`} key={course.id} className="group flex flex-col h-full premium-card rounded-[2.5rem] md:rounded-[3rem] overflow-hidden hover:scale-[1.01] transition-all duration-500">
                   <div className="h-64 relative overflow-hidden">
-                    <img src={course.image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={course.title} />
-                    <div className="absolute top-6 left-6 bg-brand-gold text-brand-main px-4 py-2 rounded-xl font-black text-[10px] shadow-xl">
+                    <img src={course.image} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" alt={course.title} />
+                    <div className="absolute top-6 left-6 bg-[#0a192f]/80 backdrop-blur-md border border-brand-gold/30 text-brand-gold px-4 py-1.5 rounded-full font-black text-[9px] uppercase tracking-widest">
                       {course.subject}
                     </div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#0d1b32] via-transparent to-transparent opacity-60"></div>
                   </div>
+                  
                   <div className="p-8 flex-1 flex flex-col">
-                    <h3 className="text-2xl font-black text-white mb-4 group-hover:text-brand-gold transition-colors">{course.title}</h3>
-                    <div className="flex items-center gap-4 text-brand-muted text-xs mb-8">
-                       <span className="flex items-center gap-1.5"><BookOpen size={14}/> {course.lessons.length} محاضرة</span>
-                       <span className="flex items-center gap-1.5"><Star size={14} className="text-brand-gold" fill="currentColor"/> 4.9</span>
+                    <h3 className="text-2xl font-black text-white mb-4 group-hover:text-brand-gold transition-colors duration-300 leading-tight">{course.title}</h3>
+                    
+                    <div className="flex items-center gap-5 text-brand-muted text-[10px] font-bold uppercase tracking-widest mb-8">
+                       <span className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-lg border border-white/5">
+                          <BookOpen size={13} className="text-brand-gold" /> {course.lessons.length} محاضرة
+                       </span>
+                       <span className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-lg border border-white/5">
+                          <Clock size={13} className="text-brand-gold" /> 15+ ساعة
+                       </span>
                     </div>
-                    <div className="mt-auto flex items-center justify-between">
+
+                    <div className="mt-auto flex items-center justify-between pt-6 border-t border-white/5">
                        <div className="flex flex-col">
-                          <span className="text-[10px] text-brand-muted font-bold line-through">{course.originalPrice} ج.م</span>
-                          <span className="text-2xl font-black text-white">{course.price} ج.م</span>
+                          {course.originalPrice && (
+                            <span className="text-[10px] text-brand-muted/60 font-black line-through mb-1">{course.originalPrice} ج.م</span>
+                          )}
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-3xl font-black text-brand-gold tracking-tighter drop-shadow-[0_0_10px_rgba(251,191,36,0.2)]">{course.price}</span>
+                            <span className="text-[10px] font-black text-brand-gold uppercase">ج.م</span>
+                          </div>
                        </div>
-                       <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center text-brand-gold group-hover:bg-brand-gold group-hover:text-brand-main transition-all">
-                          <ArrowLeft size={20} />
+                       
+                       <div className="w-14 h-14 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center text-brand-gold group-hover:bg-brand-gold group-hover:text-brand-main group-hover:shadow-glow transition-all duration-500">
+                          <ArrowLeft size={22} className="group-hover:-translate-x-1 transition-transform" />
                        </div>
                     </div>
                   </div>

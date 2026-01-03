@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { LogIn, GraduationCap, AlertCircle, Smartphone, Mail, Unlock, Loader2, Eye, EyeOff, ArrowLeft, Info, Sparkles, ChevronLeft } from 'lucide-react';
+import { LogIn, GraduationCap, AlertCircle, Smartphone, Mail, Unlock, Loader2, Eye, EyeOff, ArrowLeft, Info, Sparkles, ChevronLeft, ShieldCheck } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import firebase from 'firebase/compat/app';
 import { auth } from '../firebase';
@@ -94,119 +94,189 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden bg-brand-main">
+    <div className="min-h-screen flex items-center justify-center p-6 py-20 relative overflow-hidden bg-brand-main">
       {/* Dynamic Background Decorations */}
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand-gold/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2"></div>
-      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-blue-500/5 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/2"></div>
+      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-brand-gold/10 rounded-full blur-[140px] -translate-y-1/2 translate-x-1/2"></div>
+      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-[120px] translate-y-1/2 -translate-x-1/2"></div>
       
       <div className="w-full max-w-xl relative z-10 animate-fade-in-up">
         {/* Logo Section */}
         <div className="text-center mb-10">
            <Link to="/" className="inline-block group mb-6">
-             <div className="bg-brand-gold p-5 rounded-[2rem] shadow-glow group-hover:scale-110 transition-transform duration-500">
-               <GraduationCap size={48} className="text-brand-main" />
+             <div className="bg-brand-gold p-6 rounded-[2.5rem] shadow-glow group-hover:scale-110 transition-transform duration-500">
+               <GraduationCap size={56} className="text-brand-main" />
              </div>
            </Link>
-           <h1 className="text-4xl md:text-5xl font-black text-white mb-3 tracking-tighter">مرحباً بك مجدداً</h1>
+           <h1 className="text-5xl md:text-6xl font-black text-white mb-4 tracking-tighter">نيرسي</h1>
            <p className="text-brand-muted text-lg font-bold flex items-center justify-center gap-2">
-             <Sparkles size={18} className="text-brand-gold" /> استكمل رحلتك التعليمية في نيرسي
+             <ShieldCheck size={18} className="text-brand-gold" /> بوابة التمريض الأكاديمي في مصر
            </p>
         </div>
 
         {/* Login Card */}
-        <div className="bg-brand-card/40 backdrop-blur-2xl border border-white/10 p-8 md:p-12 rounded-[3.5rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)]">
+        <div className="bg-brand-card/60 backdrop-blur-3xl border border-white/10 p-8 md:p-14 rounded-[4rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.6)]">
           {view === 'login' ? (
-            <div className="space-y-8">
-              {/* Method Tabs */}
-              <div className="flex bg-brand-main/60 p-1.5 rounded-2xl border border-white/5 relative">
+            <div className="space-y-10">
+              
+              {/* Refined Method Switcher */}
+              <div className="p-1.5 bg-black/40 rounded-[2rem] border-2 border-white/5 relative flex overflow-hidden">
                 <button
-                  onClick={() => setLoginMethod('email')}
-                  className={`flex-1 py-4 rounded-xl text-xs font-black transition-all relative z-10 ${loginMethod === 'email' ? 'text-brand-main' : 'text-brand-muted hover:text-white'}`}
+                  onClick={() => !isSubmitting && setLoginMethod('email')}
+                  className={`flex-1 py-4.5 rounded-[1.5rem] text-[11px] font-black uppercase tracking-widest transition-all duration-500 relative z-10 
+                    ${loginMethod === 'email' ? 'text-brand-main' : 'text-brand-muted hover:text-white'}`}
                 >
                   البريد الإلكتروني
                 </button>
                 <button
-                  onClick={() => setLoginMethod('phone')}
-                  className={`flex-1 py-4 rounded-xl text-xs font-black transition-all relative z-10 ${loginMethod === 'phone' ? 'text-brand-main' : 'text-brand-muted hover:text-white'}`}
+                  onClick={() => !isSubmitting && setLoginMethod('phone')}
+                  className={`flex-1 py-4.5 rounded-[1.5rem] text-[11px] font-black uppercase tracking-widest transition-all duration-500 relative z-10 
+                    ${loginMethod === 'phone' ? 'text-brand-main' : 'text-brand-muted hover:text-white'}`}
                 >
                   رقم الهاتف
                 </button>
+                
+                {/* Slidder Indicator */}
                 <div 
-                  className="absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-brand-gold rounded-xl shadow-glow transition-all duration-500 ease-out"
-                  style={{ right: loginMethod === 'email' ? '6px' : 'calc(50%)' }}
+                  className="absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-brand-gold rounded-[1.5rem] shadow-[0_0_20px_rgba(251,191,36,0.4)] transition-all duration-500 cubic-bezier(0.16, 1, 0.3, 1)"
+                  style={{ 
+                    right: loginMethod === 'email' ? '6px' : 'calc(50% + 0px)',
+                    boxShadow: '0 0 15px rgba(251,191,36,0.3)'
+                  }}
                 ></div>
               </div>
 
               {error && (
-                <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-2xl text-xs font-bold flex items-center gap-3 animate-shake">
-                  <AlertCircle size={18} /> {error}
+                <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-5 rounded-2xl text-xs font-bold flex items-center gap-4 animate-shake">
+                  <AlertCircle size={20} className="shrink-0" /> {error}
                 </div>
               )}
 
               {loginMethod === 'email' ? (
-                <form onSubmit={handleEmailLogin} className="space-y-6">
-                  <div className="space-y-2">
-                    <label className="text-[10px] text-brand-muted font-black uppercase tracking-[0.2em] pr-2">البريد الإلكتروني</label>
+                <form onSubmit={handleEmailLogin} className="space-y-8">
+                  <div className="space-y-3">
+                    <label className="text-[10px] text-brand-muted font-black uppercase tracking-[0.3em] pr-2">البريد الإلكتروني</label>
                     <div className="relative group">
-                        <Mail className="absolute right-5 top-1/2 -translate-y-1/2 text-brand-muted group-focus-within:text-brand-gold transition-colors" size={20} />
+                        <Mail className="absolute right-6 top-1/2 -translate-y-1/2 text-brand-muted group-focus-within:text-brand-gold transition-colors" size={20} />
                         <input 
                           type="email" 
                           required 
                           value={email} 
                           onChange={(e) => setEmail(e.target.value)} 
-                          className="w-full bg-brand-main/50 border-2 border-white/5 rounded-2xl pr-14 pl-6 py-5 text-white text-lg font-bold focus:border-brand-gold/50 outline-none transition-all placeholder:text-brand-muted/30" 
+                          className="w-full bg-brand-main/50 border-2 border-white/5 rounded-[1.5rem] pr-16 pl-6 py-5.5 text-white text-lg font-bold focus:border-brand-gold/50 outline-none transition-all placeholder:text-brand-muted/20" 
                           placeholder="example@mail.com" 
+                          disabled={isSubmitting}
                         />
                     </div>
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <div className="flex justify-between items-center px-2">
-                      <label className="text-[10px] text-brand-muted font-black uppercase tracking-[0.2em]">كلمة المرور</label>
-                      <button type="button" onClick={() => setView('forgot-password')} className="text-[10px] text-brand-gold font-black hover:underline">نسيتها؟</button>
+                      <label className="text-[10px] text-brand-muted font-black uppercase tracking-[0.3em]">كلمة المرور</label>
+                      <button type="button" onClick={() => !isSubmitting && setView('forgot-password')} className="text-[10px] text-brand-gold font-black hover:underline underline-offset-4">نسيتها؟</button>
                     </div>
                     <div className="relative group">
-                        <Unlock className="absolute right-5 top-1/2 -translate-y-1/2 text-brand-muted group-focus-within:text-brand-gold transition-colors" size={20} />
+                        <Unlock className="absolute right-6 top-1/2 -translate-y-1/2 text-brand-muted group-focus-within:text-brand-gold transition-colors" size={20} />
                         <input 
                           type={showPassword ? 'text' : 'password'} 
                           required 
                           value={password} 
                           onChange={(e) => setPassword(e.target.value)} 
-                          className="w-full bg-brand-main/50 border-2 border-white/5 rounded-2xl pr-14 pl-14 py-5 text-white text-lg font-bold focus:border-brand-gold/50 outline-none transition-all placeholder:text-brand-muted/30" 
+                          className="w-full bg-brand-main/50 border-2 border-white/5 rounded-[1.5rem] pr-16 pl-14 py-5.5 text-white text-lg font-bold focus:border-brand-gold/50 outline-none transition-all placeholder:text-brand-muted/20" 
                           placeholder="••••••••" 
+                          disabled={isSubmitting}
                         />
-                        <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute left-5 top-1/2 -translate-y-1/2 text-brand-muted hover:text-white transition-colors">
+                        <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute left-6 top-1/2 -translate-y-1/2 text-brand-muted hover:text-white transition-colors">
                           {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                         </button>
                     </div>
                   </div>
-                  <button type="submit" disabled={isSubmitting} className="w-full bg-brand-gold text-brand-main font-black py-5 rounded-[1.8rem] shadow-glow hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 text-xl">
-                    {isSubmitting ? <Loader2 className="animate-spin" /> : <><LogIn size={24} /> دخـول</>}
+                  
+                  {/* Enhanced Submission Button */}
+                  <button 
+                    type="submit" 
+                    disabled={isSubmitting} 
+                    className={`w-full font-black py-6 rounded-[2rem] shadow-glow transition-all duration-500 flex items-center justify-center gap-4 text-2xl tracking-tighter
+                      ${isSubmitting ? 'bg-brand-gold/50 cursor-not-allowed scale-[0.98]' : 'bg-brand-gold text-brand-main hover:scale-[1.02] active:scale-95'}`}
+                  >
+                    {isSubmitting ? (
+                      <div className="flex items-center gap-3">
+                        <Loader2 className="animate-spin" size={24} />
+                        <span className="text-xl">جاري التحقق...</span>
+                      </div>
+                    ) : (
+                      <>
+                        <LogIn size={28} /> دخـول
+                      </>
+                    )}
                   </button>
                 </form>
               ) : (
-                <div className="space-y-6">
+                <div className="space-y-8">
                   {phoneStep === 'input' ? (
-                    <form onSubmit={requestOtp} className="space-y-6">
-                      <div className="space-y-2">
-                        <label className="text-[10px] text-brand-muted font-black uppercase tracking-widest pr-2">رقم الهاتف</label>
+                    <form onSubmit={requestOtp} className="space-y-8">
+                      <div className="space-y-3">
+                        <label className="text-[10px] text-brand-muted font-black uppercase tracking-widest pr-2">رقم الهاتف المصري</label>
                         <div className="relative group">
-                          <Smartphone className="absolute right-5 top-1/2 -translate-y-1/2 text-brand-muted group-focus-within:text-brand-gold transition-colors" size={20} />
-                          <input type="tel" required value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} className="w-full bg-brand-main/50 border-2 border-white/5 rounded-2xl pr-14 pl-6 py-5 text-white text-lg font-bold focus:border-brand-gold/50 outline-none transition-all" placeholder="01XXXXXXXXX" />
+                          <Smartphone className="absolute right-6 top-1/2 -translate-y-1/2 text-brand-muted group-focus-within:text-brand-gold transition-colors" size={20} />
+                          <div className="absolute left-6 top-1/2 -translate-y-1/2 text-brand-muted font-black text-lg border-r border-white/10 pr-4 pointer-events-none">
+                            +20
+                          </div>
+                          <input 
+                            type="tel" 
+                            required 
+                            value={phoneNumber} 
+                            onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))} 
+                            className="w-full bg-brand-main/50 border-2 border-white/5 rounded-[1.5rem] pr-16 pl-20 py-5.5 text-white text-xl font-black tracking-widest focus:border-brand-gold/50 outline-none transition-all" 
+                            placeholder="01XXXXXXXXX" 
+                            disabled={isSubmitting}
+                            maxLength={11}
+                          />
                         </div>
                       </div>
-                      <div id="recaptcha-container"></div>
-                      <button type="submit" disabled={isSubmitting} className="w-full bg-brand-gold text-brand-main font-black py-5 rounded-[1.8rem] shadow-glow transition-all flex items-center justify-center gap-3 text-xl">
-                        {isSubmitting ? <Loader2 className="animate-spin" /> : 'إرسال كود التحقق'}
+                      <div id="recaptcha-container" className="my-4"></div>
+                      <button 
+                        type="submit" 
+                        disabled={isSubmitting || phoneNumber.length < 10} 
+                        className={`w-full font-black py-6 rounded-[2rem] shadow-glow transition-all duration-500 flex items-center justify-center gap-4 text-xl
+                          ${isSubmitting ? 'bg-brand-gold/50 cursor-not-allowed' : 'bg-brand-gold text-brand-main hover:scale-[1.02] active:scale-95'}`}
+                      >
+                        {isSubmitting ? (
+                          <div className="flex items-center gap-3">
+                            <Loader2 className="animate-spin" size={24} />
+                            <span>جاري إرسال الكود...</span>
+                          </div>
+                        ) : 'إرسال كود التحقق (SMS)'}
                       </button>
                     </form>
                   ) : (
-                    <form onSubmit={verifyOtp} className="space-y-8">
-                      <div className="text-center space-y-4">
-                        <p className="text-brand-muted font-bold">أدخل كود الـ 6 أرقام المرسل لهاتفك</p>
-                        <input type="text" required value={otpCode} onChange={(e) => setOtpCode(e.target.value)} className="w-full bg-brand-main/50 border-2 border-brand-gold rounded-[2rem] px-4 py-6 text-center text-white text-4xl font-black tracking-[0.5em] outline-none shadow-inner" maxLength={6} />
+                    <form onSubmit={verifyOtp} className="space-y-10">
+                      <div className="text-center space-y-6">
+                        <p className="text-brand-muted font-bold text-lg">أدخل كود التحقق المكون من 6 أرقام</p>
+                        <input 
+                          type="text" 
+                          required 
+                          value={otpCode} 
+                          onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))} 
+                          className="w-full bg-brand-main/40 border-2 border-brand-gold rounded-[2rem] px-4 py-8 text-center text-white text-5xl font-black tracking-[0.5em] outline-none shadow-glow transition-all" 
+                          maxLength={6} 
+                          autoFocus
+                          disabled={isSubmitting}
+                        />
                       </div>
-                      <button type="submit" disabled={isSubmitting} className="w-full bg-brand-gold text-brand-main font-black py-5 rounded-[1.8rem] shadow-glow transition-all text-xl">تأكيد الكود</button>
-                      <button type="button" onClick={() => setPhoneStep('input')} className="w-full text-brand-muted text-xs font-bold hover:text-white transition-colors">تعديل رقم الهاتف؟</button>
+                      <button 
+                        type="submit" 
+                        disabled={isSubmitting || otpCode.length < 6} 
+                        className={`w-full font-black py-6 rounded-[2rem] shadow-glow transition-all duration-500 text-2xl
+                          ${isSubmitting ? 'bg-brand-gold/50' : 'bg-brand-gold text-brand-main hover:scale-[1.02] active:scale-95'}`}
+                      >
+                        {isSubmitting ? <Loader2 className="animate-spin mx-auto" size={28} /> : 'تأكيد ودخول'}
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={() => !isSubmitting && setPhoneStep('input')} 
+                        className="w-full text-brand-muted text-sm font-black hover:text-white transition-colors flex items-center justify-center gap-2"
+                      >
+                        تغيير الرقم؟ <ArrowLeft size={16} />
+                      </button>
                     </form>
                   )}
                 </div>
@@ -214,30 +284,43 @@ export const Login: React.FC = () => {
 
               <div className="relative my-10 text-center">
                 <hr className="border-white/5" />
-                <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-brand-card/20 backdrop-blur-xl px-4 text-[10px] text-brand-muted font-black uppercase tracking-widest">أو عبر</span>
+                <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#0b1b32] px-6 text-[10px] text-brand-muted font-black uppercase tracking-[0.3em]">أو المتابعة عبر</span>
               </div>
 
-              <button onClick={handleGoogleLogin} disabled={isSubmitting} className="w-full bg-white text-gray-900 font-black py-5 rounded-[1.8rem] flex items-center justify-center gap-4 hover:bg-gray-100 transition-all active:scale-95 disabled:opacity-50 text-lg">
+              <button 
+                onClick={handleGoogleLogin} 
+                disabled={isSubmitting} 
+                className="w-full bg-white text-gray-900 font-black py-5.5 rounded-[2rem] flex items-center justify-center gap-4 hover:bg-gray-100 transition-all active:scale-95 disabled:opacity-50 text-xl shadow-xl"
+              >
                 {isSubmitting ? <Loader2 className="animate-spin text-gray-400" /> : <><GoogleIcon /> Google Account</>}
               </button>
             </div>
           ) : (
-            <div className="space-y-8">
+            <div className="space-y-10">
                <div className="text-center">
-                  <h3 className="text-2xl font-black text-white mb-2">نسيت كلمة المرور؟</h3>
-                  <p className="text-sm text-brand-muted font-bold">أدخل بريدك الإلكتروني وسنرسل لك رابط الاستعادة</p>
+                  <h3 className="text-3xl font-black text-white mb-3">نسيت كلمة المرور؟</h3>
+                  <p className="text-lg text-brand-muted font-bold">أدخل بريدك الإلكتروني وسنرسل لك رابط استعادة آمن</p>
                </div>
-               <div className="space-y-2">
-                 <label className="text-[10px] text-brand-muted font-black uppercase tracking-widest pr-2">البريد الإلكتروني</label>
-                 <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-brand-main/50 border-2 border-white/5 rounded-2xl px-6 py-5 text-white font-bold focus:border-brand-gold outline-none transition-all" placeholder="example@mail.com" />
+               <div className="space-y-3">
+                 <label className="text-[10px] text-brand-muted font-black uppercase tracking-widest px-2">البريد الإلكتروني</label>
+                 <input 
+                    type="email" 
+                    value={email} 
+                    onChange={(e) => setEmail(e.target.value)} 
+                    className="w-full bg-brand-main border-2 border-white/5 rounded-[1.5rem] px-8 py-5.5 text-white font-bold outline-none focus:border-brand-gold transition-all" 
+                    placeholder="example@mail.com" 
+                  />
                </div>
-               <button className="w-full bg-brand-gold text-brand-main font-black py-5 rounded-[1.8rem] shadow-glow text-xl">إرسال رابط الاستعادة</button>
-               <button onClick={() => setView('login')} className="w-full text-brand-muted text-sm font-bold hover:text-white flex items-center justify-center gap-2"><ArrowLeft size={16} /> العودة لتسجيل الدخول</button>
+               <button className="w-full bg-brand-gold text-brand-main font-black py-6 rounded-[2rem] shadow-glow text-xl">إرسال رابط الاستعادة</button>
+               <button onClick={() => setView('login')} className="w-full text-brand-muted text-sm font-black hover:text-white flex items-center justify-center gap-2"><ArrowLeft size={18} /> العودة لتسجيل الدخول</button>
             </div>
           )}
           
-          <div className="mt-12 text-center pt-8 border-t border-white/5">
-            <p className="text-brand-muted font-bold text-sm">ليس لديك حساب؟ <Link to="/signup" className="text-brand-gold font-black hover:underline flex items-center justify-center gap-1 mt-2">أنشئ حسابك الآن <ChevronLeft size={16} /></Link></p>
+          <div className="mt-14 text-center pt-10 border-t border-white/5">
+            <p className="text-brand-muted font-bold text-base">ليس لديك حساب في نيرسي؟</p>
+            <Link to="/signup" className="text-brand-gold font-black hover:underline underline-offset-4 flex items-center justify-center gap-2 mt-4 text-lg">
+              أنشئ حسابك التعليمي الآن <ChevronLeft size={20} />
+            </Link>
           </div>
         </div>
       </div>

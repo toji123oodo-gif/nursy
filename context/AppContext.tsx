@@ -12,7 +12,7 @@ interface AppContextType {
   language: 'ar' | 'en';
   toggleLanguage: () => void;
   login: (email: string, pass: string) => Promise<void>;
-  signup: (email: string, pass: string, name: string, phone: string, subscriptionTier: SubscriptionTier) => Promise<void>;
+  signup: (email: string, pass: string, name: string, phone: string) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
   upgradeToPro: () => void;
@@ -107,13 +107,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           let baseUser: User;
           if (docSnap.exists) {
             baseUser = { id: firebaseUser.uid, ...docSnap.data() } as User;
+            
+            // Check for trial expiry
+            if (baseUser.subscriptionTier === 'pro' && baseUser.subscriptionExpiry) {
+               const now = new Date();
+               const expiry = new Date(baseUser.subscriptionExpiry);
+               if (now > expiry) {
+                  baseUser.subscriptionTier = 'free';
+                  await syncUserToCloud(baseUser);
+               }
+            }
           } else {
             baseUser = {
               id: firebaseUser.uid,
               name: firebaseUser.displayName || 'طالب جديد',
               email: firebaseUser.email || '',
               phone: '',
-              subscriptionTier: firebaseUser.email === 'toji123oodo@gmail.com' ? 'pro' : 'free'
+              subscriptionTier: 'free'
             };
           }
           
@@ -137,12 +147,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     await auth.signInWithEmailAndPassword(email, pass);
   };
 
-  const signup = async (email: string, pass: string, name: string, phone: string, subscriptionTier: SubscriptionTier) => {
+  const signup = async (email: string, pass: string, name: string, phone: string) => {
     const userCredential = await auth.createUserWithEmailAndPassword(email, pass);
     const firebaseUser = userCredential.user;
     if (firebaseUser) {
       await firebaseUser.updateProfile({ displayName: name });
-      const newUser: User = { id: firebaseUser.uid, name, email, phone, subscriptionTier };
+      
+      // Calculate 30 days trial expiry
+      const trialExpiry = new Date();
+      trialExpiry.setDate(trialExpiry.getDate() + 30);
+
+      const newUser: User = { 
+        id: firebaseUser.uid, 
+        name, 
+        email, 
+        phone, 
+        subscriptionTier: 'pro',
+        subscriptionExpiry: trialExpiry.toISOString(),
+        joinedAt: new Date().toISOString()
+      };
+      
       setUser(newUser);
       await syncUserToCloud(newUser);
     }
@@ -158,7 +182,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (docSnap && docSnap.exists) {
             baseUser = { id: firebaseUser.uid, ...docSnap.data() } as User;
         } else {
-            baseUser = { id: firebaseUser.uid, name: firebaseUser.displayName || 'طالب جوجل', email: firebaseUser.email || '', phone: '', subscriptionTier: 'free' };
+            // Google users also get 30 days trial
+            const trialExpiry = new Date();
+            trialExpiry.setDate(trialExpiry.getDate() + 30);
+            
+            baseUser = { 
+              id: firebaseUser.uid, 
+              name: firebaseUser.displayName || 'طالب جوجل', 
+              email: firebaseUser.email || '', 
+              phone: '', 
+              subscriptionTier: 'pro',
+              subscriptionExpiry: trialExpiry.toISOString(),
+              joinedAt: new Date().toISOString()
+            };
         }
         setUser(baseUser);
         await syncUserToCloud(baseUser);
