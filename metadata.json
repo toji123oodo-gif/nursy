@@ -1,5 +1,8 @@
 {
   "name": "Nursy - Educational Platform",
   "description": "A premium LMS platform for Egyptian students featuring video lessons, activation codes, and security watermarking.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
 }

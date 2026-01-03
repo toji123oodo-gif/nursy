@@ -1,7 +1,15 @@
 
-export type SubscriptionTier = 'free' | 'pro';
-
 export type ContentType = 'video' | 'audio' | 'pdf' | 'document' | 'image';
+
+export interface ChatMessage {
+  id: string;
+  userId: string;
+  userName: string;
+  text: string;
+  timestamp: string;
+  userRole?: 'admin' | 'student';
+  isPro?: boolean;
+}
 
 export interface Question {
   id: string;
@@ -15,6 +23,14 @@ export interface Quiz {
   id: string;
   title: string;
   questions: Question[];
+}
+
+export interface Flashcard {
+  id: string;
+  front: string;
+  back: string;
+  hint?: string;
+  category?: string;
 }
 
 export interface ContentItem {
@@ -32,29 +48,47 @@ export interface Lesson {
   isLocked: boolean; 
   contents: ContentItem[]; 
   duration?: string;
-  quiz?: Quiz; // اختبار المحاضرة
+  quiz?: Quiz;
+  flashcards?: Flashcard[];
 }
 
 export interface Course {
   id: string;
   title: string;
   instructor: string;
-  price: number;
-  originalPrice?: number;
   image: string;
   subject: string;
   lessons: Lesson[];
-  finalQuiz?: Quiz; // اختبار الفصل/الكورس الشامل
+  finalQuiz?: Quiz;
+  price: number;
+}
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  role?: 'admin' | 'student';
+  lastSeen?: string; 
+  lastDevice?: string;
+  joinedAt?: string;
+  completedLessons?: string[]; 
+  completedExams?: string[];
+  quizGrades?: Record<string, number>;
+  hasCompletedTour?: boolean;
+  xp: number; 
+  level: number; 
+  streak: number; 
+  subscriptionTier: 'free' | 'pro';
+  subscriptionExpiry?: string | null;
 }
 
 export interface ActivationCode {
   id: string;
   code: string;
   isUsed: boolean;
-  usedBy?: string;
-  usedAt?: string;
-  createdAt: string;
   days: number;
+  createdAt: string;
 }
 
 export interface Exam {
@@ -64,21 +98,4 @@ export interface Exam {
   date: string;
   time: string;
   location: string;
-}
-
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  role?: 'admin' | 'student';
-  subscriptionTier: SubscriptionTier;
-  subscriptionExpiry?: string; 
-  lastSeen?: string; 
-  lastDevice?: string;
-  joinedAt?: string;
-  completedLessons?: string[]; 
-  completedExams?: string[];
-  quizGrades?: Record<string, number>; // تخزين درجات الاختبارات
-  hasCompletedTour?: boolean; // هل أتم الجولة التعليمية؟
 }

@@ -6,14 +6,11 @@
 @layer base {
   body {
     @apply bg-brand-main text-brand-text font-sans m-0 p-0 overflow-x-hidden antialiased;
-  }
-
-  #root {
-    @apply min-h-screen flex flex-col;
+    scroll-behavior: smooth;
   }
 
   ::-webkit-scrollbar {
-    @apply w-1.5;
+    @apply w-2;
   }
 
   ::-webkit-scrollbar-track {
@@ -21,7 +18,7 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-brand-hover rounded-full border-2 border-brand-main;
+    @apply bg-brand-card rounded-full border-2 border-brand-main;
   }
 
   ::-webkit-scrollbar-thumb:hover {
@@ -29,104 +26,120 @@
   }
 }
 
+@layer utilities {
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+  .transform-style-3d {
+    transform-style: preserve-3d;
+  }
+  .backface-hidden {
+    backface-visibility: hidden;
+  }
+  .rotate-y-180 {
+    transform: rotateY(180deg);
+  }
+}
+
 @layer components {
-  .premium-card {
-    @apply bg-[#0d1b32] backdrop-blur-xl border border-white/5 shadow-2xl transition-all duration-500 hover:border-brand-gold/30 hover:shadow-[0_0_40px_rgba(251,191,36,0.1)];
-  }
-  
-  .glass-button {
-    @apply bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 hover:border-brand-gold/30 transition-all duration-300;
+  /* Block: Nursy Card (ns-card) */
+  .ns-card {
+    @apply bg-brand-card rounded-[2.5rem] border border-white/5 shadow-xl transition-all duration-500;
   }
 
-  /* Refined Admin Access Button */
-  .admin-access-btn {
-    @apply relative overflow-hidden flex items-center gap-1.5 md:gap-2 px-3 md:px-5 py-2 rounded-full font-bold text-[10px] md:text-sm transition-all duration-500;
-    background: rgba(251, 191, 36, 0.05);
-    border: 1px solid rgba(251, 191, 36, 0.2);
-    color: #fbbf24;
-    backdrop-filter: blur(8px);
+  .ns-card--glass {
+    @apply bg-brand-card/70 backdrop-blur-[12px] border border-white/5;
   }
 
-  .admin-access-btn:hover {
-    background: rgba(251, 191, 36, 0.15);
-    border-color: rgba(251, 191, 36, 0.6);
-    box-shadow: 0 0 20px rgba(251, 191, 36, 0.1);
-    transform: translateY(-1px);
-    color: #fff;
+  .ns-card--premium {
+    @apply border-brand-gold/30 shadow-premium;
   }
 
-  /* Subtle Metallic Shimmer */
-  .admin-btn-shimmer {
-    position: absolute;
-    top: 0;
-    left: -150%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(
-      120deg,
-      transparent,
-      rgba(251, 191, 36, 0.1),
-      rgba(255, 255, 255, 0.2),
-      rgba(251, 191, 36, 0.1),
-      transparent
-    );
-    animation: admin-shimmer 4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  /* Block: Nursy Surface (ns-surface) */
+  .ns-surface--gold-gradient {
+    background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
   }
 
-  @keyframes admin-shimmer {
-    0% { left: -150%; }
-    30% { left: 150%; }
-    100% { left: 150%; }
+  /* Block: Nursy Text (ns-text) */
+  .ns-text--gradient {
+    background: linear-gradient(to left, #fff, #fbbf24);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
   }
 
-  /* Soft Ambient Pulse */
-  .admin-pulse-ring {
-    position: absolute;
-    inset: -1px;
-    border-radius: inherit;
-    border: 1px solid rgba(251, 191, 36, 0.4);
-    animation: admin-soft-pulse 3s infinite;
-    pointer-events: none;
+  /* Block: Nursy Reveal (ns-reveal) */
+  .ns-reveal {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+    transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-  @keyframes admin-soft-pulse {
-    0% { transform: scale(1); opacity: 0.8; }
-    50% { transform: scale(1.05, 1.15); opacity: 0; }
-    100% { transform: scale(1); opacity: 0; }
+  .ns-reveal--active {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 
-  /* Cinema Player Ambient Glow */
-  .player-glow-container {
-    position: relative;
-    z-index: 10;
-  }
-  
-  .player-glow-container::after {
-    content: '';
-    position: absolute;
-    inset: -20px;
-    background: radial-gradient(circle, rgba(251, 191, 36, 0.15) 0%, transparent 70%);
-    z-index: -1;
-    filter: blur(40px);
-    border-radius: 4rem;
-    pointer-events: none;
+  /* Block: Nursy Parallax (ns-parallax) */
+  .ns-parallax {
+    will-change: transform;
   }
 
-  .roadmap-line {
-    position: absolute;
-    right: 43px;
-    top: 0;
-    bottom: 0;
-    width: 2px;
-    background: linear-gradient(to bottom, transparent, rgba(251, 191, 36, 0.2), transparent);
-    z-index: 0;
+  /* Block: Nursy Shadow (ns-shadow) */
+  .ns-shadow--premium {
+    box-shadow: 0 20px 50px -15px rgba(251, 191, 36, 0.3);
   }
 
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
+  .ns-shadow--glow {
+    box-shadow: 0 0 30px -5px rgba(251, 191, 36, 0.4);
   }
-  .no-scrollbar {
+
+  .ns-shadow--glow-green {
+    box-shadow: 0 0 30px -5px rgba(34, 197, 94, 0.4);
+  }
+
+  /* Block: Nursy Utils (ns-util) */
+  .ns-util--no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+  .ns-util--no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Animations */
+  @keyframes fadeInUp {
+    0% { opacity: 0; transform: translateY(30px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+
+  .ns-animate--fade-in-up {
+    animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+
+  .ns-animate--float {
+    animation: float 4s ease-in-out infinite;
+  }
+
+  @keyframes slow-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  .ns-animate--slow-spin {
+    animation: slow-spin 20s linear infinite;
+  }
+
+  @keyframes scale-up {
+    0% { transform: scale(0.9); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .ns-animate--scale-up {
+    animation: scale-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
 }

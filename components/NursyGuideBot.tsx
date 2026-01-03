@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
-/* Import useLocation and useNavigate from react-router-dom */
-import { useLocation, useNavigate } from 'react-router-dom';
+/* Fix: Using star import for react-router-dom to resolve "no exported member" errors */
+import * as ReactRouterDOM from 'react-router-dom';
+const { useLocation, useNavigate } = ReactRouterDOM as any;
 import { 
   X, ChevronLeft, Sparkles, Target, ArrowDown
 } from 'lucide-react';

@@ -6,10 +6,10 @@ export const courses: Course[] = [
     id: 'c1',
     title: 'بودكاست التمريض: علم التشريح',
     instructor: 'Dr. Ahmed Khaled',
-    price: 300,
-    originalPrice: 600,
     subject: 'Anatomy',
     image: 'https://images.unsplash.com/photo-1530210124550-912dc1381cb8?q=80&w=800&auto=format&fit=crop',
+    // Added default price
+    price: 0,
     lessons: [
         { 
             id: 'l1', 
@@ -42,10 +42,10 @@ export const courses: Course[] = [
     id: 'c2',
     title: 'شروحات صوتية: فسيولوجيا الخلية',
     instructor: 'Dr. Sarah Nabil',
-    price: 280,
-    originalPrice: 450,
     subject: 'Physiology',
     image: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?q=80&w=800&auto=format&fit=crop',
+    // Added default price
+    price: 0,
     lessons: [
         { 
             id: 'l1', 

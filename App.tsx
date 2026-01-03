@@ -1,7 +1,9 @@
 
 import React from 'react';
-/* Re-write react-router-dom imports to resolve potential bundling issues */
-import { HashRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
+const { HashRouter, Routes, Route, Navigate, useLocation } = ReactRouterDOM as any;
+const Router = HashRouter;
+
 import { AppProvider, useApp } from './context/AppContext';
 import { Layout } from './components/Layout';
 import { Landing } from './pages/Landing';
@@ -13,8 +15,14 @@ import { Admin } from './pages/Admin';
 import { Profile } from './pages/Profile';
 import { HelpCenter } from './pages/HelpCenter';
 import { CourseDetail } from './pages/CourseDetail';
+import { Certificates } from './pages/Certificates';
+import { Leaderboard } from './pages/Leaderboard';
+import { Flashcards } from './pages/Flashcards';
+import { VideoAI } from './pages/VideoAI';
+import { Community } from './pages/Community';
 import { ExamHub } from './components/ExamHub';
 import { OnboardingTour } from './components/OnboardingTour';
+import { NursyGuideBot } from './components/NursyGuideBot';
 import { jwtUtils } from './utils/jwt';
 
 // Protected Route Component
@@ -24,7 +32,6 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
   if (isLoading) return null; 
 
-  // Check both user object and JWT token validity
   const isAuthenticated = user && token && !jwtUtils.isExpired(token);
 
   if (!isAuthenticated) {
@@ -44,6 +51,7 @@ const AppContent: React.FC = () => {
           <Route path="/signup" element={<Signup />} />
           <Route path="/course/:courseId" element={<CourseDetail />} />
           <Route path="/help" element={<HelpCenter />} />
+          <Route path="/ai-vision" element={<VideoAI />} />
           
           <Route 
             path="/dashboard" 
@@ -54,10 +62,42 @@ const AppContent: React.FC = () => {
             } 
           />
           <Route 
+            path="/community" 
+            element={
+              <ProtectedRoute>
+                <Community />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
             path="/wallet" 
             element={
               <ProtectedRoute>
                 <Wallet />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/certificates" 
+            element={
+              <ProtectedRoute>
+                <Certificates />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/leaderboard" 
+            element={
+              <ProtectedRoute>
+                <Leaderboard />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/flashcards" 
+            element={
+              <ProtectedRoute>
+                <Flashcards />
               </ProtectedRoute>
             } 
           />
@@ -81,11 +121,11 @@ const AppContent: React.FC = () => {
           <Route path="*" element={<Navigate to="/" replace />} />
        </Routes>
        
-       {/* المكونات العالمية التي تظهر للمستخدم المسجل فقط */}
        {user && (
          <>
            <ExamHub />
            <OnboardingTour />
+           <NursyGuideBot />
          </>
        )}
     </Layout>

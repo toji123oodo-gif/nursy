@@ -41,7 +41,7 @@ export const CoursesTab: React.FC = () => {
     <div className="space-y-8 animate-fade-in pb-10">
       <div className="flex justify-between items-center">
          <h2 className="text-2xl font-black text-white">إدارة المحتوى (بودكاست وملفات)</h2>
-         <button onClick={() => {setEditingCourse({lessons: [], price: 0, subject: 'عام', image: ''}); setIsModalOpen(true);}} className="bg-brand-gold text-brand-main font-black px-8 py-4 rounded-2xl flex items-center gap-2 shadow-glow transition-all hover:scale-105"><PlusCircle size={20}/> كورس جديد</button>
+         <button onClick={() => {setEditingCourse({lessons: [], price: 0, subject: 'عام', image: '', instructor: ''}); setIsModalOpen(true);}} className="bg-brand-gold text-brand-main font-black px-8 py-4 rounded-2xl flex items-center gap-2 shadow-glow transition-all hover:scale-105"><PlusCircle size={20}/> كورس جديد</button>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -76,10 +76,14 @@ export const CoursesTab: React.FC = () => {
              </div>
 
              <div className="p-8 overflow-y-auto flex-1 space-y-10 no-scrollbar">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                    <div className="space-y-1">
                       <label className="text-[10px] text-brand-muted font-black uppercase px-2">اسم الكورس</label>
                       <input type="text" value={editingCourse.title || ''} onChange={e => setEditingCourse({...editingCourse, title: e.target.value})} className="w-full bg-brand-main border border-white/10 rounded-xl p-4 text-white text-sm focus:border-brand-gold outline-none" />
+                   </div>
+                   <div className="space-y-1">
+                      <label className="text-[10px] text-brand-muted font-black uppercase px-2">المحاضر</label>
+                      <input type="text" value={editingCourse.instructor || ''} onChange={e => setEditingCourse({...editingCourse, instructor: e.target.value})} className="w-full bg-brand-main border border-white/10 rounded-xl p-4 text-white text-sm focus:border-brand-gold outline-none" />
                    </div>
                    <div className="space-y-1">
                       <label className="text-[10px] text-brand-muted font-black uppercase px-2">التخصص</label>

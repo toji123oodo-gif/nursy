@@ -1,6 +1,8 @@
 
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+/* Fix: Using star import for react-router-dom to resolve "no exported member" errors */
+import * as ReactRouterDOM from 'react-router-dom';
+const { Link, useNavigate } = ReactRouterDOM as any;
 import { 
   UserPlus, CheckCircle, Shield, Zap, AlertCircle, User, 
   Mail, Smartphone, Lock, Eye, EyeOff, ArrowLeft, 
