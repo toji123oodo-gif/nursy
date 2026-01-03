@@ -1,6 +1,13 @@
 
 export type ContentType = 'video' | 'audio' | 'pdf' | 'document' | 'image';
 
+export interface ChatAttachment {
+  type: 'pdf' | 'audio';
+  url: string;
+  name: string;
+  size?: string;
+}
+
 export interface ChatMessage {
   id: string;
   userId: string;
@@ -9,6 +16,12 @@ export interface ChatMessage {
   timestamp: string;
   userRole?: 'admin' | 'student';
   isPro?: boolean;
+  subject?: string;
+  attachment?: ChatAttachment;
+  quizRef?: {
+    quizId: string;
+    questionText: string;
+  };
 }
 
 export interface Question {
