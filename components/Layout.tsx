@@ -3,11 +3,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 const { Link, useLocation, useNavigate } = ReactRouterDOM as any;
 import { 
-  Home, Heart, User as UserIcon, LogOut, 
-  GraduationCap, LayoutDashboard, Bell, Languages, 
-  ShieldCheck, Zap, Settings, UserCircle, Search, 
-  Menu, X, Calendar, Star, Sparkles, ChevronDown, Award,
-  MessageSquare
+  Home, User as UserIcon, LogOut, 
+  GraduationCap, LayoutDashboard, Bell, 
+  Settings, Search, Menu, X, Calendar, 
+  Sparkles, ChevronDown, Award,
+  MessageSquare, Zap, Target, BookOpen
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { NotificationDrawer } from './NotificationDrawer';
@@ -18,7 +18,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   const [isScrolled, setIsScrolled] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
-  const { user, logout, setExamHubOpen, language, toggleLanguage } = useApp();
+  const { user, logout, setExamHubOpen, language } = useApp();
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -35,102 +35,178 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     };
   }, []);
 
-  const t = {
-    home: language === 'ar' ? 'الرئيسية' : 'Home',
-    dashboard: language === 'ar' ? 'المواد' : 'Courses',
-    community: language === 'ar' ? 'المجتمع' : 'Community',
-    support: language === 'ar' ? 'ادعمنا' : 'Support Us',
-    profile: language === 'ar' ? 'حسابي' : 'Profile',
-    certificates: language === 'ar' ? 'شهاداتي' : 'My Certificates',
-    search: language === 'ar' ? 'ابحث...' : 'Search...'
-  };
+  const navLinks = [
+    { path: '/', label: 'الرئيسية', icon: Home },
+    { path: '/dashboard', label: 'المذاكرة', icon: LayoutDashboard, protected: true },
+    { path: '/community', label: 'المجتمع', icon: MessageSquare },
+    { path: '/wallet', label: 'الدعم', icon: Zap, protected: true },
+  ];
 
   return (
     <div className="min-h-screen bg-brand-main text-brand-text font-sans flex flex-col selection:bg-brand-gold selection:text-brand-main overflow-x-hidden">
       
       <NotificationDrawer isOpen={isNotificationsOpen} onClose={() => setIsNotificationsOpen(false)} />
 
-      <header className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 ${isScrolled ? 'py-2 md:py-4' : 'py-4 md:py-8'}`}>
-        <div className="container mx-auto px-4">
-          <div className={`mx-auto max-w-7xl px-4 md:px-8 py-2 md:py-3 rounded-full border transition-all duration-500 flex items-center justify-between gap-2 md:gap-4 ${
-            isScrolled ? 'bg-brand-main/80 backdrop-blur-2xl border-white/10 shadow-2xl' : 'bg-brand-main/40 backdrop-blur-md border-white/5'
-          }`}>
-            <Link to="/" className="flex items-center gap-2 group shrink-0">
-              <div className="bg-brand-gold p-1.5 md:p-2 rounded-xl ns-shadow--glow group-hover:rotate-12 transition-all">
-                <GraduationCap className="text-brand-main h-4 w-4 md:h-6 md:w-6" />
-              </div>
-              <h1 className="font-black text-lg md:text-2xl text-white tracking-tighter">Nursy</h1>
-            </Link>
+      {/* --- Desktop Header --- */}
+      <header className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-700 px-4 md:px-8 ${isScrolled ? 'pt-4' : 'pt-8'}`}>
+        <div className={`container mx-auto max-w-7xl h-20 rounded-[2rem] border transition-all duration-700 flex items-center justify-between px-8 shadow-2xl ${
+          isScrolled 
+          ? 'bg-brand-card/80 backdrop-blur-2xl border-white/10' 
+          : 'bg-brand-card/20 backdrop-blur-md border-white/5'
+        }`}>
+          
+          {/* Logo Section */}
+          <Link to="/" className="flex items-center gap-3 group shrink-0">
+            <div className="bg-brand-gold w-10 h-10 md:w-12 md:h-12 rounded-2xl ns-shadow--glow flex items-center justify-center group-hover:rotate-[15deg] transition-all duration-500">
+              <GraduationCap className="text-brand-main h-6 w-6 md:h-7 md:w-7" strokeWidth={2.5} />
+            </div>
+            <div className="flex flex-col">
+               <h1 className="font-black text-xl md:text-2xl text-white tracking-tighter leading-none">Nursy</h1>
+               <span className="text-[8px] font-black text-brand-gold uppercase tracking-[0.3em]">Nursing Hub</span>
+            </div>
+          </Link>
 
-            <nav className="hidden md:flex items-center gap-1 bg-white/5 p-1 rounded-full border border-white/5">
-                <Link to="/" className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${isActive('/') ? 'text-brand-gold bg-brand-gold/10' : 'text-brand-muted hover:text-white'}`}>{t.home}</Link>
-                {user && <Link to="/dashboard" className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${isActive('/dashboard') ? 'text-brand-gold bg-brand-gold/10' : 'text-brand-muted hover:text-white'}`}>{t.dashboard}</Link>}
-                <Link to="/community" className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${isActive('/community') ? 'text-brand-gold bg-brand-gold/10' : 'text-brand-muted hover:text-white'}`}>{t.community}</Link>
-                <Link to="/wallet" className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${isActive('/wallet') ? 'text-brand-gold bg-brand-gold/10' : 'text-brand-muted hover:text-white'}`}>{t.support}</Link>
-            </nav>
+          {/* Desktop Nav Links */}
+          <nav className="hidden lg:flex items-center gap-2 bg-white/5 p-1.5 rounded-2xl border border-white/5">
+              {navLinks.map((link) => (
+                (!link.protected || user) && (
+                  <Link 
+                    key={link.path}
+                    to={link.path} 
+                    className={`relative px-6 py-2.5 rounded-xl text-xs font-black transition-all duration-500 flex items-center gap-2 group ${
+                      isActive(link.path) 
+                      ? 'text-brand-gold bg-brand-gold/5' 
+                      : 'text-brand-muted hover:text-white'
+                    }`}
+                  >
+                    <link.icon size={16} className={isActive(link.path) ? 'animate-pulse' : 'group-hover:scale-110 transition-transform'} />
+                    {link.label}
+                    {isActive(link.path) && (
+                      <div className="absolute -bottom-1 left-4 right-4 h-0.5 bg-brand-gold shadow-glow rounded-full"></div>
+                    )}
+                  </Link>
+                )
+              ))}
+          </nav>
 
-            <div className="flex items-center gap-2">
-               <button onClick={() => setIsNotificationsOpen(true)} className="p-2 rounded-full bg-white/5 text-brand-muted hover:text-brand-gold transition-all relative">
-                 <Bell size={18} />
-                 <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-red-500 rounded-full animate-ping"></span>
-               </button>
+          {/* User Controls */}
+          <div className="flex items-center gap-4">
+             <div className="hidden md:flex relative group">
+                <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-brand-muted group-focus-within:text-brand-gold transition-colors" size={16} />
+                <input 
+                  type="text" 
+                  placeholder="ابحث عن محاضرة..." 
+                  className="bg-white/5 border border-white/5 rounded-xl pr-10 pl-4 py-2 text-[10px] font-bold text-white outline-none focus:border-brand-gold/50 w-40 focus:w-60 transition-all"
+                />
+             </div>
 
-               {user ? (
-                 <div className="relative flex items-center gap-2" ref={dropdownRef}>
-                    <button onClick={() => setIsProfileOpen(!isProfileOpen)} className="flex items-center gap-2 p-0.5 rounded-full bg-white/5 border border-white/10 transition-all hover:border-brand-gold/50">
-                       <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-brand-gold flex items-center justify-center text-brand-main font-black">
-                          {(user.name || 'U').charAt(0)}
-                       </div>
-                       <ChevronDown size={14} className={`text-brand-muted transition-transform ${isProfileOpen ? 'rotate-180' : ''}`} />
-                    </button>
-                    {isProfileOpen && (
-                      <div className="absolute top-full mt-4 left-0 md:left-auto md:right-0 w-64 bg-brand-card/95 backdrop-blur-3xl border border-white/10 rounded-3xl shadow-2xl p-3 ns-animate--scale-up z-[200]">
-                        <Link to="/profile" onClick={() => setIsProfileOpen(false)} className="flex items-center gap-3 p-3 rounded-xl text-brand-muted hover:text-white hover:bg-white/5 transition-all text-xs font-bold">
-                           <UserCircle size={16} /> {t.profile}
+             <button 
+               onClick={() => setIsNotificationsOpen(true)} 
+               className="p-3 rounded-xl bg-white/5 text-brand-muted hover:text-brand-gold transition-all relative border border-white/5"
+             >
+               <Bell size={18} />
+               <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-brand-card"></span>
+             </button>
+
+             {user ? (
+               <div className="relative" ref={dropdownRef}>
+                  <button 
+                    onClick={() => setIsProfileOpen(!isProfileOpen)} 
+                    className={`flex items-center gap-3 p-1 rounded-2xl transition-all duration-500 border ${
+                      isProfileOpen ? 'bg-brand-gold/10 border-brand-gold/50' : 'bg-white/5 border-white/10'
+                    }`}
+                  >
+                     <div className="w-10 h-10 rounded-xl bg-brand-gold flex items-center justify-center text-brand-main font-black shadow-glow">
+                        {(user.name || 'U').charAt(0)}
+                     </div>
+                     <div className="hidden xl:flex flex-col text-right ml-2">
+                        <span className="text-[10px] font-black text-white leading-none mb-1">{user.name.split(' ')[0]}</span>
+                        <span className="text-[8px] font-black text-brand-gold uppercase tracking-widest">Level {user.level || 1}</span>
+                     </div>
+                     <ChevronDown size={14} className={`text-brand-muted mr-1 transition-transform ${isProfileOpen ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {isProfileOpen && (
+                    <div className="absolute top-full mt-4 left-0 md:left-auto md:right-0 w-72 bg-brand-card/95 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] shadow-[0_30px_60px_rgba(0,0,0,0.5)] p-4 ns-animate--scale-up z-[200]">
+                      <div className="p-4 bg-white/5 rounded-2xl mb-4">
+                         <div className="flex justify-between items-center mb-2">
+                            <span className="text-[9px] font-black text-brand-muted uppercase">التقدم الدراسي</span>
+                            <span className="text-[9px] font-black text-brand-gold">{user.xp || 0} XP</span>
+                         </div>
+                         <div className="h-1.5 bg-brand-main rounded-full overflow-hidden">
+                            <div className="h-full bg-brand-gold shadow-glow" style={{ width: `${(user.xp % 500) / 5}%` }}></div>
+                         </div>
+                      </div>
+                      <div className="space-y-1">
+                        <Link to="/profile" onClick={() => setIsProfileOpen(false)} className="flex items-center gap-3 p-3.5 rounded-xl text-brand-muted hover:text-white hover:bg-brand-gold/10 transition-all text-xs font-bold">
+                           <UserIcon size={16} className="text-brand-gold" /> حسابي الشخصي
                         </Link>
-                        <Link to="/certificates" onClick={() => setIsProfileOpen(false)} className="flex items-center gap-3 p-3 rounded-xl text-brand-muted hover:text-white hover:bg-white/5 transition-all text-xs font-bold">
-                           <Award size={16} /> {t.certificates}
+                        <Link to="/certificates" onClick={() => setIsProfileOpen(false)} className="flex items-center gap-3 p-3.5 rounded-xl text-brand-muted hover:text-white hover:bg-brand-gold/10 transition-all text-xs font-bold">
+                           <Award size={16} className="text-brand-gold" /> شهاداتي المعتمدة
                         </Link>
-                        <button onClick={logout} className="w-full flex items-center gap-3 p-3 rounded-xl text-red-400 hover:bg-red-500/10 transition-all text-xs font-bold mt-2">
-                           <LogOut size={16} /> خروج
+                        {user.role === 'admin' && (
+                          <Link to="/admin" onClick={() => setIsProfileOpen(false)} className="flex items-center gap-3 p-3.5 rounded-xl text-brand-muted hover:text-white hover:bg-brand-gold/10 transition-all text-xs font-bold">
+                             <Settings size={16} className="text-brand-gold" /> لوحة الإدارة
+                          </Link>
+                        )}
+                        <div className="h-px bg-white/5 my-2"></div>
+                        <button onClick={logout} className="w-full flex items-center gap-3 p-3.5 rounded-xl text-red-400 hover:bg-red-500/10 transition-all text-xs font-bold">
+                           <LogOut size={16} /> تسجيل الخروج
                         </button>
                       </div>
-                    )}
-                 </div>
-               ) : (
-                 <Link to="/login" className="px-5 py-2 rounded-full bg-brand-gold text-brand-main font-black text-xs ns-shadow--glow">دخول</Link>
-               )}
-            </div>
+                    </div>
+                  )}
+               </div>
+             ) : (
+               <Link to="/login" className="px-8 py-3 rounded-2xl bg-brand-gold text-brand-main font-black text-xs ns-shadow--glow hover:scale-105 transition-all">دخول</Link>
+             )}
           </div>
         </div>
       </header>
 
-      <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-[150] w-[95%] max-w-lg">
-         <div className="bg-brand-card/90 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-2xl p-2 flex items-center justify-around">
-            <Link to="/" className={`flex flex-col items-center gap-1 p-3 rounded-2xl transition-all ${isActive('/') ? 'text-brand-gold bg-brand-gold/10' : 'text-brand-muted'}`}>
-               <Home size={20} />
-               <span className="text-[8px] font-black uppercase">{t.home}</span>
+      {/* --- Mobile Floating Navigation --- */}
+      <div className="lg:hidden fixed bottom-6 left-0 right-0 z-[150] px-4">
+         <div className="bg-brand-card/90 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] p-2 flex items-center justify-around relative">
+            
+            <Link to="/" className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl transition-all duration-500 ${isActive('/') ? 'text-brand-gold' : 'text-brand-muted opacity-50'}`}>
+               <Home size={22} strokeWidth={isActive('/') ? 2.5 : 2} />
+               <span className="text-[7px] font-black uppercase tracking-widest">الرئيسية</span>
             </Link>
-            <Link to="/dashboard" className={`flex flex-col items-center gap-1 p-3 rounded-2xl transition-all ${isActive('/dashboard') ? 'text-brand-gold bg-brand-gold/10' : 'text-brand-muted'}`}>
-               <LayoutDashboard size={20} />
-               <span className="text-[8px] font-black uppercase">{t.dashboard}</span>
+
+            <Link to="/community" className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl transition-all duration-500 ${isActive('/community') ? 'text-brand-gold' : 'text-brand-muted opacity-50'}`}>
+               <MessageSquare size={22} strokeWidth={isActive('/community') ? 2.5 : 2} />
+               <span className="text-[7px] font-black uppercase tracking-widest">المجتمع</span>
             </Link>
-            <Link to="/community" className={`flex flex-col items-center gap-1 p-3 rounded-2xl transition-all ${isActive('/community') ? 'text-brand-gold bg-brand-gold/10' : 'text-brand-muted'}`}>
-               <MessageSquare size={20} />
-               <span className="text-[8px] font-black uppercase">{t.community}</span>
+
+            {/* Central Main Action Button */}
+            <Link to="/dashboard" className="relative -mt-12 group">
+               <div className={`w-16 h-16 rounded-[1.8rem] flex items-center justify-center shadow-2xl transition-all duration-500 transform group-active:scale-90 ${
+                 isActive('/dashboard') ? 'bg-brand-gold text-brand-main shadow-glow' : 'bg-brand-main border-4 border-brand-card text-brand-gold'
+               }`}>
+                  <BookOpen size={28} strokeWidth={2.5} />
+               </div>
+               <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[7px] font-black text-white uppercase tracking-widest opacity-80">مذاكرة</div>
+               <div className="absolute inset-0 bg-brand-gold rounded-[1.8rem] animate-ping opacity-20 group-active:hidden"></div>
             </Link>
-            <button onClick={() => setExamHubOpen(true)} className="flex flex-col items-center gap-1 p-3 rounded-2xl text-brand-muted">
-               <Calendar size={20} />
-               <span className="text-[8px] font-black uppercase">الجدول</span>
+
+            <button onClick={() => setExamHubOpen(true)} className="flex flex-col items-center gap-1.5 p-3 rounded-2xl text-brand-muted opacity-50">
+               <Calendar size={22} strokeWidth={2} />
+               <span className="text-[7px] font-black uppercase tracking-widest">الجدول</span>
             </button>
-            <Link to="/profile" className={`flex flex-col items-center gap-1 p-3 rounded-2xl transition-all ${isActive('/profile') ? 'text-brand-gold bg-brand-gold/10' : 'text-brand-muted'}`}>
-               <UserIcon size={20} />
-               <span className="text-[8px] font-black uppercase">{t.profile}</span>
+
+            <Link to="/profile" className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl transition-all duration-500 ${isActive('/profile') ? 'text-brand-gold' : 'text-brand-muted opacity-50'}`}>
+               <UserIcon size={22} strokeWidth={isActive('/profile') ? 2.5 : 2} />
+               <span className="text-[7px] font-black uppercase tracking-widest">بروفايل</span>
             </Link>
+
+            {/* Indicator Dot for Active Route */}
+            {isActive('/') && <div className="absolute bottom-1 right-[11.5%] w-1 h-1 bg-brand-gold rounded-full shadow-glow"></div>}
+            {isActive('/community') && <div className="absolute bottom-1 right-[31.5%] w-1 h-1 bg-brand-gold rounded-full shadow-glow"></div>}
+            {isActive('/profile') && <div className="absolute bottom-1 left-[11.5%] w-1 h-1 bg-brand-gold rounded-full shadow-glow"></div>}
          </div>
       </div>
 
-      <main className="flex-1 pt-24 pb-32 md:pb-12">
+      <main className="flex-1 pt-32 pb-36 lg:pb-12">
          {children}
       </main>
     </div>
