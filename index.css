@@ -39,6 +39,15 @@
   .rotate-y-180 {
     transform: rotateY(180deg);
   }
+  .text-glow {
+    text-shadow: 0 0 15px rgba(251, 191, 36, 0.4);
+  }
+  .bg-mesh {
+    background-image: 
+      radial-gradient(at 0% 0%, rgba(251, 191, 36, 0.1) 0, transparent 50%), 
+      radial-gradient(at 100% 0%, rgba(56, 189, 248, 0.1) 0, transparent 50%),
+      radial-gradient(at 50% 100%, rgba(251, 191, 36, 0.05) 0, transparent 50%);
+  }
 }
 
 @layer components {
@@ -48,7 +57,7 @@
   }
 
   .ns-card--glass {
-    @apply bg-brand-card/70 backdrop-blur-[12px] border border-white/5;
+    @apply bg-white/5 backdrop-blur-[16px] border border-white/10 shadow-2xl;
   }
 
   .ns-card--premium {
@@ -70,7 +79,7 @@
   /* Block: Nursy Reveal (ns-reveal) */
   .ns-reveal {
     opacity: 0;
-    transform: translateY(30px) scale(0.95);
+    transform: translateY(30px) scale(0.98);
     transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
@@ -118,7 +127,7 @@
 
   @keyframes float {
     0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-10px); }
+    50% { transform: translateY(-15px); }
   }
 
   .ns-animate--float {
@@ -135,7 +144,7 @@
   }
 
   @keyframes scale-up {
-    0% { transform: scale(0.9); opacity: 0; }
+    0% { transform: scale(0.95); opacity: 0; }
     100% { transform: scale(1); opacity: 1; }
   }
 

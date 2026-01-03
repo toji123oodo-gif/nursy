@@ -218,7 +218,7 @@ export const Login: React.FC = () => {
                             required 
                             value={phoneNumber} 
                             onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))} 
-                            className="w-full bg-brand-main/50 border border-white/5 rounded-2xl pr-14 pl-16 py-4.5 text-white text-lg font-black tracking-widest focus:border-brand-gold/50 outline-none transition-all" 
+                            className="w-full bg-brand-main/50 border border-white/5 rounded-2xl pr-14 pl-16 py-4.5 text-white text-lg font-black tracking-widest focus:border-brand-gold/50 focus:bg-brand-main outline-none transition-all" 
                             placeholder="01XXXXXXXXX" 
                             disabled={isSubmitting}
                             maxLength={11}
@@ -293,7 +293,7 @@ export const Login: React.FC = () => {
                     type="email" 
                     value={email} 
                     onChange={(e) => setEmail(e.target.value)} 
-                    className="w-full bg-brand-main border border-white/5 rounded-2xl px-6 py-4.5 text-white font-bold outline-none focus:border-brand-gold transition-all" 
+                    className="w-full bg-brand-main/50 border border-white/5 rounded-2xl px-6 py-4.5 text-white font-bold outline-none focus:border-brand-gold/50 focus:bg-brand-main transition-all" 
                     placeholder="name@example.com" 
                   />
                </div>
