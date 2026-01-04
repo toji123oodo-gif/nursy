@@ -1,6 +1,13 @@
 
 export type ContentType = 'audio' | 'pdf' | 'video' | 'article' | 'image';
 
+export interface Flashcard {
+  id: string;
+  front: string;
+  back: string;
+  hint?: string;
+}
+
 export interface Question {
   id: string;
   text: string;
@@ -35,6 +42,7 @@ export interface Lesson {
   duration?: string;
   contents: ContentItem[];
   quiz?: Quiz;
+  flashcards?: Flashcard[]; // New: Flashcards specific to this lesson
   isLocked?: boolean;
 }
 

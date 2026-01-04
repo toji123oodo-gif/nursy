@@ -1,13 +1,14 @@
 
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Course, Lesson, ContentItem, Question } from '../../types';
+import { Course, Lesson, ContentItem, Question, Flashcard } from '../../types';
 import { 
   Plus, Edit2, Trash2, X, Save, FileText, Mic, 
   Video, Upload, Check, ChevronDown, ChevronRight,
   MoreVertical, FileJson, Brain, Layout, DollarSign, 
   Image as ImageIcon, Lock, Clock, AlertCircle, Settings, 
-  AlignLeft, List, HelpCircle, CheckCircle2, BookOpen, FolderOpen
+  AlignLeft, List, HelpCircle, CheckCircle2, BookOpen, FolderOpen,
+  Zap
 } from 'lucide-react';
 
 export const CoursesTab: React.FC = () => {
@@ -17,9 +18,12 @@ export const CoursesTab: React.FC = () => {
   // Editor State
   const [editingCourse, setEditingCourse] = useState<Partial<Course>>({});
   const [expandedLesson, setExpandedLesson] = useState<string | null>(null);
-  const [activeLessonTab, setActiveLessonTab] = useState<'content' | 'quiz' | 'settings'>('content');
+  const [activeLessonTab, setActiveLessonTab] = useState<'content' | 'quiz' | 'flashcards' | 'settings'>('content');
   const [showMobileSettings, setShowMobileSettings] = useState(false); // Mobile toggle for metadata
   
+  // Flashcard Temp State
+  const [tempFlashcard, setTempFlashcard] = useState<Partial<Flashcard>>({ front: '', back: '', hint: '' });
+
   // Bulk Import State
   const [showBulkImport, setShowBulkImport] = useState(false);
   const [bulkImportText, setBulkImportText] = useState('');
@@ -68,6 +72,7 @@ export const CoursesTab: React.FC = () => {
             lessons: (editingCourse.lessons || []).map(l => ({
                 ...l,
                 contents: l.contents || [],
+                flashcards: l.flashcards || [],
                 quiz: l.quiz ? {
                     ...l.quiz,
                     timeLimit: Number(l.quiz.timeLimit) || 0,
@@ -93,6 +98,7 @@ export const CoursesTab: React.FC = () => {
       description: '',
       isLocked: false,
       contents: [],
+      flashcards: [],
       quiz: { 
           id: 'q-' + Date.now(), 
           title: 'Lesson Quiz', 
@@ -132,6 +138,25 @@ export const CoursesTab: React.FC = () => {
     updatedLessons[lessonIndex].contents = [...currentContents, newContent];
     
     setEditingCourse(prev => ({ ...prev, lessons: updatedLessons }));
+  };
+
+  const addFlashcard = (lessonIndex: number) => {
+    if (!editingCourse.lessons || !tempFlashcard.front || !tempFlashcard.back) return;
+    const updatedLessons = [...editingCourse.lessons];
+    const currentFlashcards = updatedLessons[lessonIndex].flashcards || [];
+    
+    updatedLessons[lessonIndex].flashcards = [
+        ...currentFlashcards, 
+        { 
+            id: 'fc-' + Date.now(), 
+            front: tempFlashcard.front, 
+            back: tempFlashcard.back,
+            hint: tempFlashcard.hint
+        } as Flashcard
+    ];
+    
+    setEditingCourse(prev => ({ ...prev, lessons: updatedLessons }));
+    setTempFlashcard({ front: '', back: '', hint: '' });
   };
 
   // Helper to handle file selection for a specific content item
@@ -499,6 +524,7 @@ export const CoursesTab: React.FC = () => {
                                     {[
                                         { id: 'content', label: 'Content', icon: Layout },
                                         { id: 'quiz', label: 'Quiz', icon: Brain },
+                                        { id: 'flashcards', label: 'Flashcards', icon: Zap },
                                         { id: 'settings', label: 'Settings', icon: Settings },
                                     ].map(tab => (
                                         <button
@@ -842,7 +868,100 @@ export const CoursesTab: React.FC = () => {
                                         </div>
                                     )}
 
-                                    {/* TAB 3: SETTINGS */}
+                                    {/* TAB 3: FLASHCARDS */}
+                                    {activeLessonTab === 'flashcards' && (
+                                        <div className="space-y-6 animate-in fade-in">
+                                            <div className="bg-orange-50 dark:bg-orange-900/10 p-6 rounded-xl border border-orange-100 dark:border-orange-900/30">
+                                                <h5 className="text-sm font-bold text-orange-700 dark:text-orange-400 mb-4 flex items-center gap-2">
+                                                    <Zap size={16}/> Add New Flashcard
+                                                </h5>
+                                                
+                                                <div className="space-y-4">
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                        <div>
+                                                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block">Front (Question/Term)</label>
+                                                            <textarea 
+                                                                value={tempFlashcard.front}
+                                                                onChange={(e) => setTempFlashcard({...tempFlashcard, front: e.target.value})}
+                                                                className="w-full bg-white dark:bg-[#1E1E1E] border border-gray-200 dark:border-[#333] rounded-lg p-3 text-sm focus:border-brand-orange outline-none h-24 resize-none"
+                                                                placeholder="e.g. Tachycardia"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block">Back (Answer/Definition)</label>
+                                                            <textarea 
+                                                                value={tempFlashcard.back}
+                                                                onChange={(e) => setTempFlashcard({...tempFlashcard, back: e.target.value})}
+                                                                className="w-full bg-white dark:bg-[#1E1E1E] border border-gray-200 dark:border-[#333] rounded-lg p-3 text-sm focus:border-brand-orange outline-none h-24 resize-none"
+                                                                placeholder="e.g. Heart rate > 100 bpm"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block">Hint (Optional)</label>
+                                                        <input 
+                                                            type="text"
+                                                            value={tempFlashcard.hint || ''}
+                                                            onChange={(e) => setTempFlashcard({...tempFlashcard, hint: e.target.value})}
+                                                            className="w-full bg-white dark:bg-[#1E1E1E] border border-gray-200 dark:border-[#333] rounded-lg p-2.5 text-sm focus:border-brand-orange outline-none"
+                                                            placeholder="Small clue..."
+                                                        />
+                                                    </div>
+                                                    <button 
+                                                        onClick={() => addFlashcard(index)}
+                                                        disabled={!tempFlashcard.front || !tempFlashcard.back}
+                                                        className="w-full py-2.5 bg-brand-orange text-white rounded-lg font-bold shadow-md hover:bg-orange-600 disabled:opacity-50 disabled:shadow-none transition-all flex items-center justify-center gap-2"
+                                                    >
+                                                        <Plus size={16}/> Add Flashcard
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-3">
+                                                {(!lesson.flashcards || lesson.flashcards.length === 0) && (
+                                                    <div className="text-center py-12 text-gray-400">
+                                                        <Zap size={48} className="mx-auto mb-2 opacity-20" />
+                                                        <p>No flashcards created yet.</p>
+                                                    </div>
+                                                )}
+
+                                                {(lesson.flashcards || []).map((card, fIdx) => (
+                                                    <div key={card.id} className="bg-white dark:bg-[#1E1E1E] p-4 rounded-xl border border-gray-200 dark:border-[#333] shadow-sm relative group">
+                                                        <button 
+                                                            onClick={() => {
+                                                                if (!editingCourse.lessons) return;
+                                                                const updated = [...editingCourse.lessons];
+                                                                updated[index].flashcards!.splice(fIdx, 1);
+                                                                setEditingCourse(prev => ({...prev, lessons: updated}));
+                                                            }}
+                                                            className="absolute top-2 right-2 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-[#333] rounded transition-colors opacity-0 group-hover:opacity-100"
+                                                        >
+                                                            <Trash2 size={14}/>
+                                                        </button>
+                                                        
+                                                        <div className="flex flex-col md:flex-row gap-4">
+                                                            <div className="flex-1">
+                                                                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mb-1">Front</span>
+                                                                <p className="font-bold text-gray-900 dark:text-white text-sm">{card.front}</p>
+                                                            </div>
+                                                            <div className="hidden md:block w-px bg-gray-100 dark:bg-[#333]"></div>
+                                                            <div className="flex-1">
+                                                                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mb-1">Back</span>
+                                                                <p className="text-gray-700 dark:text-gray-300 text-sm">{card.back}</p>
+                                                            </div>
+                                                        </div>
+                                                        {card.hint && (
+                                                            <div className="mt-3 pt-3 border-t border-gray-50 dark:border-[#333]">
+                                                                <p className="text-xs text-gray-500 italic"><span className="font-bold not-italic">Hint:</span> {card.hint}</p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* TAB 4: SETTINGS */}
                                     {activeLessonTab === 'settings' && (
                                         <div className="space-y-6">
                                             <div className="bg-white dark:bg-[#1E1E1E] p-6 rounded-lg border border-gray-200 dark:border-[#333]">
