@@ -2,7 +2,8 @@
 import React, { useState } from 'react';
 import { X, Mail, Lock, User, Phone, Loader2, Cloud, AlertCircle, Globe } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { useNavigate } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
+const { useNavigate } = ReactRouterDOM as any;
 
 interface AuthModalProps {
   isOpen: boolean;

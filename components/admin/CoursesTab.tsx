@@ -9,12 +9,15 @@ import {
 } from 'lucide-react';
 
 export const CoursesTab: React.FC = () => {
-  const { courses, addCourse, updateCourse, deleteCourse } = useApp();
+  const { courses, addCourse, updateCourse, deleteCourse, user } = useApp();
   const [isModalOpen, setIsModalOpen] = useState(false);
   
   // Initialize with safe default values to prevent undefined errors
   const [editingCourse, setEditingCourse] = useState<Partial<Course> | null>(null);
   const [expandedLesson, setExpandedLesson] = useState<string | null>(null);
+
+  const OWNER_EMAIL = "toji123oodo@gmail.com";
+  const isOwner = user?.email === OWNER_EMAIL;
 
   const openNewCourseModal = () => {
     setEditingCourse({
@@ -30,7 +33,7 @@ export const CoursesTab: React.FC = () => {
   };
 
   const handleSave = async () => {
-    if (!editingCourse?.title) return;
+    if (!editingCourse?.title || !isOwner) return;
     
     // Ensure data integrity before saving
     const courseData: Course = {
@@ -129,12 +132,14 @@ export const CoursesTab: React.FC = () => {
             <h2 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">Course Management</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">Create, edit, and organize curriculum content.</p>
          </div>
-         <button 
-           onClick={openNewCourseModal} 
-           className="btn-primary flex items-center gap-2 px-6 py-2.5 shadow-lg shadow-orange-500/20"
-         >
-           <Plus size={18}/> Create New Course
-         </button>
+         {isOwner && (
+           <button 
+             onClick={openNewCourseModal} 
+             className="btn-primary flex items-center gap-2 px-6 py-2.5 shadow-lg shadow-orange-500/20"
+           >
+             <Plus size={18}/> Create New Course
+           </button>
+         )}
       </div>
       
       {/* Course Grid */}
@@ -143,22 +148,27 @@ export const CoursesTab: React.FC = () => {
           <div key={course.id} className="group bg-white dark:bg-[#1E1E1E] rounded-xl border border-gray-200 dark:border-[#333] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col">
             <div className="h-48 bg-gray-100 dark:bg-[#252525] relative overflow-hidden">
                <img src={course.image} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="" />
-               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3 backdrop-blur-sm">
-                  <button 
-                    onClick={() => { setEditingCourse(JSON.parse(JSON.stringify(course))); setIsModalOpen(true); }} 
-                    className="p-3 bg-white rounded-full text-gray-900 hover:text-blue-600 hover:scale-110 transition-all shadow-lg"
-                    title="Edit Course"
-                  >
-                    <Edit2 size={20}/>
-                  </button>
-                  <button 
-                    onClick={() => { if(confirm('Delete course?')) deleteCourse(course.id); }} 
-                    className="p-3 bg-white rounded-full text-gray-900 hover:text-red-600 hover:scale-110 transition-all shadow-lg"
-                    title="Delete Course"
-                  >
-                    <Trash2 size={20}/>
-                  </button>
-               </div>
+               
+               {/* Only show actions if user is Owner */}
+               {isOwner && (
+                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3 backdrop-blur-sm">
+                    <button 
+                      onClick={() => { setEditingCourse(JSON.parse(JSON.stringify(course))); setIsModalOpen(true); }} 
+                      className="p-3 bg-white rounded-full text-gray-900 hover:text-blue-600 hover:scale-110 transition-all shadow-lg"
+                      title="Edit Course"
+                    >
+                      <Edit2 size={20}/>
+                    </button>
+                    <button 
+                      onClick={() => { if(confirm('Delete course?')) deleteCourse(course.id); }} 
+                      className="p-3 bg-white rounded-full text-gray-900 hover:text-red-600 hover:scale-110 transition-all shadow-lg"
+                      title="Delete Course"
+                    >
+                      <Trash2 size={20}/>
+                    </button>
+                 </div>
+               )}
+               
                <span className="absolute bottom-3 left-3 bg-black/60 text-white text-[10px] font-bold px-2.5 py-1 rounded backdrop-blur-md border border-white/10">
                   {course.subject}
                </span>
@@ -185,8 +195,8 @@ export const CoursesTab: React.FC = () => {
         ))}
       </div>
 
-      {/* FULL SCREEN EDITOR MODAL */}
-      {isModalOpen && editingCourse && (
+      {/* FULL SCREEN EDITOR MODAL - Only render if Owner */}
+      {isModalOpen && editingCourse && isOwner && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-gray-900/80 backdrop-blur-md p-4">
           <div className="bg-white dark:bg-[#1E1E1E] rounded-2xl shadow-2xl w-full max-w-7xl h-[95vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-200 dark:border-[#333]">
              

@@ -55,7 +55,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   );
 };
 
-// Admin Route Component - Only for Owner
+// Admin Route Component - Accessible by Owner and Admins
 const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isLoading } = useApp();
   // Updated Owner Email
@@ -69,7 +69,8 @@ const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     );
   }
 
-  if (!user || user.email !== OWNER_EMAIL) {
+  // Allow if user is the Owner OR has the 'admin' role
+  if (!user || (user.email !== OWNER_EMAIL && user.role !== 'admin')) {
     return <Navigate to="/dashboard" replace />;
   }
 
