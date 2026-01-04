@@ -5,7 +5,7 @@ import { db } from '../../firebase';
 import { 
   Search, Filter, Trash2, Shield, Zap, Mail, Smartphone, 
   MoreHorizontal, Edit3, X, Save, Ban, CheckCircle, 
-  GraduationCap, Wallet, FileText, Calendar, Lock
+  GraduationCap, Wallet, FileText, Calendar, Lock, UserCheck
 } from 'lucide-react';
 
 interface Props {
@@ -14,7 +14,7 @@ interface Props {
 }
 
 export const UsersTab: React.FC<Props> = ({ users, searchTerm }) => {
-  const [filter, setFilter] = useState<'all' | 'pro' | 'free' | 'blocked'>('all');
+  const [filter, setFilter] = useState<'all' | 'admin' | 'pro' | 'free' | 'blocked'>('all');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
 
@@ -26,6 +26,7 @@ export const UsersTab: React.FC<Props> = ({ users, searchTerm }) => {
     
     if (filter === 'all') return matchesSearch;
     if (filter === 'blocked') return matchesSearch && u.isBlocked;
+    if (filter === 'admin') return matchesSearch && u.role === 'admin';
     return matchesSearch && u.subscriptionTier === filter;
   });
 
@@ -42,9 +43,10 @@ export const UsersTab: React.FC<Props> = ({ users, searchTerm }) => {
     <div className="space-y-6">
        {/* Modern Filter Toolbar */}
        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-[#1E1E1E] p-4 rounded-xl border border-gray-200 dark:border-[#333] shadow-sm transition-colors">
-         <div className="flex gap-2 bg-gray-100 dark:bg-[#252525] p-1 rounded-lg self-start">
+         <div className="flex flex-wrap gap-2 bg-gray-100 dark:bg-[#252525] p-1 rounded-lg self-start">
            {[
              { id: 'all', label: 'الكل' },
+             { id: 'admin', label: 'Admins' },
              { id: 'pro', label: 'Pro Members' },
              { id: 'free', label: 'Free Tier' },
              { id: 'blocked', label: 'محظور' }
@@ -52,7 +54,7 @@ export const UsersTab: React.FC<Props> = ({ users, searchTerm }) => {
              <button 
                 key={f.id} 
                 onClick={() => setFilter(f.id as any)} 
-                className={`px-4 py-2 rounded-md text-xs font-bold transition-all shadow-sm ${
+                className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all shadow-sm ${
                   filter === f.id 
                   ? 'bg-white dark:bg-[#333] text-gray-900 dark:text-white shadow' 
                   : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200/50 dark:hover:bg-[#333] shadow-none'
@@ -63,7 +65,7 @@ export const UsersTab: React.FC<Props> = ({ users, searchTerm }) => {
            ))}
          </div>
          <div className="text-xs font-medium text-gray-500 dark:text-gray-400 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 px-3 py-1.5 rounded-full border border-blue-100 dark:border-blue-800">
-            {filtered.length} طالب نشط
+            {filtered.length} مستخدم
          </div>
        </div>
 
@@ -75,7 +77,7 @@ export const UsersTab: React.FC<Props> = ({ users, searchTerm }) => {
                 <tr>
                   <th className="px-6 py-4 text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">الطالب</th>
                   <th className="px-6 py-4 text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden md:table-cell">الأكاديمية</th>
-                  <th className="px-6 py-4 text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">الاشتراك</th>
+                  <th className="px-6 py-4 text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">الحالة</th>
                   <th className="px-6 py-4 text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden lg:table-cell">آخر ظهور</th>
                   <th className="px-6 py-4 text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-left">تحكم</th>
                 </tr>
@@ -85,13 +87,17 @@ export const UsersTab: React.FC<Props> = ({ users, searchTerm }) => {
                   <tr key={u.id} className={`group transition-all hover:bg-blue-50/30 dark:hover:bg-blue-900/10 ${u.isBlocked ? 'bg-red-50/30 dark:bg-red-900/10' : ''}`}>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-4">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shadow-sm border-2 border-white dark:border-[#333] ${u.isBlocked ? 'bg-red-100 text-red-600' : 'bg-gradient-to-br from-blue-100 to-indigo-100 text-indigo-700'}`}>
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shadow-sm border-2 border-white dark:border-[#333] ${u.isBlocked ? 'bg-red-100 text-red-600' : (u.role === 'admin' ? 'bg-purple-100 text-purple-600' : 'bg-gradient-to-br from-blue-100 to-indigo-100 text-indigo-700')}`}>
                           {(u.name || 'U').charAt(0).toUpperCase()}
                         </div>
                         <div>
                           <p className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
                             {u.name}
-                            {u.role === 'admin' && <Shield size={12} className="text-blue-600 dark:text-blue-400" />}
+                            {u.role === 'admin' && (
+                                <span className="px-1.5 py-0.5 rounded-sm bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-[9px] uppercase font-black border border-purple-200 dark:border-purple-800 flex items-center gap-1">
+                                    <Shield size={8} fill="currentColor"/> ADMIN
+                                </span>
+                            )}
                           </p>
                           <p className="text-xs text-gray-500 dark:text-gray-400 font-mono flex items-center gap-1">
                             <Mail size={10} /> {u.email}
@@ -138,7 +144,7 @@ export const UsersTab: React.FC<Props> = ({ users, searchTerm }) => {
                         onClick={() => { setSelectedUser(u); setIsEditorOpen(true); }}
                         className="px-4 py-2 bg-white dark:bg-[#252525] border border-gray-200 dark:border-[#444] text-gray-700 dark:text-gray-300 rounded-lg hover:border-blue-300 hover:text-blue-600 hover:shadow-md transition-all text-xs font-bold flex items-center gap-2 ml-auto"
                        >
-                         <Edit3 size={14} /> تعديل شامل
+                         <Edit3 size={14} /> تعديل
                        </button>
                     </td>
                   </tr>
@@ -196,7 +202,10 @@ const UserEditorModal: React.FC<{ user: User, onClose: () => void, onDelete: () 
                  {formData.name.charAt(0)}
               </div>
               <div>
-                 <h3 className="text-lg font-bold text-gray-900 dark:text-white">{formData.name}</h3>
+                 <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    {formData.name}
+                    {formData.role === 'admin' && <Shield size={16} className="text-purple-600" fill="currentColor"/>}
+                 </h3>
                  <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">{formData.id}</p>
               </div>
            </div>
@@ -262,15 +271,19 @@ const UserEditorModal: React.FC<{ user: User, onClose: () => void, onDelete: () 
                          <input type="text" value={formData.phone} onChange={e => handleChange('phone', e.target.value)} className="cf-input" />
                       </div>
                       <div className="space-y-2">
-                         <label className="text-sm font-medium text-gray-700 dark:text-gray-300">نوع الصلاحية</label>
-                         <select 
-                            value={formData.role || 'student'} 
-                            onChange={e => handleChange('role', e.target.value)}
-                            className="cf-input"
-                         >
-                            <option value="student">طالب (Student)</option>
-                            <option value="admin">مسؤول (Admin)</option>
-                         </select>
+                         <label className="text-sm font-medium text-gray-700 dark:text-gray-300">نوع الصلاحية (Role)</label>
+                         <div className="relative">
+                            <select 
+                                value={formData.role || 'student'} 
+                                onChange={e => handleChange('role', e.target.value)}
+                                className="cf-input appearance-none"
+                            >
+                                <option value="student">طالب (Student)</option>
+                                <option value="admin">مسؤول (Admin)</option>
+                            </select>
+                            {formData.role === 'admin' && <Shield size={14} className="absolute left-10 top-1/2 -translate-y-1/2 text-purple-500" />}
+                         </div>
+                         <p className="text-[10px] text-gray-400 mt-1">تنبيه: "مسؤول" سيمنح المستخدم صلاحية الوصول للوحة التحكم.</p>
                       </div>
                    </div>
                 </div>
