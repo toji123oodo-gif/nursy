@@ -5,16 +5,17 @@ import { User, ActivationCode } from '../types';
 import { db } from '../firebase';
 import { 
   Shield, Activity, CreditCard, Users, 
-  BarChart3, Layout, Ticket
+  BarChart3, Layout, Ticket, GraduationCap
 } from 'lucide-react';
 import { UsersTab } from '../components/admin/UsersTab';
 import { CodesTab } from '../components/admin/CodesTab';
 import { CoursesTab } from '../components/admin/CoursesTab';
 import { OverviewTab } from '../components/admin/OverviewTab';
+import { ExamsTab } from '../components/admin/ExamsTab';
 
 export const Admin: React.FC = () => {
   const { courses } = useApp();
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'codes' | 'courses'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'codes' | 'courses' | 'exams'>('overview');
   const [users, setUsers] = useState<User[]>([]);
   const [codes, setCodes] = useState<ActivationCode[]>([]);
   const [activities, setActivities] = useState<any[]>([]);
@@ -46,6 +47,7 @@ export const Admin: React.FC = () => {
   const tabs = [
     { id: 'overview', label: 'Overview', icon: BarChart3 },
     { id: 'users', label: 'Students & Users', icon: Users },
+    { id: 'exams', label: 'Exam Results', icon: GraduationCap },
     { id: 'courses', label: 'Curriculum & Content', icon: Layout },
     { id: 'codes', label: 'Access Codes', icon: Ticket },
   ];
@@ -86,6 +88,7 @@ export const Admin: React.FC = () => {
       <div className="max-w-7xl mx-auto px-6 py-8">
          {activeTab === 'overview' && <OverviewTab users={users} courses={courses} activities={activities} />}
          {activeTab === 'users' && <UsersTab users={users} searchTerm="" />}
+         {activeTab === 'exams' && <ExamsTab users={users} />}
          {activeTab === 'codes' && <CodesTab initialCodes={codes} />}
          {activeTab === 'courses' && <CoursesTab />}
       </div>

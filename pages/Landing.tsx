@@ -4,12 +4,12 @@ import * as ReactRouterDOM from 'react-router-dom';
 const { Link } = ReactRouterDOM as any;
 import { 
   Play, ShieldCheck, Zap, Brain, Globe, 
-  ArrowRight, BarChart3
+  ArrowRight, BarChart3, Moon, Sun
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export const Landing: React.FC = () => {
-  const { user } = useApp();
+  const { user, theme, toggleTheme } = useApp();
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#101010]">
@@ -30,6 +30,14 @@ export const Landing: React.FC = () => {
            </div>
 
            <div className="flex items-center gap-3">
+              <button 
+                onClick={toggleTheme} 
+                className="p-2 text-muted hover:text-main transition-colors rounded-full hover:bg-gray-100 dark:hover:bg-[#1E1E1E]"
+                aria-label="Toggle Theme"
+              >
+                {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+              </button>
+              
               {user ? (
                 <Link to="/dashboard" className="btn-primary">Dashboard <ArrowRight size={14}/></Link>
               ) : (

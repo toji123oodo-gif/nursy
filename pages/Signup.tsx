@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 const { useNavigate, Link } = ReactRouterDOM as any;
-import { Cloud, Loader2, AlertCircle, ArrowRight, Check, ShieldCheck } from 'lucide-react';
+import { Cloud, Loader2, AlertCircle, ArrowRight, Check, ShieldCheck, Moon, Sun } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export const Signup: React.FC = () => {
@@ -10,7 +10,7 @@ export const Signup: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   
-  const { user, signup } = useApp();
+  const { user, signup, theme, toggleTheme } = useApp();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -35,7 +35,16 @@ export const Signup: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen w-full flex bg-white dark:bg-[#0a0a0a]">
+    <div className="min-h-screen w-full flex bg-white dark:bg-[#0a0a0a] relative">
+      {/* Theme Toggle */}
+      <button 
+        onClick={toggleTheme}
+        className="absolute top-4 left-4 z-50 p-2 rounded-full bg-gray-100 dark:bg-[#1E1E1E] text-gray-600 dark:text-gray-200 shadow-sm hover:scale-105 transition-all"
+        aria-label="Toggle Theme"
+      >
+        {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+      </button>
+
       {/* Right Side - Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 order-2 lg:order-1">
          <div className="w-full max-w-sm space-y-8">

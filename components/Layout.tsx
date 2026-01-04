@@ -154,13 +154,6 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                 <p className="text-xs font-semibold text-main truncate">{user.name}</p>
                 <p className="text-[10px] text-muted truncate">{user.email}</p>
               </div>
-              <button 
-                  onClick={toggleTheme} 
-                  className="p-1.5 rounded-[4px] hover:bg-gray-200 dark:hover:bg-[#404040] text-muted"
-                  title="Toggle Theme"
-               >
-                  {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
-               </button>
             </div>
           </div>
         )}
@@ -190,6 +183,16 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
           <div className="flex items-center gap-4">
              <div className="h-4 w-px bg-[#E5E5E5] dark:bg-[#333] hidden md:block"></div>
+             
+             {/* Theme Toggle */}
+             <button 
+                onClick={toggleTheme} 
+                className="text-muted hover:text-main transition-colors p-1 rounded-md hover:bg-gray-100 dark:hover:bg-[#2C2C2C]"
+                title="Toggle Theme"
+             >
+                {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+             </button>
+
              <button className="text-muted hover:text-main relative">
                 <Bell size={18} />
                 <span className="absolute top-0 right-0 w-1.5 h-1.5 bg-red-500 rounded-full border border-white dark:border-[#1E1E1E]"></span>

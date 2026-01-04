@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 const { useNavigate, Link } = ReactRouterDOM as any;
-import { Cloud, Loader2, AlertCircle, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { Cloud, Loader2, AlertCircle, ArrowRight, Moon, Sun } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export const Login: React.FC = () => {
@@ -11,7 +11,7 @@ export const Login: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   
-  const { user, login, loginWithGoogle } = useApp();
+  const { user, login, loginWithGoogle, theme, toggleTheme } = useApp();
   const navigate = useNavigate();
 
   // Redirect if already logged in
@@ -53,7 +53,16 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen w-full flex bg-white dark:bg-[#0a0a0a]">
+    <div className="min-h-screen w-full flex bg-white dark:bg-[#0a0a0a] relative">
+      {/* Theme Toggle */}
+      <button 
+        onClick={toggleTheme}
+        className="absolute top-4 left-4 z-50 p-2 rounded-full bg-gray-100 dark:bg-[#1E1E1E] text-gray-600 dark:text-gray-200 shadow-sm hover:scale-105 transition-all"
+        aria-label="Toggle Theme"
+      >
+        {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+      </button>
+
       {/* Left Side - Visual & Branding */}
       <div className="hidden lg:flex lg:w-1/2 bg-[#101010] relative flex-col justify-between p-12 text-white overflow-hidden">
          <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1576091160550-2187d800273a?q=80&w=2000&auto=format&fit=crop')] bg-cover bg-center opacity-30"></div>
