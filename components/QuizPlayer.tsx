@@ -3,16 +3,17 @@ import React, { useState } from 'react';
 import { Quiz } from '../types';
 import { 
   X, ChevronLeft, ChevronRight, CheckCircle2, AlertCircle, HelpCircle, 
-  Timer, Brain, Award, RotateCcw 
+  Timer, Brain, Award, RotateCcw, FileText
 } from 'lucide-react';
 
 interface QuizPlayerProps {
   quiz: Quiz;
   onComplete: (score: number) => void;
   onClose: () => void;
+  pdfUrl?: string; // New Prop to link quiz to a PDF
 }
 
-export const QuizPlayer: React.FC<QuizPlayerProps> = ({ quiz, onComplete, onClose }) => {
+export const QuizPlayer: React.FC<QuizPlayerProps> = ({ quiz, onComplete, onClose, pdfUrl }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
   const [showResult, setShowResult] = useState(false);
@@ -118,9 +119,23 @@ export const QuizPlayer: React.FC<QuizPlayerProps> = ({ quiz, onComplete, onClos
              
              {/* Question Card */}
              <div className="mb-8">
-                 <span className="text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-4 block">
-                     سؤال {currentStep + 1} من {quiz.questions.length}
-                 </span>
+                 <div className="flex justify-between items-start mb-4">
+                    <span className="text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest block">
+                        سؤال {currentStep + 1} من {quiz.questions.length}
+                    </span>
+                    {/* Deep Link to PDF Button */}
+                    {currentQuestion.referencePage && pdfUrl && (
+                        <a 
+                            href={`${pdfUrl}#page=${currentQuestion.referencePage}`} 
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-bold hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
+                            title="Open related PDF page"
+                        >
+                            <FileText size={14} /> صفحة {currentQuestion.referencePage}
+                        </a>
+                    )}
+                 </div>
                  <h3 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white leading-relaxed md:leading-relaxed">
                     {currentQuestion.text}
                  </h3>

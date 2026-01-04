@@ -7,6 +7,7 @@ export interface Question {
   options: string[];
   correctOptionIndex: number;
   explanation?: string;
+  referencePage?: number; // New: Page number in the associated PDF
 }
 
 export interface Quiz {

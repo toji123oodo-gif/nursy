@@ -41,6 +41,9 @@ export const CourseDetail: React.FC = () => {
     ? Math.round((course.lessons.filter(l => isCompleted(l.id)).length / course.lessons.length) * 100)
     : 0;
 
+  // Find the first PDF in the active lesson to use as the quiz reference source
+  const lessonPdfUrl = activeLesson?.contents?.find(c => c.type === 'pdf')?.url;
+
   return (
     <div className="flex flex-col min-h-[calc(100vh-4rem)] bg-[#F9FAFB] dark:bg-[#101010]">
       
@@ -49,6 +52,7 @@ export const CourseDetail: React.FC = () => {
           quiz={course.lessons?.find(l => l.id === activeQuizId)?.quiz!} 
           onComplete={() => {}} 
           onClose={() => setActiveQuizId(null)} 
+          pdfUrl={lessonPdfUrl} // Pass the PDF URL here
         />
       )}
 

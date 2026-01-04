@@ -7,7 +7,7 @@ import {
   Video, Upload, Check, ChevronDown, ChevronRight,
   MoreVertical, FileJson, Brain, Layout, DollarSign, 
   Image as ImageIcon, Lock, Clock, AlertCircle, Settings, 
-  AlignLeft, List, HelpCircle, CheckCircle2
+  AlignLeft, List, HelpCircle, CheckCircle2, BookOpen
 } from 'lucide-react';
 
 export const CoursesTab: React.FC = () => {
@@ -140,13 +140,16 @@ export const CoursesTab: React.FC = () => {
     const newQuestions: Question[] = bulkImportText.trim().split('\n').filter(line => line.trim()).map((line, i) => {
         const parts = line.split('|').map(p => p.trim());
         // Require: Question text | 4 options | Answer index
+        // Optional: Page Number (7th item)
         if (parts.length < 6) return null;
         
         const text = parts[0];
         // Take next 4 parts as options
         const options = parts.slice(1, 5);
-        // Last part is index
+        // Answer index
         const ansIndex = parseInt(parts[5]);
+        // Page Ref (Optional)
+        const pageRef = parts.length > 6 ? parseInt(parts[6]) : undefined;
         
         const correctOptionIndex = isNaN(ansIndex) ? 0 : Math.min(Math.max(ansIndex, 0), 3);
 
@@ -154,12 +157,13 @@ export const CoursesTab: React.FC = () => {
             id: `qn-bulk-${Date.now()}-${i}`,
             text,
             options,
-            correctOptionIndex
+            correctOptionIndex,
+            referencePage: isNaN(pageRef || NaN) ? undefined : pageRef
         };
     }).filter(q => q !== null) as Question[];
 
     if (newQuestions.length === 0) {
-        alert("لم يتم العثور على أسئلة صالحة. تأكد من الصيغة:\nالسؤال؟ | خيار 1 | خيار 2 | خيار 3 | خيار 4 | رقم الإجابة");
+        alert("لم يتم العثور على أسئلة صالحة. تأكد من الصيغة:\nالسؤال؟ | خيار 1 | خيار 2 | خيار 3 | خيار 4 | رقم الإجابة | (اختياري) رقم الصفحة");
         return;
     }
 
@@ -192,7 +196,8 @@ export const CoursesTab: React.FC = () => {
              text: q.text || 'Question text',
              options: q.options || [],
              correctOptionIndex: typeof q.correctOptionIndex === 'number' ? q.correctOptionIndex : 0,
-             explanation: q.explanation
+             explanation: q.explanation,
+             referencePage: q.referencePage
            }));
            
            currentQuiz.questions = [...currentQuiz.questions, ...newQuestions];
@@ -231,7 +236,7 @@ export const CoursesTab: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {courses.map(course => (
           <div key={course.id} className="group bg-white dark:bg-[#1E1E1E] rounded-xl border border-gray-200 dark:border-[#333] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col relative">
-            
+            {/* ... (Course Card rendering) ... */}
             {!isOwner && (
                <div className="absolute top-3 right-3 z-10">
                   <div className="bg-black/50 backdrop-blur-sm text-white p-1.5 rounded-full" title="Read Only">
@@ -297,8 +302,7 @@ export const CoursesTab: React.FC = () => {
       {isModalOpen && isOwner && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-gray-900/80 backdrop-blur-md p-4">
           <div className="bg-white dark:bg-[#121212] rounded-2xl shadow-2xl w-full max-w-7xl h-[95vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-200 dark:border-[#333]">
-             
-             {/* Modal Header */}
+             {/* ... Modal Header & Sidebar (Same as previous) ... */}
              <div className="px-6 py-4 border-b border-gray-200 dark:border-[#333] flex flex-col sm:flex-row justify-between items-center bg-white dark:bg-[#1E1E1E] gap-3">
                <div className="flex items-center gap-3 w-full sm:w-auto">
                   <div className="w-10 h-10 bg-brand-orange/10 text-brand-orange rounded-lg flex items-center justify-center shrink-0">
@@ -314,7 +318,6 @@ export const CoursesTab: React.FC = () => {
                   </div>
                </div>
                
-               {/* Mobile Toggle for Settings */}
                <button 
                  onClick={() => setShowMobileSettings(!showMobileSettings)}
                  className="lg:hidden w-full sm:w-auto py-2 px-4 bg-gray-100 dark:bg-[#252525] rounded text-xs font-bold text-gray-600 dark:text-gray-300"
@@ -333,9 +336,8 @@ export const CoursesTab: React.FC = () => {
              </div>
 
              <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-                {/* Left Sidebar: Metadata */}
                 <div className={`w-full lg:w-72 border-r border-gray-200 dark:border-[#333] overflow-y-auto bg-gray-50/50 dark:bg-[#181818] p-6 ${showMobileSettings ? 'block' : 'hidden lg:block'}`}>
-                   {/* ... Settings Inputs ... */}
+                   {/* ... Settings ... */}
                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">Course Settings</h4>
                    <div className="space-y-5">
                       <div>
@@ -407,7 +409,7 @@ export const CoursesTab: React.FC = () => {
 
                 {/* Main Content: Lessons */}
                 <div className={`flex-1 bg-white dark:bg-[#1E1E1E] flex flex-col min-w-0 ${showMobileSettings ? 'hidden lg:flex' : 'flex'}`}>
-                   {/* Lessons Toolbar */}
+                   {/* ... Lessons Toolbar ... */}
                    <div className="px-4 md:px-8 py-6 border-b border-gray-200 dark:border-[#333] flex justify-between items-center bg-gray-50/30 dark:bg-[#202020]">
                       <div>
                          <h4 className="text-lg font-bold text-gray-900 dark:text-white">Curriculum</h4>
@@ -432,7 +434,7 @@ export const CoursesTab: React.FC = () => {
 
                       {(editingCourse.lessons || []).map((lesson, index) => (
                         <div key={lesson.id} className="bg-white dark:bg-[#1E1E1E] border border-gray-200 dark:border-[#333] rounded-xl shadow-sm overflow-hidden transition-all">
-                           {/* Lesson Accordion Header */}
+                           {/* ... Lesson Header ... */}
                            <div 
                              className={`flex items-center gap-4 p-4 cursor-pointer transition-colors ${expandedLesson === lesson.id ? 'bg-gray-50 dark:bg-[#252525] border-b border-gray-200 dark:border-[#333]' : 'hover:bg-gray-50 dark:hover:bg-[#252525]'}`}
                              onClick={() => {
@@ -673,7 +675,7 @@ export const CoursesTab: React.FC = () => {
                                                             <h4 className="text-white font-bold text-sm flex items-center gap-2">
                                                                 <List size={16} className="text-purple-500"/> Bulk Import Editor
                                                             </h4>
-                                                            <p className="text-[10px] text-gray-400 mt-1 font-mono">Format: Question? | Opt1 | Opt2 | Opt3 | Opt4 | AnswerIndex(0-3)</p>
+                                                            <p className="text-[10px] text-gray-400 mt-1 font-mono">Format: Question? | Opt1 | Opt2 | Opt3 | Opt4 | AnsIdx(0-3) | PageNum(Optional)</p>
                                                         </div>
                                                         <button onClick={() => setShowBulkImport(false)} className="text-gray-500 hover:text-white"><X size={16}/></button>
                                                     </div>
@@ -682,7 +684,7 @@ export const CoursesTab: React.FC = () => {
                                                         value={bulkImportText}
                                                         onChange={(e) => setBulkImportText(e.target.value)}
                                                         className="w-full h-48 p-4 text-xs font-mono rounded-xl border border-gray-600 dark:border-[#333] bg-[#2a2a2a] dark:bg-[#0a0a0a] text-gray-200 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none resize-none shadow-inner placeholder:text-gray-600"
-                                                        placeholder={`Example:\nHow many bones in the skull? | 20 | 22 | 24 | 30 | 1\nWhat does the heart pump? | Air | Food | Blood | Thoughts | 2`}
+                                                        placeholder={`Example:\nHow many bones in the skull? | 20 | 22 | 24 | 30 | 1 | 5\nWhat does the heart pump? | Air | Food | Blood | Thoughts | 2 | 12`}
                                                     />
                                                     
                                                     <div className="flex justify-end gap-2 mt-4">
@@ -770,20 +772,37 @@ export const CoursesTab: React.FC = () => {
                                                             ))}
                                                         </div>
                                                         
-                                                        <div className="pt-3 border-t border-gray-100 dark:border-[#333] flex items-center gap-2">
-                                                            <HelpCircle size={14} className="text-gray-400"/>
-                                                            <input 
-                                                                type="text" 
-                                                                value={q.explanation || ''}
-                                                                onChange={(e) => {
-                                                                    if (!editingCourse.lessons) return;
-                                                                    const updated = [...editingCourse.lessons];
-                                                                    updated[index].quiz!.questions[qIdx].explanation = e.target.value;
-                                                                    setEditingCourse(prev => ({...prev, lessons: updated}));
-                                                                }}
-                                                                className="flex-1 text-xs text-gray-500 dark:text-gray-400 bg-transparent outline-none italic placeholder:text-gray-300 dark:placeholder:text-gray-600"
-                                                                placeholder="Optional: Explanation for the correct answer..."
-                                                            />
+                                                        <div className="pt-3 border-t border-gray-100 dark:border-[#333] flex flex-col md:flex-row gap-2">
+                                                            <div className="flex-1 flex items-center gap-2">
+                                                                <HelpCircle size={14} className="text-gray-400"/>
+                                                                <input 
+                                                                    type="text" 
+                                                                    value={q.explanation || ''}
+                                                                    onChange={(e) => {
+                                                                        if (!editingCourse.lessons) return;
+                                                                        const updated = [...editingCourse.lessons];
+                                                                        updated[index].quiz!.questions[qIdx].explanation = e.target.value;
+                                                                        setEditingCourse(prev => ({...prev, lessons: updated}));
+                                                                    }}
+                                                                    className="flex-1 text-xs text-gray-500 dark:text-gray-400 bg-transparent outline-none italic placeholder:text-gray-300 dark:placeholder:text-gray-600"
+                                                                    placeholder="Optional: Explanation for the correct answer..."
+                                                                />
+                                                            </div>
+                                                            <div className="flex items-center gap-2 border-l border-gray-200 dark:border-[#333] pl-2 md:w-32">
+                                                                <BookOpen size={14} className="text-gray-400"/>
+                                                                <input 
+                                                                    type="number" 
+                                                                    value={q.referencePage || ''}
+                                                                    onChange={(e) => {
+                                                                        if (!editingCourse.lessons) return;
+                                                                        const updated = [...editingCourse.lessons];
+                                                                        updated[index].quiz!.questions[qIdx].referencePage = parseInt(e.target.value);
+                                                                        setEditingCourse(prev => ({...prev, lessons: updated}));
+                                                                    }}
+                                                                    className="flex-1 text-xs text-gray-500 dark:text-gray-400 bg-transparent outline-none placeholder:text-gray-300 dark:placeholder:text-gray-600"
+                                                                    placeholder="PDF Page #"
+                                                                />
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 ))}
@@ -794,6 +813,7 @@ export const CoursesTab: React.FC = () => {
                                     {/* TAB 3: SETTINGS */}
                                     {activeLessonTab === 'settings' && (
                                         <div className="space-y-6">
+                                            {/* ... (Existing Settings UI) ... */}
                                             <div className="bg-white dark:bg-[#1E1E1E] p-6 rounded-lg border border-gray-200 dark:border-[#333]">
                                                 <h5 className="font-bold text-gray-900 dark:text-white mb-4">Lesson Visibility</h5>
                                                 
