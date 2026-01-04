@@ -103,7 +103,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }, { merge: true }).catch(err => console.error("Background sync failed", err));
   };
 
-  // Auth Listener & Auto-Login Logic
+  // Auth Listener & Persistence Logic
   useEffect(() => {
     // Check if we have a persisted token first to show UI immediately
     const persistedToken = jwtUtils.getToken();
@@ -111,6 +111,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
        const decoded = jwtUtils.decode(persistedToken);
        if (decoded) {
           // Temporarily set user from token while firebase loads
+          // This prevents "flicker" of login screen
           setUser({
              id: decoded.sub,
              name: decoded.name,
@@ -130,7 +131,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
       if (firebaseUser) {
-        // Standard Firebase Login
+        // User is signed in.
         const optimisticUser: User = {
           id: firebaseUser.uid,
           name: firebaseUser.displayName || 'Student',
@@ -143,7 +144,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           subscriptionTier: 'free'
         };
 
-        setUser(optimisticUser);
+        // If we don't have a user set yet (or it's partial), set optimistic
+        if (!user) setUser(optimisticUser);
         
         const newToken = jwtUtils.sign({ 
            sub: optimisticUser.id, 
@@ -155,48 +157,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setToken(newToken);
         setIsLoading(false);
 
-        // Fetch detailed profile
+        // Fetch detailed profile from Firestore
         db.collection("users").doc(firebaseUser.uid).get().then((docSnap: any) => {
           if (docSnap.exists) {
-            setUser({ id: firebaseUser.uid, ...docSnap.data() } as User);
+            const userData = { id: firebaseUser.uid, ...docSnap.data() } as User;
+            setUser(userData);
+            
+            // Update token with role if exists
+            if (userData.role) {
+                const updatedToken = jwtUtils.sign({ 
+                    sub: userData.id, 
+                    name: userData.name, 
+                    email: userData.email,
+                    role: userData.role
+                });
+                jwtUtils.saveToken(updatedToken);
+            }
           } else {
             syncUserToCloud(optimisticUser);
           }
         }).catch(console.error);
 
       } else {
-        // --- AUTO-LOGIN BYPASS FOR SPECIFIC OWNER ---
-        // This ensures Mstfymdht542@gmail.com never sees a login screen
-        console.log("No Firebase session found. Activating Auto-Login Bypass...");
-        
-        const bypassUser: User = {
-            id: 'owner-auto-login-001',
-            name: 'Mostafa (Owner)',
-            email: 'Mstfymdht542@gmail.com',
-            phone: '01000000000',
-            role: 'admin', // Grants access to Admin Panel
-            subscriptionTier: 'pro',
-            xp: 99999,
-            level: 100,
-            streak: 365,
-            joinedAt: new Date().toISOString(),
-            university: 'Nursy Academy',
-            faculty: 'Administration',
-            academicYear: 'Staff',
-            walletBalance: 5000
-        };
-        
-        setUser(bypassUser);
-        
-        const bypassToken = jwtUtils.sign({ 
-           sub: bypassUser.id, 
-           name: bypassUser.name, 
-           email: bypassUser.email,
-           role: 'admin'
-        });
-        
-        jwtUtils.saveToken(bypassToken);
-        setToken(bypassToken);
+        // User is signed out.
+        setUser(null);
+        setToken(null);
+        jwtUtils.removeToken();
         setIsLoading(false);
       }
     });
@@ -213,17 +199,39 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const firebaseUser = userCredential.user;
     if (firebaseUser) {
       await firebaseUser.updateProfile({ displayName: name });
+      // Create initial user doc
+      await db.collection("users").doc(firebaseUser.uid).set({
+          name,
+          email,
+          phone,
+          role: 'student',
+          subscriptionTier: 'free',
+          joinedAt: new Date().toISOString(),
+          lastDevice: getDeviceInfo()
+      });
     }
   };
 
-  const loginWithGoogle = async () => { await auth.signInWithPopup(googleProvider); };
+  const loginWithGoogle = async () => { 
+      const result = await auth.signInWithPopup(googleProvider); 
+      if (result.user && result.additionalUserInfo?.isNewUser) {
+          await db.collection("users").doc(result.user.uid).set({
+              name: result.user.displayName,
+              email: result.user.email,
+              role: 'student',
+              subscriptionTier: 'free',
+              joinedAt: new Date().toISOString(),
+              lastDevice: getDeviceInfo()
+          });
+      }
+  };
   
   const logout = async () => { 
       await auth.signOut(); 
       jwtUtils.removeToken();
-      // Note: The listener will re-login the bypass user immediately unless logic is added to prevent it.
-      // Ideally for a "kiosk" mode, logout resets the session.
-      window.location.reload(); 
+      setUser(null);
+      // Force reload to clear any in-memory states
+      window.location.href = '/';
   };
   
   const updateUserData = async (data: Partial<User>) => {
