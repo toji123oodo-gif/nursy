@@ -19,7 +19,7 @@ import { Schedule } from './pages/Schedule'; // Import Schedule
 import { NotFound } from './pages/NotFound'; // Import NotFound
 import { Wallet } from './pages/Wallet';
 import { Flashcards } from './pages/Flashcards';
-import { VideoAI } from './pages/VideoAI';
+import { UploadResource } from './pages/UploadResource'; // New Import
 import { Certificates } from './pages/Certificates';
 import { Leaderboard } from './pages/Leaderboard';
 import { HelpCenter } from './pages/HelpCenter';
@@ -86,7 +86,7 @@ const AppContent: React.FC = () => {
        
        {/* Dashboard Layout Routes */}
        <Route path="/dashboard" element={<Layout><ProtectedRoute><Dashboard /></ProtectedRoute></Layout>} />
-       <Route path="/dashboard/courses" element={<Layout><ProtectedRoute><Dashboard /></ProtectedRoute></Layout>} /> {/* Reusing Dashboard for simplicity or separate page */}
+       <Route path="/dashboard/courses" element={<Layout><ProtectedRoute><Dashboard /></ProtectedRoute></Layout>} /> 
        
        <Route path="/course/:courseId" element={<Layout><ProtectedRoute><CourseDetail /></ProtectedRoute></Layout>} />
        <Route path="/community" element={<Layout><ProtectedRoute><Community /></ProtectedRoute></Layout>} />
@@ -94,7 +94,7 @@ const AppContent: React.FC = () => {
        <Route path="/profile" element={<Layout><ProtectedRoute><Profile /></ProtectedRoute></Layout>} />
        <Route path="/wallet" element={<Layout><ProtectedRoute><Wallet /></ProtectedRoute></Layout>} />
        <Route path="/flashcards" element={<Layout><ProtectedRoute><Flashcards /></ProtectedRoute></Layout>} />
-       <Route path="/video-ai" element={<Layout><ProtectedRoute><VideoAI /></ProtectedRoute></Layout>} />
+       <Route path="/uploads" element={<Layout><ProtectedRoute><UploadResource /></ProtectedRoute></Layout>} />
        <Route path="/certificates" element={<Layout><ProtectedRoute><Certificates /></ProtectedRoute></Layout>} />
        <Route path="/leaderboard" element={<Layout><ProtectedRoute><Leaderboard /></ProtectedRoute></Layout>} />
        <Route path="/help" element={<Layout><ProtectedRoute><HelpCenter /></ProtectedRoute></Layout>} />

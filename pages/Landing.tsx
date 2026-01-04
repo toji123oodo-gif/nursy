@@ -4,7 +4,7 @@ import * as ReactRouterDOM from 'react-router-dom';
 const { Link } = ReactRouterDOM as any;
 import { 
   Play, ShieldCheck, Zap, Brain, Globe, 
-  ArrowRight, BarChart3, Moon, Sun
+  ArrowRight, BarChart3, Moon, Sun, UploadCloud
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
@@ -54,7 +54,7 @@ export const Landing: React.FC = () => {
       <section className="pt-24 pb-20 px-6 border-b border-[#E5E5E5] dark:border-[#333]">
          <div className="max-w-4xl mx-auto text-center space-y-8">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-orange-200 bg-orange-50 dark:bg-orange-900/20 dark:border-orange-900/50 text-[#F38020] text-xs font-semibold uppercase tracking-wider">
-               <Zap size={12} fill="currentColor" /> New: AI Video Analysis 2.0
+               <Zap size={12} fill="currentColor" /> New: Community Uploads
             </div>
             
             <h1 className="text-5xl md:text-7xl font-bold text-main tracking-tight leading-[1.1]">
@@ -63,7 +63,7 @@ export const Landing: React.FC = () => {
             </h1>
             
             <p className="text-xl text-muted max-w-2xl mx-auto leading-relaxed">
-               Nursy combines advanced AI analysis with accredited curriculum to help Egyptian nursing students master clinical skills faster.
+               Nursy combines advanced accredited curriculum with community-driven resources to help Egyptian nursing students master clinical skills faster.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
@@ -100,14 +100,14 @@ export const Landing: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-               {/* Main Card */}
+               {/* Main Card - Student Contributions */}
                <div className="md:col-span-2 cf-card p-8 flex flex-col justify-between min-h-[300px] relative overflow-hidden group">
                   <div className="relative z-10 max-w-md">
                      <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/20 text-[#0051C3] rounded-[4px] flex items-center justify-center mb-4">
-                        <Brain size={20} />
+                        <UploadCloud size={20} />
                      </div>
-                     <h3 className="text-xl font-bold text-main mb-2">AI-Powered Video Analysis</h3>
-                     <p className="text-muted">Upload any clinical procedure video. Our Gemini-powered engine breaks it down step-by-step, highlights safety protocols, and generates study notes automatically.</p>
+                     <h3 className="text-xl font-bold text-main mb-2">Student Contributions Center</h3>
+                     <p className="text-muted">Share and discover notes, summaries, and helpful videos from your peers. A complete repository built by students, for students.</p>
                   </div>
                   <div className="absolute right-0 bottom-0 w-1/2 h-full bg-gradient-to-l from-blue-50/50 to-transparent dark:from-blue-900/10 pointer-events-none"></div>
                </div>
@@ -157,7 +157,7 @@ export const Landing: React.FC = () => {
                <h4 className="font-bold text-main mb-4">Platform</h4>
                <ul className="space-y-2 text-sm text-muted">
                   <li><a href="#" className="hover:text-main">Browse Courses</a></li>
-                  <li><a href="#" className="hover:text-main">Video AI</a></li>
+                  <li><a href="#" className="hover:text-main">Contributions</a></li>
                   <li><a href="#" className="hover:text-main">Flashcards</a></li>
                </ul>
             </div>

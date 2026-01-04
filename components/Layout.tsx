@@ -6,7 +6,7 @@ import {
   Home, Book, Wallet, User, LogOut, Menu, X, 
   Activity, ChevronRight, Bell, Settings, Cloud,
   Moon, Sun, Users, HelpCircle, ExternalLink, Search, Command,
-  Calendar, Video, Award, Trophy, Shield
+  Calendar, UploadCloud, Award, Trophy, Shield
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { CommandPalette } from './CommandPalette';
@@ -46,7 +46,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   ];
 
   const toolsLinks = [
-    { path: '/video-ai', label: 'AI Video Analysis', icon: Video },
+    { path: '/uploads', label: 'Contribute Content', icon: UploadCloud }, // Replaced Video AI
     { path: '/flashcards', label: 'Flashcards', icon: Activity },
     { path: '/certificates', label: 'Certificates', icon: Award },
     { path: '/leaderboard', label: 'Rankings', icon: Trophy },
