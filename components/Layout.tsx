@@ -53,6 +53,8 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       return false;
   };
 
+  const isAdminOrOwner = user && (user.email === OWNER_EMAIL || user.role === 'admin');
+
   return (
     <div className="min-h-screen bg-[#F9FAFB] dark:bg-[#101010] flex font-sans text-sm">
       <CommandPalette isOpen={isPaletteOpen} onClose={() => setIsPaletteOpen(false)} />
@@ -122,8 +124,8 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               <User size={16} /> My Profile
            </Link>
 
-           {/* ADMIN SECTION - Visible Only to Owner */}
-           {user && user.email === OWNER_EMAIL && (
+           {/* ADMIN SECTION - Visible to Owner AND Admin Role */}
+           {isAdminOrOwner && (
              <>
                <div className="my-4 border-t border-[#E5E5E5] dark:border-[#333]"></div>
                <div className="px-3 py-2 text-[10px] font-bold text-red-500 uppercase tracking-wider">

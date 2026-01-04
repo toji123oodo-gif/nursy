@@ -5,7 +5,7 @@ import { Course, Lesson, ContentItem, Question } from '../../types';
 import { 
   Plus, Edit2, Trash2, X, Save, FileText, Mic, 
   Video, Upload, Check, ChevronDown, ChevronRight,
-  MoreVertical, FileJson, Brain, Layout, DollarSign, Image as ImageIcon
+  MoreVertical, FileJson, Brain, Layout, DollarSign, Image as ImageIcon, Lock
 } from 'lucide-react';
 
 export const CoursesTab: React.FC = () => {
@@ -20,6 +20,7 @@ export const CoursesTab: React.FC = () => {
   const isOwner = user?.email === OWNER_EMAIL;
 
   const openNewCourseModal = () => {
+    if (!isOwner) return;
     setEditingCourse({
       id: '',
       title: '',
@@ -130,7 +131,9 @@ export const CoursesTab: React.FC = () => {
       <div className="flex justify-between items-center bg-white dark:bg-[#1E1E1E] p-5 rounded-xl border border-gray-200 dark:border-[#333] shadow-sm transition-colors">
          <div>
             <h2 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">Course Management</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Create, edit, and organize curriculum content.</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {isOwner ? 'Create, edit, and organize curriculum content.' : 'View course curriculum and status.'}
+            </p>
          </div>
          {isOwner && (
            <button 
@@ -145,11 +148,20 @@ export const CoursesTab: React.FC = () => {
       {/* Course Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {courses.map(course => (
-          <div key={course.id} className="group bg-white dark:bg-[#1E1E1E] rounded-xl border border-gray-200 dark:border-[#333] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col">
+          <div key={course.id} className="group bg-white dark:bg-[#1E1E1E] rounded-xl border border-gray-200 dark:border-[#333] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col relative">
+            
+            {!isOwner && (
+               <div className="absolute top-3 right-3 z-10">
+                  <div className="bg-black/50 backdrop-blur-sm text-white p-1.5 rounded-full" title="Read Only">
+                     <Lock size={14} />
+                  </div>
+               </div>
+            )}
+
             <div className="h-48 bg-gray-100 dark:bg-[#252525] relative overflow-hidden">
                <img src={course.image} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="" />
                
-               {/* Only show actions if user is Owner */}
+               {/* Only show edit actions if user is Owner */}
                {isOwner && (
                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3 backdrop-blur-sm">
                     <button 
