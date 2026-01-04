@@ -25,6 +25,9 @@ auth.languageCode = 'ar';
 // Initialize Firestore
 const db = firebase.firestore();
 
+// IMPORTANT: Ignore undefined properties to prevent "Unsupported field value: undefined" errors
+db.settings({ ignoreUndefinedProperties: true });
+
 // Standard persistence settings - removed experimentalForceLongPolling as it causes hangs
 if (typeof window !== 'undefined') {
   db.enablePersistence({ synchronizeTabs: true }).catch((err) => {

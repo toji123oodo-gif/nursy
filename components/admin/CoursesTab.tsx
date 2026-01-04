@@ -62,6 +62,57 @@ export const CoursesTab: React.FC = () => {
   const handleSave = async () => {
     if (!editingCourse?.title || !isOwner) return;
     try {
+        // Sanitize data to avoid Firestore errors
+        const cleanLessons = (editingCourse.lessons || []).map(l => {
+            // Ensure contents are clean
+            const cleanContents = (l.contents || []).map(c => ({
+                ...c,
+                title: c.title || 'Untitled',
+                url: c.url || '',
+                // Ensure textContent is a string if it exists, or empty string, avoid undefined
+                textContent: c.textContent || '', 
+                duration: c.duration || '',
+                fileSize: c.fileSize || ''
+            }));
+
+            // Ensure flashcards are clean
+            const cleanFlashcards = (l.flashcards || []).map(f => ({
+                id: f.id,
+                front: f.front || '',
+                back: f.back || '',
+                hint: f.hint || ''
+            }));
+
+            // Construct valid Quiz object if exists
+            let cleanQuiz = undefined;
+            if (l.quiz) {
+                cleanQuiz = {
+                    ...l.quiz,
+                    title: l.quiz.title || 'Quiz',
+                    timeLimit: Number(l.quiz.timeLimit) || 0,
+                    passingScore: Number(l.quiz.passingScore) || 50,
+                    questions: (l.quiz.questions || []).map(q => ({
+                        ...q,
+                        text: q.text || '',
+                        options: q.options || [],
+                        explanation: q.explanation || '',
+                        referencePage: q.referencePage || null // use null for optional numbers
+                    }))
+                };
+            }
+
+            return {
+                ...l,
+                title: l.title || 'New Lesson',
+                description: l.description || '',
+                duration: l.duration || '',
+                isLocked: !!l.isLocked,
+                contents: cleanContents,
+                flashcards: cleanFlashcards,
+                quiz: cleanQuiz
+            };
+        });
+
         const courseData: Course = {
             id: editingCourse.id || 'c-' + Date.now(),
             title: editingCourse.title || 'Untitled Course',
@@ -69,25 +120,19 @@ export const CoursesTab: React.FC = () => {
             subject: editingCourse.subject || 'General',
             image: editingCourse.image || 'https://placehold.co/600x400',
             price: Number(editingCourse.price) || 0,
-            lessons: (editingCourse.lessons || []).map(l => ({
-                ...l,
-                contents: l.contents || [],
-                flashcards: l.flashcards || [],
-                quiz: l.quiz ? {
-                    ...l.quiz,
-                    timeLimit: Number(l.quiz.timeLimit) || 0,
-                    passingScore: Number(l.quiz.passingScore) || 50
-                } : undefined
-            }))
+            lessons: cleanLessons
         };
 
-        if (editingCourse.id) await updateCourse(courseData);
-        else await addCourse(courseData);
+        // Use JSON parse/stringify as a final safety net to strip undefineds
+        const payload = JSON.parse(JSON.stringify(courseData));
+
+        if (editingCourse.id) await updateCourse(payload);
+        else await addCourse(payload);
         
         setIsModalOpen(false);
     } catch (error) {
         console.error("Failed to save course:", error);
-        alert("Error saving course. Please check the console.");
+        alert(`Error saving course: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
