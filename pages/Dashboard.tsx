@@ -4,8 +4,8 @@ import * as ReactRouterDOM from 'react-router-dom';
 const { Link } = ReactRouterDOM as any;
 import { useApp } from '../context/AppContext';
 import { 
-  Search, Plus, BarChart3, ArrowUpRight, CheckCircle2, 
-  AlertCircle, ShieldCheck, Activity, Globe, Zap, Wallet
+  Search, Play, BookOpen, Clock, 
+  Award, Calendar, ArrowRight, Zap, MoreHorizontal
 } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
@@ -18,168 +18,147 @@ export const Dashboard: React.FC = () => {
     c.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Mock data for student-friendly stats
+  const stats = [
+    { label: 'كورساتي', value: courses.length, icon: BookOpen, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { label: 'ساعات المذاكرة', value: '12h', icon: Clock, color: 'text-orange-600', bg: 'bg-orange-50' },
+    { label: 'الامتحانات', value: '2', icon: Calendar, color: 'text-purple-600', bg: 'bg-purple-50' },
+    { label: 'متوسط الدرجات', value: '88%', icon: Award, color: 'text-green-600', bg: 'bg-green-50' },
+  ];
+
   return (
-    <div className="space-y-6">
-      {/* Page Title & Actions */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="space-y-8 pb-10">
+      {/* 1. Welcome Section */}
+      <div className="flex flex-col md:flex-row justify-between items-end gap-4">
         <div>
-          <h1 className="text-xl font-bold text-main">Overview</h1>
-          <p className="text-xs text-muted mt-1">Summary of your learning activity and subscription status.</p>
+           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2">
+             أهلاً بك، {user.name.split(' ')[0]} 👋
+           </h1>
+           <p className="text-gray-500 dark:text-gray-400">
+             جاهز تكمل رحلتك التعليمية النهاردة؟
+           </p>
         </div>
-        <div className="flex items-center gap-2">
-           <button className="btn-secondary">Download Report</button>
-           <button className="btn-primary">
-             <Plus size={14} /> Add Course
+        <div className="flex gap-3">
+           <button className="btn-secondary rounded-full px-6">الجدول</button>
+           <button className="btn-primary rounded-full px-6 shadow-lg shadow-orange-500/20">
+             استكمل المذاكرة <Play size={16} fill="currentColor" />
            </button>
         </div>
       </div>
 
-      {/* Analytics Cards - Boxy & Dense */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="cf-card p-4">
-           <div className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Active Courses</div>
-           <div className="flex items-baseline gap-2">
-             <span className="text-2xl font-bold text-main">{courses.length}</span>
-             <span className="text-xs text-green-600 font-medium">+1 new</span>
-           </div>
-           <div className="mt-3 h-1 w-full bg-gray-100 dark:bg-[#333] rounded-sm overflow-hidden">
-              <div className="h-full bg-green-500 w-3/4"></div>
-           </div>
-        </div>
-        
-        <div className="cf-card p-4">
-           <div className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Completion Rate</div>
-           <div className="flex items-baseline gap-2">
-             <span className="text-2xl font-bold text-main">88.5%</span>
-             <span className="text-xs text-muted">avg</span>
-           </div>
-           <div className="mt-3 text-[10px] text-muted flex justify-between">
-              <span>Last 7 days</span>
-              <span className="text-green-600">▲ 2.4%</span>
-           </div>
-        </div>
-
-        <div className="cf-card p-4">
-           <div className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Security Status</div>
-           <div className="flex items-center gap-2 mb-1">
-             <ShieldCheck size={20} className="text-green-600" />
-             <span className="text-sm font-bold text-main">Protected</span>
-           </div>
-           <p className="text-[10px] text-muted">Account is secure. 2FA enabled.</p>
-        </div>
-
-        <div className="cf-card p-4">
-           <div className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Plan Usage</div>
-           <div className="flex justify-between items-center mb-1">
-              <span className="text-sm font-bold text-[#0051C3] dark:text-[#68b5fb]">{user.subscriptionTier.toUpperCase()}</span>
-              <span className="text-[10px] text-muted">Renews Oct 25</span>
-           </div>
-           <div className="w-full bg-gray-100 dark:bg-[#333] h-1.5 rounded-sm">
-             <div className="bg-[#F38020] h-full w-[40%] rounded-sm"></div>
-           </div>
-        </div>
+      {/* 2. Simple Stats Grid (Widget Style) */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {stats.map((stat, idx) => (
+          <div key={idx} className="bg-white dark:bg-[#1E1E1E] p-4 rounded-2xl border border-gray-100 dark:border-[#333] shadow-sm flex flex-col items-center text-center hover:shadow-md transition-all">
+             <div className={`w-10 h-10 ${stat.bg} ${stat.color} rounded-full flex items-center justify-center mb-3`}>
+                <stat.icon size={20} />
+             </div>
+             <span className="text-2xl font-bold text-gray-900 dark:text-white">{stat.value}</span>
+             <span className="text-xs text-gray-500 font-medium">{stat.label}</span>
+          </div>
+        ))}
       </div>
 
-      {/* Main Data Table */}
-      <div className="cf-card">
-        {/* Table Header / Toolbar */}
-        <div className="cf-header">
-           <h3 className="text-sm font-bold text-main">Enrolled Courses</h3>
-           <div className="relative w-64">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
-              <input 
-                type="text" 
-                placeholder="Search resources..." 
-                className="cf-input pl-8"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+      {/* 3. Featured / Continue Learning (Hero Card) */}
+      {courses.length > 0 && (
+        <div className="w-full bg-gradient-to-r from-[#1a1a1a] to-[#2d2d2d] rounded-3xl p-6 md:p-8 text-white relative overflow-hidden shadow-2xl">
+           <div className="absolute top-0 right-0 w-64 h-64 bg-[#F38020] rounded-full blur-[100px] opacity-20 pointer-events-none"></div>
+           
+           <div className="relative z-10 flex flex-col md:flex-row items-center gap-6">
+              <div className="w-full md:w-48 h-32 rounded-xl overflow-hidden shadow-lg border border-white/10 shrink-0">
+                 <img src={courses[0].image} alt="Course" className="w-full h-full object-cover" />
+              </div>
+              
+              <div className="flex-1 text-center md:text-right">
+                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/10 text-xs font-medium mb-3">
+                    <Zap size={12} className="text-[#F38020]" fill="currentColor" /> استكمل آخر درس
+                 </div>
+                 <h2 className="text-xl md:text-2xl font-bold mb-2">{courses[0].title}</h2>
+                 <p className="text-gray-400 text-sm mb-4">المحاضرة 3: مقدمة في علم التشريح ووظائف الأعضاء</p>
+                 
+                 <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden mb-2">
+                    <div className="bg-[#F38020] h-full w-[65%] shadow-[0_0_10px_rgba(243,128,32,0.5)]"></div>
+                 </div>
+                 <div className="flex justify-between text-xs text-gray-400">
+                    <span>تم إنجاز 65%</span>
+                    <span>باقي 15 دقيقة</span>
+                 </div>
+              </div>
+
+              <Link to={`/course/${courses[0].id}`} className="bg-white text-black px-6 py-3 rounded-xl font-bold hover:bg-gray-100 transition-colors shrink-0 w-full md:w-auto text-center">
+                 تابع الدرس
+              </Link>
            </div>
         </div>
+      )}
 
-        {/* Table Content */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead className="bg-[#FAFAFA] dark:bg-[#252525] border-b border-[#E5E5E5] dark:border-[#333]">
-              <tr>
-                <th className="px-5 py-3 text-[11px] font-bold text-muted uppercase tracking-wider text-right">Course Name</th>
-                <th className="px-5 py-3 text-[11px] font-bold text-muted uppercase tracking-wider text-right">Status</th>
-                <th className="px-5 py-3 text-[11px] font-bold text-muted uppercase tracking-wider text-right">Progress</th>
-                <th className="px-5 py-3 text-[11px] font-bold text-muted uppercase tracking-wider text-right">Last Activity</th>
-                <th className="px-5 py-3 text-[11px] font-bold text-muted uppercase tracking-wider text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#E5E5E5] dark:divide-[#333]">
-              {filteredCourses.map((course) => (
-                <tr key={course.id} className="hover:bg-gray-50 dark:hover:bg-[#252525] transition-colors group">
-                  <td className="px-5 py-3.5 text-right">
-                     <div className="flex items-center gap-3 justify-end">
-                       <div className="text-right">
-                         <div className="text-sm font-medium text-main">{course.title}</div>
-                         <div className="text-xs text-muted flex items-center justify-end gap-1">
-                           {course.subject} <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600"></span> {course.instructor}
-                         </div>
-                       </div>
-                       <div className="w-8 h-8 rounded-[4px] bg-blue-50 dark:bg-[#2B3A4F] text-[#0051C3] dark:text-[#68b5fb] flex items-center justify-center shrink-0">
-                         <Zap size={16} />
-                       </div>
+      {/* 4. Course Grid (Replacing the Table) */}
+      <div>
+         <div className="flex justify-between items-center mb-6">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">كورساتي المشترك بها</h3>
+            
+            <div className="relative hidden md:block">
+               <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+               <input 
+                 type="text" 
+                 placeholder="بحث في الكورسات..." 
+                 className="bg-white dark:bg-[#1E1E1E] border border-gray-200 dark:border-[#333] rounded-full px-4 pr-10 py-2 text-sm w-64 focus:outline-none focus:border-[#F38020]"
+                 value={searchTerm}
+                 onChange={(e) => setSearchTerm(e.target.value)}
+               />
+            </div>
+         </div>
+
+         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredCourses.map((course) => (
+               <div key={course.id} className="bg-white dark:bg-[#1E1E1E] rounded-2xl border border-gray-100 dark:border-[#333] overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
+                  {/* Image Header */}
+                  <div className="h-40 overflow-hidden relative">
+                     <img src={course.image} alt={course.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                     <div className="absolute top-3 left-3 bg-white/90 dark:bg-black/80 backdrop-blur-sm px-2 py-1 rounded-md text-xs font-bold shadow-sm">
+                        {course.subject}
                      </div>
-                  </td>
-                  <td className="px-5 py-3.5 text-right">
-                     <span className="cf-badge bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800">
-                       Active
-                     </span>
-                  </td>
-                  <td className="px-5 py-3.5 text-right">
-                     <div className="flex items-center justify-end gap-3">
-                        <span className="text-xs font-mono text-muted">45%</span>
-                        <div className="w-24 bg-gray-100 dark:bg-[#333] h-1.5 rounded-sm overflow-hidden">
-                           <div className="bg-[#F38020] h-full w-[45%]"></div>
+                  </div>
+
+                  {/* Body */}
+                  <div className="p-5">
+                     <div className="flex justify-between items-start mb-2">
+                        <h4 className="font-bold text-gray-900 dark:text-white line-clamp-1 text-lg">{course.title}</h4>
+                        <button className="text-gray-400 hover:text-gray-600"><MoreHorizontal size={18} /></button>
+                     </div>
+                     
+                     <p className="text-sm text-gray-500 mb-4 flex items-center gap-1">
+                        د. {course.instructor}
+                     </p>
+
+                     {/* Progress */}
+                     <div className="mb-4">
+                        <div className="flex justify-between text-xs mb-1.5 font-medium">
+                           <span className="text-gray-600 dark:text-gray-400">التقدم</span>
+                           <span className="text-[#F38020]">45%</span>
+                        </div>
+                        <div className="w-full bg-gray-100 dark:bg-[#333] h-2 rounded-full overflow-hidden">
+                           <div className="bg-[#F38020] h-full w-[45%] rounded-full"></div>
                         </div>
                      </div>
-                  </td>
-                  <td className="px-5 py-3.5 text-right text-xs text-muted font-mono">
-                     2 hours ago
-                  </td>
-                  <td className="px-5 py-3.5 text-right">
-                     <Link to={`/course/${course.id}`} className="cf-link text-xs">
-                       Manage
+
+                     <Link 
+                        to={`/course/${course.id}`}
+                        className="w-full flex items-center justify-center gap-2 bg-gray-50 dark:bg-[#2C2C2C] hover:bg-gray-100 dark:hover:bg-[#333] text-gray-900 dark:text-white py-3 rounded-xl text-sm font-bold transition-colors border border-gray-200 dark:border-[#444]"
+                     >
+                        الذهاب للكورس <ArrowRight size={16} className="rotate-180" />
                      </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        
-        {/* Table Footer / Pagination */}
-        <div className="px-5 py-3 border-t border-[#E5E5E5] dark:border-[#333] bg-[#FAFAFA] dark:bg-[#252525] flex justify-between items-center">
-           <span className="text-xs text-muted">Showing 1-{filteredCourses.length} of {filteredCourses.length} items</span>
-           <div className="flex gap-1">
-              <button className="px-2 py-1 border border-[#E5E5E5] dark:border-[#333] rounded-[3px] bg-white dark:bg-[#1E1E1E] text-xs text-muted disabled:opacity-50" disabled>Prev</button>
-              <button className="px-2 py-1 border border-[#E5E5E5] dark:border-[#333] rounded-[3px] bg-white dark:bg-[#1E1E1E] text-xs text-muted disabled:opacity-50" disabled>Next</button>
-           </div>
-        </div>
-      </div>
-      
-      {/* Secondary Info Area (Quick Links) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-         <div className="cf-card p-5 flex items-start justify-between">
-            <div>
-               <h4 className="text-sm font-bold text-main mb-1">Community Activity</h4>
-               <p className="text-xs text-muted mb-3">Join the discussion with other students.</p>
-               <Link to="/community" className="cf-link text-xs">Go to Community &rarr;</Link>
-            </div>
-            <Activity size={20} className="text-muted" />
+                  </div>
+               </div>
+            ))}
          </div>
-         <div className="cf-card p-5 flex items-start justify-between">
-            <div>
-               <h4 className="text-sm font-bold text-main mb-1">Billing & Invoices</h4>
-               <p className="text-xs text-muted mb-3">Manage your subscription and payment methods.</p>
-               <Link to="/wallet" className="cf-link text-xs">View Billing &rarr;</Link>
+
+         {filteredCourses.length === 0 && (
+            <div className="text-center py-12 bg-gray-50 dark:bg-[#151515] rounded-2xl border border-dashed border-gray-300 dark:border-[#333]">
+               <BookOpen size={48} className="mx-auto text-gray-300 mb-4" />
+               <p className="text-gray-500">لا توجد كورسات مطابقة للبحث</p>
             </div>
-            <Wallet size={20} className="text-muted" />
-         </div>
+         )}
       </div>
     </div>
   );
