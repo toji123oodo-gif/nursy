@@ -12,6 +12,9 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ url, title }) => {
   const [progress, setProgress] = useState(0);
   const audioRef = useRef<HTMLAudioElement>(null);
 
+  // Generate fake visualization bars
+  const [bars] = useState(() => Array.from({ length: 24 }, () => Math.floor(Math.random() * 60) + 20));
+
   const togglePlay = () => {
     if (isPlaying) audioRef.current?.pause();
     else audioRef.current?.play();
@@ -23,30 +26,47 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ url, title }) => {
     if (!audio) return;
     const updateProgress = () => setProgress((audio.currentTime / audio.duration) * 100);
     audio.addEventListener('timeupdate', updateProgress);
-    return () => audio.removeEventListener('timeupdate', updateProgress);
+    audio.addEventListener('ended', () => setIsPlaying(false));
+    return () => {
+       audio.removeEventListener('timeupdate', updateProgress);
+       audio.removeEventListener('ended', () => setIsPlaying(false));
+    }
   }, []);
 
   return (
-    <div className="flex items-center gap-4 w-full">
-      <audio ref={audioRef} src={url} onEnded={() => setIsPlaying(false)} />
+    <div className="flex items-center gap-4 w-full bg-[#1A1A1A] dark:bg-black p-4 rounded-lg border border-[#333]">
+      <audio ref={audioRef} src={url} />
       
       <button 
         onClick={togglePlay} 
-        className="w-8 h-8 bg-brand-orange text-white rounded flex items-center justify-center hover:bg-brand-orangeHover transition-colors shrink-0 shadow-sm"
+        className="w-10 h-10 bg-[#F38020] text-white rounded-full flex items-center justify-center hover:bg-[#c7620e] transition-all shrink-0 shadow-lg shadow-orange-900/20"
       >
-        {isPlaying ? <Pause size={14} fill="currentColor" /> : <Play size={14} fill="currentColor" className="ml-0.5" />}
+        {isPlaying ? <Pause size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" className="ml-1" />}
       </button>
 
       <div className="flex-1 min-w-0">
-        <div className="flex justify-between items-center mb-1.5">
-          <span className="text-xs font-bold text-[#333] truncate uppercase tracking-wider">{title}</span>
-          <span className="text-[10px] text-[#666] font-mono">MP3</span>
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-xs font-bold text-white truncate">{title}</span>
+          <span className="text-[10px] text-gray-400 font-mono">AUDIO</span>
         </div>
-        <div className="h-1.5 w-full bg-[#E5E5E5] rounded-full overflow-hidden cursor-pointer relative">
-          <div 
-            className="h-full bg-brand-orange relative" 
-            style={{ width: `${progress}%` }}
-          ></div>
+        
+        {/* Fake Visualizer */}
+        <div className="flex items-center gap-1 h-8 cursor-pointer relative group" onClick={(e) => {
+           const rect = e.currentTarget.getBoundingClientRect();
+           const x = e.clientX - rect.left;
+           const percent = x / rect.width;
+           if(audioRef.current) audioRef.current.currentTime = percent * audioRef.current.duration;
+        }}>
+           {bars.map((h, i) => {
+              const active = (i / bars.length) * 100 < progress;
+              return (
+                 <div 
+                   key={i} 
+                   className={`flex-1 rounded-full transition-all duration-200 ${active ? 'bg-[#F38020]' : 'bg-[#333] group-hover:bg-[#444]'}`}
+                   style={{ height: active && isPlaying ? `${Math.max(h, Math.random()*100)}%` : `${h}%` }}
+                 ></div>
+              )
+           })}
         </div>
       </div>
     </div>

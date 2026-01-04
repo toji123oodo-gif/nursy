@@ -1,22 +1,36 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 const { Link, useLocation } = ReactRouterDOM as any;
 import { 
   Home, Book, Wallet, User, LogOut, Menu, X, 
   Activity, ChevronRight, Bell, Settings, Cloud,
-  Moon, Sun, Users, HelpCircle, ExternalLink
+  Moon, Sun, Users, HelpCircle, ExternalLink, Search, Command
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { CommandPalette } from './CommandPalette';
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, logout, theme, toggleTheme } = useApp();
   const location = useLocation();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const [isPaletteOpen, setIsPaletteOpen] = useState(false);
+
+  // Command Palette Keyboard Shortcut
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setIsPaletteOpen((open) => !open);
+      }
+    };
+    document.addEventListener('keydown', down);
+    return () => document.removeEventListener('keydown', down);
+  }, []);
 
   const navLinks = [
     { path: '/dashboard', label: 'Overview', icon: Home },
-    { path: '/dashboard/courses', label: 'My Courses', icon: Book }, // Changed path for conceptual grouping
+    { path: '/dashboard/courses', label: 'My Courses', icon: Book },
     { path: '/community', label: 'Community', icon: Users },
     { path: '/wallet', label: 'Billing', icon: Wallet },
   ];
@@ -29,7 +43,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
   return (
     <div className="min-h-screen bg-[#F9FAFB] dark:bg-[#101010] flex font-sans text-sm">
-      {/* Sidebar - Cloudflare Style: Fixed width, darker/lighter contrast */}
+      <CommandPalette isOpen={isPaletteOpen} onClose={() => setIsPaletteOpen(false)} />
+      
+      {/* Sidebar - Cloudflare Style */}
       <aside className={`fixed inset-y-0 left-0 z-[100] w-64 bg-white dark:bg-[#1E1E1E] border-r border-[#E5E5E5] dark:border-[#333] flex flex-col transition-transform duration-300 lg:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:static`}>
         
         {/* Logo Area */}
@@ -45,8 +61,6 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
         {/* Navigation */}
         <div className="flex-1 overflow-y-auto py-4 px-3 space-y-0.5">
-          
-          {/* Section Header */}
           <div className="px-3 py-2 text-[10px] font-bold text-muted uppercase tracking-wider">
             Account Home
           </div>
@@ -54,7 +68,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           {navLinks.map(link => (
             <Link
               key={link.path}
-              to={link.path === '/dashboard/courses' ? '/dashboard' : link.path} // Quick fix for routing
+              to={link.path === '/dashboard/courses' ? '/dashboard' : link.path}
               className={`flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm font-medium transition-colors ${
                 isActive(link.path === '/dashboard/courses' ? '/dashboard' : link.path) 
                 ? 'bg-blue-50 dark:bg-[#2B3A4F] text-[#0051C3] dark:text-[#68b5fb]' 
@@ -83,7 +97,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
            </Link>
         </div>
 
-        {/* User Footer - Compact */}
+        {/* User Footer */}
         {user && (
           <div className="p-3 border-t border-[#E5E5E5] dark:border-[#333] bg-[#FAFAFA] dark:bg-[#252525]">
             <div className="flex items-center gap-3">
@@ -108,20 +122,24 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Top Header - Minimalist */}
+        {/* Top Header */}
         <header className="h-14 bg-white dark:bg-[#1E1E1E] border-b border-[#E5E5E5] dark:border-[#333] flex items-center justify-between px-6 shadow-[0_1px_2px_rgba(0,0,0,0.02)] z-10">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-1">
             <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-muted hover:text-main">
               <Menu size={20} />
             </button>
-            {/* Breadcrumbs */}
-            <div className="flex items-center text-xs text-muted">
-              <span className="hover:text-[#0051C3] dark:hover:text-[#68b5fb] cursor-pointer">Account</span>
-              <ChevronRight size={12} className="mx-2 text-gray-300 dark:text-[#404040]" />
-              <span className="font-semibold text-main">
-                {navLinks.find(l => l.path === location.pathname)?.label || 'Dashboard'}
-              </span>
-            </div>
+            
+            {/* Quick Search Button */}
+            <button 
+              onClick={() => setIsPaletteOpen(true)}
+              className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-[#252525] border border-gray-200 dark:border-[#333] rounded-[4px] text-muted hover:border-gray-300 dark:hover:border-[#444] transition-colors w-64 group"
+            >
+               <Search size={14} className="group-hover:text-main" />
+               <span className="text-xs">Search...</span>
+               <span className="ml-auto text-[10px] border border-gray-200 dark:border-[#444] rounded px-1 flex items-center gap-0.5">
+                 <Command size={8}/> K
+               </span>
+            </button>
           </div>
 
           <div className="flex items-center gap-4">
@@ -139,7 +157,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           </div>
         </header>
 
-        {/* Content Body - Gray Background for content */}
+        {/* Content Body */}
         <main className="flex-1 overflow-y-auto p-4 lg:p-8">
           <div className="max-w-7xl mx-auto space-y-6">
              {children}

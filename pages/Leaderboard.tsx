@@ -1,122 +1,114 @@
 
-import React, { useMemo } from 'react';
-import { Trophy, Medal, Star, Flame, Crown, Sparkles, ChevronLeft, ArrowUpRight } from 'lucide-react';
+import React from 'react';
 import { useApp } from '../context/AppContext';
+import { Trophy, TrendingUp, Minus, ArrowUp, ArrowDown } from 'lucide-react';
 
 export const Leaderboard: React.FC = () => {
   const { user } = useApp();
 
-  // Mock data for other students
+  // Mock data representing a dataset
   const topStudents = [
-    { name: 'أحمد محمود القاضي', xp: 12500, level: 25, streak: 45, rank: 1 },
-    { name: 'سارة يوسف مندور', xp: 11200, level: 22, streak: 30, rank: 2 },
-    { name: 'مصطفى كمال الدين', xp: 10800, level: 21, streak: 12, rank: 3 },
-    { name: 'إيمان علي رضوان', xp: 9500, level: 19, streak: 8, rank: 4 },
-    { name: 'محمد حامد شريف', xp: 8200, level: 16, streak: 20, rank: 5 },
+    { rank: 1, name: 'Ahmed M. El-Qadi', xp: 12500, change: 'up' },
+    { rank: 2, name: 'Sara Y. Mandour', xp: 11200, change: 'same' },
+    { rank: 3, name: 'Mostafa Kamal', xp: 10800, change: 'down' },
+    { rank: 4, name: 'Eman A. Radwan', xp: 9500, change: 'up' },
+    { rank: 5, name: 'Mohamed Hamed', xp: 8200, change: 'same' },
+    { rank: 6, name: 'Nour El-Sherif', xp: 7800, change: 'up' },
+    { rank: 7, name: 'Khaled Waleed', xp: 7500, change: 'down' },
   ];
 
-  if (!user) return null;
-
   return (
-    <div className="min-h-screen bg-brand-main py-12 px-6">
-      <div className="max-w-4xl mx-auto space-y-12">
-        
-        {/* Header Hero */}
-        <div className="text-center space-y-6 ns-animate--fade-in-up">
-           <div className="inline-flex items-center gap-3 bg-brand-gold/10 px-6 py-2 rounded-full border border-brand-gold/20 text-brand-gold font-black uppercase tracking-widest text-[10px]">
-              <Trophy size={14} fill="currentColor" className="animate-pulse" /> قاعة المشاهير
-           </div>
-           <h1 className="text-5xl md:text-8xl font-black text-white tracking-tighter leading-none">
-             فرسان <span className="text-brand-gold">نيرسي</span>
-           </h1>
-           <p className="text-brand-muted text-lg font-medium max-w-2xl mx-auto">
-             المنافسة مش بس على الدرجات، المنافسة على الالتزام والاستمرار. كل محاضرة بتسمعها بتقربك من القمة.
-           </p>
-        </div>
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row justify-between items-end border-b border-[#E5E5E5] dark:border-[#333] pb-6">
+         <div>
+            <h1 className="text-xl font-bold text-main">Performance Rankings</h1>
+            <p className="text-xs text-muted mt-1">Weekly student engagement and experience points (XP) analysis.</p>
+         </div>
+         <div className="text-right">
+            <span className="text-xs font-bold text-muted uppercase tracking-wider">Your Position</span>
+            <div className="text-2xl font-bold text-[#F38020]">Top 15%</div>
+         </div>
+      </div>
 
-        {/* Podium Area */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-10 items-end">
-          {/* Second Place */}
-          <div className="bg-brand-card/40 border border-white/5 p-8 rounded-[3rem] text-center space-y-4 order-2 md:order-1 h-64 flex flex-col justify-center relative ns-animate--fade-in-up" style={{animationDelay: '0.2s'}}>
-             <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-12 h-12 bg-slate-400 rounded-2xl flex items-center justify-center text-brand-main shadow-lg">
-                <Medal size={24} />
-             </div>
-             <p className="text-white font-black text-lg">{topStudents[1].name.split(' ')[0]}</p>
-             <p className="text-brand-gold font-black text-2xl">{topStudents[1].xp} XP</p>
-          </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+         {/* Top Card */}
+         <div className="md:col-span-2 cf-card">
+            <div className="cf-header">
+               <h3 className="text-sm font-bold text-main">Top Performers (This Week)</h3>
+               <button className="text-xs text-[#0051C3] dark:text-[#68b5fb] hover:underline">View Full Report</button>
+            </div>
+            <div className="overflow-x-auto">
+               <table className="w-full text-left">
+                  <thead className="bg-[#FAFAFA] dark:bg-[#252525] border-b border-[#E5E5E5] dark:border-[#333]">
+                     <tr>
+                        <th className="px-5 py-3 text-[11px] font-bold text-muted uppercase tracking-wider w-16">Rank</th>
+                        <th className="px-5 py-3 text-[11px] font-bold text-muted uppercase tracking-wider">Student Name</th>
+                        <th className="px-5 py-3 text-[11px] font-bold text-muted uppercase tracking-wider">Trend</th>
+                        <th className="px-5 py-3 text-[11px] font-bold text-muted uppercase tracking-wider text-right">Total XP</th>
+                     </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#E5E5E5] dark:divide-[#333]">
+                     {topStudents.map((s) => (
+                        <tr key={s.rank} className={`hover:bg-gray-50 dark:hover:bg-[#252525] transition-colors ${user?.name.includes(s.name) ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}`}>
+                           <td className="px-5 py-3 text-sm font-mono text-muted">
+                              #{s.rank}
+                           </td>
+                           <td className="px-5 py-3">
+                              <span className={`text-sm font-medium ${s.rank <= 3 ? 'text-main' : 'text-muted'}`}>{s.name}</span>
+                           </td>
+                           <td className="px-5 py-3">
+                              {s.change === 'up' && <ArrowUp size={14} className="text-green-500" />}
+                              {s.change === 'down' && <ArrowDown size={14} className="text-red-500" />}
+                              {s.change === 'same' && <Minus size={14} className="text-gray-300" />}
+                           </td>
+                           <td className="px-5 py-3 text-right">
+                              <span className="font-mono text-sm font-bold text-main">{s.xp.toLocaleString()}</span>
+                           </td>
+                        </tr>
+                     ))}
+                  </tbody>
+               </table>
+            </div>
+         </div>
 
-          {/* First Place */}
-          <div className="bg-brand-card border-2 border-brand-gold p-10 rounded-[4rem] text-center space-y-6 order-1 md:order-2 h-80 flex flex-col justify-center relative shadow-glow ns-animate--fade-in-up" style={{animationDelay: '0.1s'}}>
-             <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-20 h-20 bg-brand-gold rounded-3xl flex items-center justify-center text-brand-main shadow-glow animate-bounce-slow">
-                <Crown size={44} />
-             </div>
-             <p className="text-white font-black text-2xl">{topStudents[0].name}</p>
-             <div className="space-y-1">
-                <p className="text-brand-gold font-black text-4xl">{topStudents[0].xp}</p>
-                <p className="text-[10px] text-brand-muted font-black uppercase tracking-widest">نقطة خبرة</p>
-             </div>
-          </div>
+         {/* Side Stats */}
+         <div className="space-y-6">
+            <div className="cf-card p-6">
+               <h3 className="text-xs font-bold text-muted uppercase tracking-wider mb-4">Your Metrics</h3>
+               
+               <div className="space-y-6">
+                  <div>
+                     <div className="flex justify-between text-sm mb-1">
+                        <span className="text-muted">Global Rank</span>
+                        <span className="font-mono font-bold text-main">#142</span>
+                     </div>
+                     <div className="w-full bg-gray-100 dark:bg-[#333] h-1.5 rounded-sm overflow-hidden">
+                        <div className="bg-[#0051C3] dark:bg-[#68b5fb] h-full w-[85%]"></div>
+                     </div>
+                  </div>
 
-          {/* Third Place */}
-          <div className="bg-brand-card/40 border border-white/5 p-8 rounded-[3rem] text-center space-y-4 order-3 md:order-3 h-56 flex flex-col justify-center relative ns-animate--fade-in-up" style={{animationDelay: '0.3s'}}>
-             <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-12 h-12 bg-amber-700 rounded-2xl flex items-center justify-center text-brand-main shadow-lg">
-                <Medal size={24} />
-             </div>
-             <p className="text-white font-black text-lg">{topStudents[2].name.split(' ')[0]}</p>
-             <p className="text-brand-gold font-black text-2xl">{topStudents[2].xp} XP</p>
-          </div>
-        </div>
+                  <div>
+                     <div className="flex justify-between text-sm mb-1">
+                        <span className="text-muted">Weekly Streak</span>
+                        <span className="font-mono font-bold text-main">5 Days</span>
+                     </div>
+                     <div className="flex gap-1">
+                        {[1,1,1,1,1,0,0].map((d, i) => (
+                           <div key={i} className={`h-2 flex-1 rounded-[1px] ${d ? 'bg-green-500' : 'bg-gray-200 dark:bg-[#333]'}`}></div>
+                        ))}
+                     </div>
+                  </div>
+               </div>
+            </div>
 
-        {/* Full List */}
-        <div className="bg-brand-card rounded-[3.5rem] border border-white/10 overflow-hidden shadow-2xl ns-animate--fade-in-up">
-           <div className="p-8 border-b border-white/5 bg-white/5 flex justify-between items-center">
-              <h3 className="text-xl font-black text-white flex items-center gap-3">
-                 <Star className="text-brand-gold" size={20} /> بقية المتصدرين
-              </h3>
-              <span className="text-[10px] text-brand-muted font-black uppercase tracking-widest">تحديث مباشر</span>
-           </div>
-           
-           <div className="divide-y divide-white/5">
-              {topStudents.slice(3).map((s, idx) => (
-                <div key={idx} className="p-8 flex items-center justify-between group hover:bg-white/[0.02] transition-all">
-                   <div className="flex items-center gap-6">
-                      <div className="text-brand-muted font-black text-xl w-8 italic">#{s.rank}</div>
-                      <div>
-                         <p className="text-white font-black text-lg group-hover:text-brand-gold transition-colors">{s.name}</p>
-                         <p className="text-[10px] text-brand-muted font-bold uppercase tracking-widest">المستوى {s.level}</p>
-                      </div>
-                   </div>
-                   <div className="flex items-center gap-8">
-                      <div className="text-center hidden sm:block">
-                         <p className="text-orange-500 font-black text-sm flex items-center gap-1">
-                           {s.streak} <Flame size={14} fill="currentColor" />
-                         </p>
-                         <p className="text-[8px] text-brand-muted font-bold uppercase">متواصل</p>
-                      </div>
-                      <div className="bg-brand-gold/10 px-6 py-2 rounded-xl border border-brand-gold/20 text-brand-gold font-black text-lg">
-                        {s.xp} XP
-                      </div>
-                   </div>
-                </div>
-              ))}
-           </div>
-        </div>
-
-        {/* Your Personal Rank Card */}
-        <div className="bg-brand-gold text-brand-main p-8 md:p-12 rounded-[3.5rem] flex flex-col md:flex-row items-center justify-between gap-8 shadow-glow ns-animate--fade-in-up">
-           <div className="flex items-center gap-6 text-center md:text-right">
-              <div className="w-20 h-20 bg-brand-main text-brand-gold rounded-[2rem] flex items-center justify-center text-4xl font-black shadow-inner">
-                {user.xp ? '142' : '--'}
-              </div>
-              <div>
-                <h4 className="text-2xl font-black">ترتيبك بين جميع الطلاب</h4>
-                <p className="text-brand-main/70 font-bold uppercase text-xs tracking-widest">أنت الآن في أعلى 15% من الطلاب هذا الشهر</p>
-              </div>
-           </div>
-           <button className="bg-brand-main text-brand-gold px-10 py-5 rounded-2xl font-black text-lg flex items-center gap-3 hover:scale-105 transition-all">
-              <Sparkles size={24} /> كيف أحصل على نقاط؟
-           </button>
-        </div>
+            <div className="bg-[#FAFAFA] dark:bg-[#151515] border border-[#E5E5E5] dark:border-[#333] rounded-[4px] p-6 text-center">
+               <Trophy size={32} className="text-[#F38020] mx-auto mb-2 opacity-80" />
+               <h4 className="text-sm font-bold text-main">Reach Top 100</h4>
+               <p className="text-xs text-muted mt-1">
+                  You need <strong>450 XP</strong> more to overtake the next rank. Complete 2 quizzes to achieve this.
+               </p>
+            </div>
+         </div>
       </div>
     </div>
   );

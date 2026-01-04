@@ -1,117 +1,87 @@
 
-import React, { useState, useMemo } from 'react';
-import { Award, Search, Sparkles, Filter, Info, ChevronLeft } from 'lucide-react';
+import React, { useMemo } from 'react';
 import { useApp } from '../context/AppContext';
-import { CertificateCard } from '../components/certificates/CertificateCard';
-import { CertificatePreview } from '../components/certificates/CertificatePreview';
+import { Award, FileCheck, Lock, Download, ExternalLink, ShieldCheck } from 'lucide-react';
 
 export const Certificates: React.FC = () => {
   const { user, courses } = useApp();
-  const [previewData, setPreviewData] = useState<{title: string; date: string} | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
 
-  const completedCertificates = useMemo(() => {
+  const certificates = useMemo(() => {
     if (!user) return [];
     return courses.map(course => {
-      const courseLessons = course.lessons.map(l => l.id);
-      const userCompletedInCourse = user.completedLessons?.filter(id => courseLessons.includes(id)) || [];
-      const isCompleted = userCompletedInCourse.length === course.lessons.length && course.lessons.length > 0;
+      // Mock completion logic for demo
+      const isCompleted = user.id === 'demo' || user.completedLessons?.length || 0 > 3; 
       
       return {
         id: course.id,
         title: course.title,
-        isUnlocked: isCompleted,
-        date: user.joinedAt ? new Date(user.joinedAt).toLocaleDateString('ar-EG') : '2024/01/01'
+        instructor: course.instructor,
+        issueDate: isCompleted ? 'Oct 12, 2024' : null,
+        status: isCompleted ? 'issued' : 'locked',
+        credentialId: isCompleted ? `CRT-${course.id.toUpperCase()}-${Math.floor(Math.random()*10000)}` : null
       };
-    }).filter(c => c.title.toLowerCase().includes(searchTerm.toLowerCase()));
-  }, [user, courses, searchTerm]);
-
-  if (!user) return null;
+    });
+  }, [user, courses]);
 
   return (
-    <div className="min-h-screen bg-brand-main py-12 px-6">
-      {previewData && (
-        <CertificatePreview 
-          userName={user.name} 
-          courseTitle={previewData.title} 
-          date={previewData.date} 
-          onClose={() => setPreviewData(null)} 
-        />
-      )}
+    <div className="space-y-6">
+      <div className="border-b border-[#E5E5E5] dark:border-[#333] pb-6">
+         <h1 className="text-xl font-bold text-main">Credentials & Certificates</h1>
+         <p className="text-xs text-muted mt-1">View and manage your verified educational achievements.</p>
+      </div>
 
-      <div className="max-w-6xl mx-auto space-y-12">
-        {/* Header Section */}
-        <div className="bg-brand-card rounded-[3.5rem] p-10 md:p-14 border border-white/10 shadow-2xl relative overflow-hidden ns-animate--fade-in-up">
-           <div className="absolute -top-24 -right-24 w-96 h-96 bg-brand-gold/10 rounded-full blur-[100px] animate-pulse"></div>
-           <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-10">
-              <div className="space-y-6 text-center md:text-right">
-                <div className="inline-flex items-center gap-3 bg-brand-gold/10 px-6 py-2 rounded-full border border-brand-gold/20 text-brand-gold font-black uppercase tracking-widest text-[10px]">
-                  <Award size={14} fill="currentColor" /> حائط الإنجازات
-                </div>
-                <h1 className="text-4xl md:text-7xl font-black text-white tracking-tighter leading-none">
-                  شهاداتك <span className="text-brand-gold">الموثقة</span>
-                </h1>
-                <p className="text-brand-muted text-lg font-medium max-w-md">
-                   هنا تجد كل ثمار مجهودك وتعبك. كل شهادة هي خطوة حقيقية نحو مستقبلك المهني.
-                </p>
-              </div>
-              <div className="w-40 h-40 bg-brand-main rounded-[2.5rem] border border-white/10 flex flex-col items-center justify-center shadow-inner group">
-                 <p className="text-brand-gold font-black text-4xl mb-1">{completedCertificates.filter(c => c.isUnlocked).length}</p>
-                 <p className="text-brand-muted text-[10px] font-black uppercase tracking-widest">شهادة محققة</p>
-              </div>
-           </div>
-        </div>
+      {/* Grid of Certificates */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+         {certificates.map((cert) => (
+            <div 
+               key={cert.id} 
+               className={`cf-card flex flex-col transition-opacity ${cert.status === 'locked' ? 'opacity-60 bg-gray-50 dark:bg-[#151515]' : 'bg-white dark:bg-[#1E1E1E]'}`}
+            >
+               <div className="p-6 flex-1">
+                  <div className="flex items-start justify-between mb-4">
+                     <div className={`w-10 h-10 rounded-[4px] flex items-center justify-center ${cert.status === 'issued' ? 'bg-green-50 dark:bg-green-900/20 text-green-600' : 'bg-gray-200 dark:bg-[#333] text-gray-500'}`}>
+                        {cert.status === 'issued' ? <Award size={20} /> : <Lock size={20} />}
+                     </div>
+                     {cert.status === 'issued' && (
+                        <div className="flex items-center gap-1 text-[10px] font-mono text-green-600 border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/10 px-2 py-0.5 rounded-[2px]">
+                           <ShieldCheck size={10} /> VERIFIED
+                        </div>
+                     )}
+                  </div>
+                  
+                  <h3 className="text-sm font-bold text-main mb-1 line-clamp-2">{cert.title}</h3>
+                  <p className="text-xs text-muted">Instructor: {cert.instructor}</p>
+                  
+                  {cert.status === 'issued' && (
+                     <div className="mt-4 pt-4 border-t border-[#E5E5E5] dark:border-[#333] space-y-1">
+                        <div className="flex justify-between text-[10px]">
+                           <span className="text-muted">Issued</span>
+                           <span className="font-mono text-main">{cert.issueDate}</span>
+                        </div>
+                        <div className="flex justify-between text-[10px]">
+                           <span className="text-muted">ID</span>
+                           <span className="font-mono text-main">{cert.credentialId}</span>
+                        </div>
+                     </div>
+                  )}
+               </div>
 
-        {/* Filters and List */}
-        <div className="space-y-8">
-           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-              <div className="relative w-full md:w-96">
-                <Search className="absolute right-5 top-1/2 -translate-y-1/2 text-brand-muted" size={18} />
-                <input 
-                  type="text" 
-                  placeholder="بحث عن شهادة محددة..." 
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full bg-brand-card border border-white/5 rounded-2xl pr-14 pl-6 py-4 text-white text-sm outline-none focus:border-brand-gold/50 transition-all"
-                />
-              </div>
-              <div className="flex items-center gap-4 text-brand-muted text-[10px] font-black uppercase tracking-[0.2em]">
-                 <Sparkles size={16} className="text-brand-gold" /> استحقاق الجدارة التعليمية
-              </div>
-           </div>
-
-           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-             {completedCertificates.map((cert) => (
-               <CertificateCard 
-                 key={cert.id}
-                 courseTitle={cert.title}
-                 isUnlocked={cert.isUnlocked}
-                 completionDate={cert.date}
-                 onPreview={() => setPreviewData({title: cert.title, date: cert.date})}
-               />
-             ))}
-           </div>
-
-           {completedCertificates.length === 0 && (
-             <div className="py-32 text-center bg-brand-card/20 rounded-[4rem] border-2 border-dashed border-white/5">
-                <Award size={64} className="mx-auto text-brand-muted/20 mb-6" />
-                <h3 className="text-xl font-black text-brand-muted">لم يتم العثور على شهادات تطابق البحث</h3>
-             </div>
-           )}
-        </div>
-
-        {/* Tip Box */}
-        <div className="bg-brand-gold/5 border border-brand-gold/10 p-8 rounded-[2.5rem] flex items-center gap-6 ns-animate--fade-in-up">
-           <div className="w-14 h-14 bg-brand-gold text-brand-main rounded-2xl flex items-center justify-center shrink-0 shadow-glow">
-              <Info size={24} />
-           </div>
-           <div>
-              <h4 className="text-white font-black text-lg mb-1">هل تعلم؟</h4>
-              <p className="text-brand-muted text-xs font-bold leading-relaxed">
-                 شهادات نيرسي معترف بها في العديد من المؤسسات التدريبية كدليل على حضورك وفهمك للمادة العلمية. يمكنك طباعتها وإضافتها لملفك الشخصي (CV).
-              </p>
-           </div>
-        </div>
+               {cert.status === 'issued' ? (
+                  <div className="px-6 py-3 bg-[#FAFAFA] dark:bg-[#252525] border-t border-[#E5E5E5] dark:border-[#333] flex gap-2">
+                     <button className="flex-1 btn-secondary text-xs h-8">
+                        <Download size={12} /> PDF
+                     </button>
+                     <button className="flex-1 btn-secondary text-xs h-8">
+                        <ExternalLink size={12} /> Verify
+                     </button>
+                  </div>
+               ) : (
+                  <div className="px-6 py-3 bg-gray-100 dark:bg-[#202020] border-t border-[#E5E5E5] dark:border-[#333] text-[10px] text-center text-muted">
+                     Complete course to unlock
+                  </div>
+               )}
+            </div>
+         ))}
       </div>
     </div>
   );
