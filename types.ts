@@ -55,13 +55,23 @@ export interface User {
   xp: number;
   completedLessons?: string[];
   subscriptionTier: 'free' | 'pro';
-  // Added missing properties to support AppContext, Admin, Certificates, and ExamsTab
+  // Extended properties for full Admin Control
   level?: number;
   streak?: number;
   joinedAt?: string;
   completedExams?: string[];
   lastDevice?: string;
+  lastSeen?: string;
   quizGrades?: Record<string, number>;
+  
+  // New Admin Fields
+  university?: string;
+  faculty?: string;
+  academicYear?: string;
+  isBlocked?: boolean;
+  adminNotes?: string;
+  walletBalance?: number;
+  subscriptionExpiry?: string;
 }
 
 // Added ActivationCode interface for Admin components
