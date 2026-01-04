@@ -7,7 +7,7 @@ import {
   Video, Upload, Check, ChevronDown, ChevronRight,
   MoreVertical, FileJson, Brain, Layout, DollarSign, 
   Image as ImageIcon, Lock, Clock, AlertCircle, Settings, 
-  AlignLeft, List
+  AlignLeft, List, HelpCircle, CheckCircle2
 } from 'lucide-react';
 
 export const CoursesTab: React.FC = () => {
@@ -227,7 +227,7 @@ export const CoursesTab: React.FC = () => {
          )}
       </div>
       
-      {/* Course Grid - Safe Rendering */}
+      {/* Course Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {courses.map(course => (
           <div key={course.id} className="group bg-white dark:bg-[#1E1E1E] rounded-xl border border-gray-200 dark:border-[#333] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col relative">
@@ -248,7 +248,6 @@ export const CoursesTab: React.FC = () => {
                  onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=No+Image'; }}
                />
                
-               {/* Only show edit actions if user is Owner */}
                {isOwner && (
                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3 backdrop-blur-sm">
                     <button 
@@ -297,7 +296,7 @@ export const CoursesTab: React.FC = () => {
       {/* FULL SCREEN EDITOR MODAL */}
       {isModalOpen && isOwner && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-gray-900/80 backdrop-blur-md p-4">
-          <div className="bg-white dark:bg-[#1E1E1E] rounded-2xl shadow-2xl w-full max-w-7xl h-[95vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-200 dark:border-[#333]">
+          <div className="bg-white dark:bg-[#121212] rounded-2xl shadow-2xl w-full max-w-7xl h-[95vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-200 dark:border-[#333]">
              
              {/* Modal Header */}
              <div className="px-6 py-4 border-b border-gray-200 dark:border-[#333] flex flex-col sm:flex-row justify-between items-center bg-white dark:bg-[#1E1E1E] gap-3">
@@ -334,10 +333,10 @@ export const CoursesTab: React.FC = () => {
              </div>
 
              <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-                {/* Left Sidebar: Metadata (Hidden on mobile unless toggled) */}
+                {/* Left Sidebar: Metadata */}
                 <div className={`w-full lg:w-72 border-r border-gray-200 dark:border-[#333] overflow-y-auto bg-gray-50/50 dark:bg-[#181818] p-6 ${showMobileSettings ? 'block' : 'hidden lg:block'}`}>
+                   {/* ... Settings Inputs ... */}
                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">Course Settings</h4>
-                   
                    <div className="space-y-5">
                       <div>
                          <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-2">Title</label>
@@ -475,7 +474,7 @@ export const CoursesTab: React.FC = () => {
 
                            {/* Expanded Lesson Content */}
                            {expandedLesson === lesson.id && (
-                              <div className="flex flex-col h-[500px]">
+                              <div className="flex flex-col h-[600px]">
                                  {/* Internal Tabs */}
                                  <div className="flex border-b border-gray-200 dark:border-[#333] bg-gray-50/50 dark:bg-[#1A1A1A] px-2 overflow-x-auto">
                                     {[
@@ -502,6 +501,7 @@ export const CoursesTab: React.FC = () => {
                                     {/* TAB 1: CONTENT */}
                                     {activeLessonTab === 'content' && (
                                         <div className="space-y-6">
+                                            {/* ... Content Resources ... */}
                                             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                                                 <h5 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Lesson Materials</h5>
                                                 <div className="flex flex-wrap gap-2">
@@ -601,7 +601,7 @@ export const CoursesTab: React.FC = () => {
                                                             updated[index].quiz = { ...quiz, title: e.target.value };
                                                             setEditingCourse(prev => ({...prev, lessons: updated}));
                                                         }}
-                                                        className="w-full bg-white dark:bg-[#2d3748] border border-blue-200 dark:border-[#4a5568] rounded px-3 py-1.5 text-sm outline-none"
+                                                        className="w-full bg-white dark:bg-[#2d3748] border border-blue-200 dark:border-[#4a5568] text-gray-900 dark:text-white rounded px-3 py-1.5 text-sm outline-none"
                                                     />
                                                 </div>
                                                 <div className="flex gap-4 w-full sm:w-auto">
@@ -617,7 +617,7 @@ export const CoursesTab: React.FC = () => {
                                                                 updated[index].quiz = { ...quiz, passingScore: Number(e.target.value) };
                                                                 setEditingCourse(prev => ({...prev, lessons: updated}));
                                                             }}
-                                                            className="w-full bg-white dark:bg-[#2d3748] border border-blue-200 dark:border-[#4a5568] rounded px-3 py-1.5 text-sm outline-none text-center"
+                                                            className="w-full bg-white dark:bg-[#2d3748] border border-blue-200 dark:border-[#4a5568] text-gray-900 dark:text-white rounded px-3 py-1.5 text-sm outline-none text-center"
                                                         />
                                                     </div>
                                                     <div className="w-1/2 sm:w-24">
@@ -632,14 +632,14 @@ export const CoursesTab: React.FC = () => {
                                                                 updated[index].quiz = { ...quiz, timeLimit: Number(e.target.value) };
                                                                 setEditingCourse(prev => ({...prev, lessons: updated}));
                                                             }}
-                                                            className="w-full bg-white dark:bg-[#2d3748] border border-blue-200 dark:border-[#4a5568] rounded px-3 py-1.5 text-sm outline-none text-center"
+                                                            className="w-full bg-white dark:bg-[#2d3748] border border-blue-200 dark:border-[#4a5568] text-gray-900 dark:text-white rounded px-3 py-1.5 text-sm outline-none text-center"
                                                         />
                                                     </div>
                                                 </div>
                                                 <div className="flex gap-2 w-full sm:w-auto">
                                                     <button 
                                                         onClick={() => setShowBulkImport(!showBulkImport)}
-                                                        className="p-2 bg-purple-50 dark:bg-purple-900/20 text-purple-600 border border-purple-200 dark:border-purple-800 rounded hover:bg-purple-100 flex-1 sm:flex-none flex justify-center text-xs font-bold gap-2 items-center"
+                                                        className="p-2 bg-purple-50 dark:bg-purple-900/20 text-purple-600 border border-purple-200 dark:border-purple-800 rounded hover:bg-purple-100 dark:hover:bg-purple-900/30 flex-1 sm:flex-none flex justify-center text-xs font-bold gap-2 items-center transition-colors"
                                                     >
                                                         <List size={16}/> Bulk Add
                                                     </button>
@@ -666,19 +666,30 @@ export const CoursesTab: React.FC = () => {
                                             </div>
 
                                             {showBulkImport && (
-                                                <div className="bg-purple-50 dark:bg-purple-900/10 p-4 rounded-lg border border-purple-100 dark:border-purple-900/30 mb-4 animate-in fade-in slide-in-from-top-2">
-                                                    <label className="text-xs font-bold text-purple-700 dark:text-purple-300 block mb-2">
-                                                        أضف الأسئلة (الصيغة: السؤال؟ | خيار 1 | خيار 2 | خيار 3 | خيار 4 | رقم الإجابة 0-3)
-                                                    </label>
+                                                <div className="bg-[#202020] dark:bg-[#111] p-5 rounded-2xl border border-gray-700 dark:border-[#333] mb-4 animate-in fade-in slide-in-from-top-2 shadow-2xl relative overflow-hidden">
+                                                    <div className="absolute top-0 left-0 w-1 h-full bg-purple-500"></div>
+                                                    <div className="flex justify-between items-start mb-3">
+                                                        <div>
+                                                            <h4 className="text-white font-bold text-sm flex items-center gap-2">
+                                                                <List size={16} className="text-purple-500"/> Bulk Import Editor
+                                                            </h4>
+                                                            <p className="text-[10px] text-gray-400 mt-1 font-mono">Format: Question? | Opt1 | Opt2 | Opt3 | Opt4 | AnswerIndex(0-3)</p>
+                                                        </div>
+                                                        <button onClick={() => setShowBulkImport(false)} className="text-gray-500 hover:text-white"><X size={16}/></button>
+                                                    </div>
+                                                    
                                                     <textarea
                                                         value={bulkImportText}
                                                         onChange={(e) => setBulkImportText(e.target.value)}
-                                                        className="w-full h-32 text-xs font-mono p-3 rounded border border-purple-200 dark:border-purple-800 bg-white dark:bg-[#151515] outline-none focus:ring-2 focus:ring-purple-500"
-                                                        placeholder={`كم عدد عظام الجمجمة؟ | 20 | 22 | 24 | 30 | 1\nما هي وظيفة القلب؟ | التنفس | الهضم | ضخ الدم | التفكير | 2`}
+                                                        className="w-full h-48 p-4 text-xs font-mono rounded-xl border border-gray-600 dark:border-[#333] bg-[#2a2a2a] dark:bg-[#0a0a0a] text-gray-200 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none resize-none shadow-inner placeholder:text-gray-600"
+                                                        placeholder={`Example:\nHow many bones in the skull? | 20 | 22 | 24 | 30 | 1\nWhat does the heart pump? | Air | Food | Blood | Thoughts | 2`}
                                                     />
-                                                    <div className="flex justify-end gap-2 mt-2">
-                                                        <button onClick={() => setShowBulkImport(false)} className="px-3 py-1.5 bg-white dark:bg-[#252525] border border-gray-300 dark:border-[#444] rounded text-xs">إلغاء</button>
-                                                        <button onClick={() => handleBulkImport(index)} className="px-3 py-1.5 bg-purple-600 text-white rounded text-xs font-bold hover:bg-purple-700">استيراد الأسئلة</button>
+                                                    
+                                                    <div className="flex justify-end gap-2 mt-4">
+                                                        <button onClick={() => setBulkImportText('')} className="px-4 py-2 text-xs font-bold text-gray-400 hover:text-white transition-colors">Clear</button>
+                                                        <button onClick={() => handleBulkImport(index)} className="px-6 py-2 bg-purple-600 text-white rounded-lg text-xs font-bold hover:bg-purple-700 shadow-lg shadow-purple-900/20 flex items-center gap-2">
+                                                            <CheckCircle2 size={14}/> Parse & Import
+                                                        </button>
                                                     </div>
                                                 </div>
                                             )}
@@ -693,8 +704,8 @@ export const CoursesTab: React.FC = () => {
                                                 )}
 
                                                 {(lesson.quiz?.questions || []).map((q, qIdx) => (
-                                                    <div key={q.id} className="bg-white dark:bg-[#1E1E1E] p-4 rounded-lg border border-gray-200 dark:border-[#333] relative">
-                                                        <div className="absolute top-4 right-4">
+                                                    <div key={q.id} className="bg-white dark:bg-[#1E1E1E] p-6 rounded-2xl border border-gray-100 dark:border-[#333] shadow-sm relative group hover:border-gray-300 dark:hover:border-[#444] transition-all">
+                                                        <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
                                                             <button 
                                                                 onClick={() => {
                                                                     if (!editingCourse.lessons) return;
@@ -702,14 +713,14 @@ export const CoursesTab: React.FC = () => {
                                                                     updated[index].quiz!.questions.splice(qIdx, 1);
                                                                     setEditingCourse(prev => ({...prev, lessons: updated}));
                                                                 }}
-                                                                className="text-gray-400 hover:text-red-500"
+                                                                className="text-gray-400 hover:text-red-500 p-2 bg-gray-50 dark:bg-[#252525] rounded-full"
                                                             >
                                                                 <Trash2 size={16}/>
                                                             </button>
                                                         </div>
                                                         
-                                                        <div className="mb-4 pr-8">
-                                                            <span className="text-xs font-bold text-brand-orange mb-1 block">Question {qIdx + 1}</span>
+                                                        <div className="mb-6 pr-8">
+                                                            <span className="text-[10px] font-black text-gray-300 dark:text-gray-600 uppercase tracking-widest mb-2 block">Question {qIdx + 1}</span>
                                                             <textarea 
                                                                 value={q.text}
                                                                 onChange={(e) => {
@@ -718,27 +729,27 @@ export const CoursesTab: React.FC = () => {
                                                                     updated[index].quiz!.questions[qIdx].text = e.target.value;
                                                                     setEditingCourse(prev => ({...prev, lessons: updated}));
                                                                 }}
-                                                                className="w-full bg-transparent text-sm font-medium outline-none resize-none border-b border-transparent focus:border-gray-200 dark:focus:border-[#333]"
+                                                                className="w-full bg-transparent text-lg font-bold outline-none resize-none border-b border-transparent focus:border-gray-200 dark:focus:border-[#444] text-gray-900 dark:text-white placeholder:text-gray-300 dark:placeholder:text-gray-600 transition-colors"
                                                                 placeholder="Enter question text here..."
                                                                 rows={2}
                                                             />
                                                         </div>
 
-                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
                                                             {q.options.map((opt, oIdx) => (
-                                                                <div key={oIdx} className="flex items-center gap-2 group">
-                                                                    <input 
-                                                                        type="radio" 
-                                                                        name={`q-${q.id}`}
-                                                                        checked={q.correctOptionIndex === oIdx}
-                                                                        onChange={() => {
-                                                                            if (!editingCourse.lessons) return;
-                                                                            const updated = [...editingCourse.lessons];
-                                                                            updated[index].quiz!.questions[qIdx].correctOptionIndex = oIdx;
-                                                                            setEditingCourse(prev => ({...prev, lessons: updated}));
-                                                                        }}
-                                                                        className="accent-brand-orange cursor-pointer w-4 h-4 shrink-0"
-                                                                    />
+                                                                <div key={oIdx} className="relative group/opt">
+                                                                    <div className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 cursor-pointer flex items-center justify-center transition-colors ${
+                                                                        q.correctOptionIndex === oIdx ? 'border-green-500 bg-green-500' : 'border-gray-300 dark:border-gray-600 group-hover/opt:border-brand-orange'
+                                                                    }`}
+                                                                    onClick={() => {
+                                                                        if (!editingCourse.lessons) return;
+                                                                        const updated = [...editingCourse.lessons];
+                                                                        updated[index].quiz!.questions[qIdx].correctOptionIndex = oIdx;
+                                                                        setEditingCourse(prev => ({...prev, lessons: updated}));
+                                                                    }}>
+                                                                        {q.correctOptionIndex === oIdx && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
+                                                                    </div>
+                                                                    
                                                                     <input 
                                                                         type="text" 
                                                                         value={opt}
@@ -748,10 +759,10 @@ export const CoursesTab: React.FC = () => {
                                                                             updated[index].quiz!.questions[qIdx].options[oIdx] = e.target.value;
                                                                             setEditingCourse(prev => ({...prev, lessons: updated}));
                                                                         }}
-                                                                        className={`flex-1 text-xs px-3 py-2 rounded bg-gray-50 dark:bg-[#252525] border outline-none transition-colors ${
+                                                                        className={`w-full pl-10 pr-4 py-3 rounded-xl bg-gray-50 dark:bg-[#252525] border outline-none text-sm font-medium transition-all ${
                                                                             q.correctOptionIndex === oIdx 
-                                                                            ? 'border-green-400 bg-green-50 dark:bg-green-900/10 text-green-700 dark:text-green-300' 
-                                                                            : 'border-gray-200 dark:border-[#333] focus:border-brand-orange text-gray-700 dark:text-gray-300'
+                                                                            ? 'border-green-500/30 bg-green-50/50 dark:bg-green-900/10 text-green-800 dark:text-green-300' 
+                                                                            : 'border-transparent focus:bg-white dark:focus:bg-[#151515] focus:border-brand-orange text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#2a2a2a]'
                                                                         }`}
                                                                         placeholder={`Option ${oIdx+1}`}
                                                                     />
@@ -759,7 +770,8 @@ export const CoursesTab: React.FC = () => {
                                                             ))}
                                                         </div>
                                                         
-                                                        <div className="mt-3 pt-3 border-t border-gray-100 dark:border-[#333]">
+                                                        <div className="pt-3 border-t border-gray-100 dark:border-[#333] flex items-center gap-2">
+                                                            <HelpCircle size={14} className="text-gray-400"/>
                                                             <input 
                                                                 type="text" 
                                                                 value={q.explanation || ''}
@@ -769,8 +781,8 @@ export const CoursesTab: React.FC = () => {
                                                                     updated[index].quiz!.questions[qIdx].explanation = e.target.value;
                                                                     setEditingCourse(prev => ({...prev, lessons: updated}));
                                                                 }}
-                                                                className="w-full text-xs text-gray-500 bg-transparent outline-none italic"
-                                                                placeholder="Add explanation for the correct answer (optional)..."
+                                                                className="flex-1 text-xs text-gray-500 dark:text-gray-400 bg-transparent outline-none italic placeholder:text-gray-300 dark:placeholder:text-gray-600"
+                                                                placeholder="Optional: Explanation for the correct answer..."
                                                             />
                                                         </div>
                                                     </div>
