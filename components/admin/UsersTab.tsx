@@ -41,8 +41,8 @@ export const UsersTab: React.FC<Props> = ({ users, searchTerm }) => {
   return (
     <div className="space-y-6">
        {/* Modern Filter Toolbar */}
-       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-         <div className="flex gap-2 bg-gray-100 p-1 rounded-lg self-start">
+       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-[#1E1E1E] p-4 rounded-xl border border-gray-200 dark:border-[#333] shadow-sm transition-colors">
+         <div className="flex gap-2 bg-gray-100 dark:bg-[#252525] p-1 rounded-lg self-start">
            {[
              { id: 'all', label: 'الكل' },
              { id: 'pro', label: 'Pro Members' },
@@ -54,46 +54,46 @@ export const UsersTab: React.FC<Props> = ({ users, searchTerm }) => {
                 onClick={() => setFilter(f.id as any)} 
                 className={`px-4 py-2 rounded-md text-xs font-bold transition-all shadow-sm ${
                   filter === f.id 
-                  ? 'bg-white text-gray-900 shadow' 
-                  : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50 shadow-none'
+                  ? 'bg-white dark:bg-[#333] text-gray-900 dark:text-white shadow' 
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200/50 dark:hover:bg-[#333] shadow-none'
                 }`}
              >
                {f.label}
              </button>
            ))}
          </div>
-         <div className="text-xs font-medium text-gray-500 bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full border border-blue-100">
+         <div className="text-xs font-medium text-gray-500 dark:text-gray-400 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 px-3 py-1.5 rounded-full border border-blue-100 dark:border-blue-800">
             {filtered.length} طالب نشط
          </div>
        </div>
 
        {/* Enhanced Data Table */}
-       <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+       <div className="bg-white dark:bg-[#1E1E1E] border border-gray-200 dark:border-[#333] rounded-xl shadow-sm overflow-hidden transition-colors">
           <div className="overflow-x-auto">
             <table className="w-full text-right">
-              <thead className="bg-gray-50/80 border-b border-gray-200 backdrop-blur-sm">
+              <thead className="bg-gray-50/80 dark:bg-[#252525] border-b border-gray-200 dark:border-[#333] backdrop-blur-sm">
                 <tr>
-                  <th className="px-6 py-4 text-[11px] font-bold text-gray-500 uppercase tracking-wider">الطالب</th>
-                  <th className="px-6 py-4 text-[11px] font-bold text-gray-500 uppercase tracking-wider hidden md:table-cell">الأكاديمية</th>
-                  <th className="px-6 py-4 text-[11px] font-bold text-gray-500 uppercase tracking-wider">الاشتراك</th>
-                  <th className="px-6 py-4 text-[11px] font-bold text-gray-500 uppercase tracking-wider hidden lg:table-cell">آخر ظهور</th>
-                  <th className="px-6 py-4 text-[11px] font-bold text-gray-500 uppercase tracking-wider text-left">تحكم</th>
+                  <th className="px-6 py-4 text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">الطالب</th>
+                  <th className="px-6 py-4 text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden md:table-cell">الأكاديمية</th>
+                  <th className="px-6 py-4 text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">الاشتراك</th>
+                  <th className="px-6 py-4 text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden lg:table-cell">آخر ظهور</th>
+                  <th className="px-6 py-4 text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-left">تحكم</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-gray-100 dark:divide-[#333]">
                 {filtered.map((u) => (
-                  <tr key={u.id} className={`group transition-all hover:bg-blue-50/30 ${u.isBlocked ? 'bg-red-50/30' : ''}`}>
+                  <tr key={u.id} className={`group transition-all hover:bg-blue-50/30 dark:hover:bg-blue-900/10 ${u.isBlocked ? 'bg-red-50/30 dark:bg-red-900/10' : ''}`}>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-4">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shadow-sm border-2 border-white ${u.isBlocked ? 'bg-red-100 text-red-600' : 'bg-gradient-to-br from-blue-100 to-indigo-100 text-indigo-700'}`}>
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shadow-sm border-2 border-white dark:border-[#333] ${u.isBlocked ? 'bg-red-100 text-red-600' : 'bg-gradient-to-br from-blue-100 to-indigo-100 text-indigo-700'}`}>
                           {(u.name || 'U').charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <p className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                          <p className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
                             {u.name}
-                            {u.role === 'admin' && <Shield size={12} className="text-blue-600" />}
+                            {u.role === 'admin' && <Shield size={12} className="text-blue-600 dark:text-blue-400" />}
                           </p>
-                          <p className="text-xs text-gray-500 font-mono flex items-center gap-1">
+                          <p className="text-xs text-gray-500 dark:text-gray-400 font-mono flex items-center gap-1">
                             <Mail size={10} /> {u.email}
                           </p>
                           {u.phone && <p className="text-xs text-gray-400 font-mono mt-0.5">{u.phone}</p>}
@@ -103,8 +103,8 @@ export const UsersTab: React.FC<Props> = ({ users, searchTerm }) => {
                     
                     <td className="px-6 py-4 hidden md:table-cell">
                       <div className="flex flex-col gap-1">
-                        <span className="text-sm text-gray-700 font-medium">{u.university || 'غير محدد'}</span>
-                        <span className="text-xs text-gray-500">{u.faculty} - {u.academicYear}</span>
+                        <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">{u.university || 'غير محدد'}</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">{u.faculty} - {u.academicYear}</span>
                       </div>
                     </td>
 
@@ -112,14 +112,14 @@ export const UsersTab: React.FC<Props> = ({ users, searchTerm }) => {
                       <div className="flex flex-col items-start gap-1">
                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${
                             u.subscriptionTier === 'pro' 
-                            ? 'bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 border border-blue-100' 
-                            : 'bg-gray-100 text-gray-600 border border-gray-200'
+                            ? 'bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 text-blue-700 dark:text-blue-400 border border-blue-100 dark:border-blue-800' 
+                            : 'bg-gray-100 dark:bg-[#333] text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-[#444]'
                         }`}>
                           {u.subscriptionTier === 'pro' ? <Zap size={10} fill="currentColor" /> : null}
                           {u.subscriptionTier}
                         </span>
                         {u.isBlocked && (
-                          <span className="text-[10px] text-red-600 font-bold flex items-center gap-1 bg-red-50 px-2 rounded-full">
+                          <span className="text-[10px] text-red-600 font-bold flex items-center gap-1 bg-red-50 dark:bg-red-900/20 px-2 rounded-full">
                             <Ban size={10} /> محظور
                           </span>
                         )}
@@ -127,7 +127,7 @@ export const UsersTab: React.FC<Props> = ({ users, searchTerm }) => {
                     </td>
 
                     <td className="px-6 py-4 hidden lg:table-cell">
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
                         <p>{u.lastSeen ? new Date(u.lastSeen).toLocaleDateString('ar-EG') : '-'}</p>
                         <p className="text-[10px] text-gray-400 mt-0.5">{u.lastDevice || 'Unknown Device'}</p>
                       </div>
@@ -136,7 +136,7 @@ export const UsersTab: React.FC<Props> = ({ users, searchTerm }) => {
                     <td className="px-6 py-4 text-left">
                        <button 
                         onClick={() => { setSelectedUser(u); setIsEditorOpen(true); }}
-                        className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:border-blue-300 hover:text-blue-600 hover:shadow-md transition-all text-xs font-bold flex items-center gap-2 ml-auto"
+                        className="px-4 py-2 bg-white dark:bg-[#252525] border border-gray-200 dark:border-[#444] text-gray-700 dark:text-gray-300 rounded-lg hover:border-blue-300 hover:text-blue-600 hover:shadow-md transition-all text-xs font-bold flex items-center gap-2 ml-auto"
                        >
                          <Edit3 size={14} /> تعديل شامل
                        </button>
@@ -173,7 +173,6 @@ const UserEditorModal: React.FC<{ user: User, onClose: () => void, onDelete: () 
     setIsSaving(true);
     try {
       await db.collection("users").doc(user.id).update(formData);
-      // Optional: Add a toast notification here
       onClose();
     } catch (e) {
       alert("Failed to update user: " + e);
@@ -188,20 +187,20 @@ const UserEditorModal: React.FC<{ user: User, onClose: () => void, onDelete: () 
 
   return (
     <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-in fade-in zoom-in-95 duration-200">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden border border-gray-200">
+      <div className="bg-white dark:bg-[#1E1E1E] rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden border border-gray-200 dark:border-[#333]">
         
         {/* Header */}
-        <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+        <div className="p-6 border-b border-gray-100 dark:border-[#333] flex justify-between items-center bg-gray-50/50 dark:bg-[#252525]">
            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center text-xl font-bold shadow-lg shadow-blue-200">
+              <div className="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center text-xl font-bold shadow-lg shadow-blue-200 dark:shadow-none">
                  {formData.name.charAt(0)}
               </div>
               <div>
-                 <h3 className="text-lg font-bold text-gray-900">{formData.name}</h3>
-                 <p className="text-xs text-gray-500 font-mono">{formData.id}</p>
+                 <h3 className="text-lg font-bold text-gray-900 dark:text-white">{formData.name}</h3>
+                 <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">{formData.id}</p>
               </div>
            </div>
-           <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-full text-gray-500 transition-colors">
+           <button onClick={onClose} className="p-2 hover:bg-gray-200 dark:hover:bg-[#333] rounded-full text-gray-500 dark:text-gray-400 transition-colors">
               <X size={20} />
            </button>
         </div>
@@ -210,7 +209,7 @@ const UserEditorModal: React.FC<{ user: User, onClose: () => void, onDelete: () 
         <div className="flex-1 flex overflow-hidden">
            
            {/* Sidebar Tabs */}
-           <div className="w-64 bg-gray-50 border-l border-gray-200 p-4 space-y-1 overflow-y-auto hidden md:block">
+           <div className="w-64 bg-gray-50 dark:bg-[#1A1A1A] border-l border-gray-200 dark:border-[#333] p-4 space-y-1 overflow-y-auto hidden md:block">
               {[
                 { id: 'profile', label: 'البيانات الشخصية', icon: MoreHorizontal },
                 { id: 'academic', label: 'البيانات الأكاديمية', icon: GraduationCap },
@@ -223,18 +222,18 @@ const UserEditorModal: React.FC<{ user: User, onClose: () => void, onDelete: () 
                   onClick={() => setActiveTab(tab.id as any)}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
                     activeTab === tab.id 
-                    ? 'bg-white text-blue-600 shadow-sm border border-gray-200' 
-                    : 'text-gray-500 hover:bg-gray-200/50 hover:text-gray-900'
+                    ? 'bg-white dark:bg-[#2C2C2C] text-blue-600 dark:text-blue-400 shadow-sm border border-gray-200 dark:border-[#444]' 
+                    : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200/50 dark:hover:bg-[#252525] hover:text-gray-900 dark:hover:text-white'
                   }`}
                 >
                   <tab.icon size={18} /> {tab.label}
                 </button>
               ))}
               
-              <div className="mt-8 p-4 bg-blue-50 rounded-xl border border-blue-100">
-                 <h4 className="text-xs font-bold text-blue-800 mb-2">ملاحظات الإدارة</h4>
+              <div className="mt-8 p-4 bg-blue-50 dark:bg-blue-900/10 rounded-xl border border-blue-100 dark:border-blue-900/30">
+                 <h4 className="text-xs font-bold text-blue-800 dark:text-blue-300 mb-2">ملاحظات الإدارة</h4>
                  <textarea 
-                   className="w-full text-xs bg-white border border-blue-200 rounded p-2 h-24 resize-none focus:outline-none focus:border-blue-400"
+                   className="w-full text-xs bg-white dark:bg-[#2C2C2C] border border-blue-200 dark:border-blue-800 rounded p-2 h-24 resize-none focus:outline-none focus:border-blue-400 text-gray-900 dark:text-white placeholder:text-gray-400"
                    placeholder="اكتب ملاحظات خاصة عن الطالب..."
                    value={formData.adminNotes || ''}
                    onChange={e => handleChange('adminNotes', e.target.value)}
@@ -243,31 +242,31 @@ const UserEditorModal: React.FC<{ user: User, onClose: () => void, onDelete: () 
            </div>
 
            {/* Content Area */}
-           <div className="flex-1 overflow-y-auto p-8 bg-white">
+           <div className="flex-1 overflow-y-auto p-8 bg-white dark:bg-[#1E1E1E]">
               
               {/* TAB: PROFILE */}
               {activeTab === 'profile' && (
                 <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-300">
-                   <h3 className="text-lg font-bold text-gray-900 border-b pb-2 mb-6">البيانات الأساسية</h3>
+                   <h3 className="text-lg font-bold text-gray-900 dark:text-white border-b dark:border-[#333] pb-2 mb-6">البيانات الأساسية</h3>
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
-                         <label className="text-sm font-medium text-gray-700">الاسم بالكامل</label>
-                         <input type="text" value={formData.name} onChange={e => handleChange('name', e.target.value)} className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
+                         <label className="text-sm font-medium text-gray-700 dark:text-gray-300">الاسم بالكامل</label>
+                         <input type="text" value={formData.name} onChange={e => handleChange('name', e.target.value)} className="cf-input" />
                       </div>
                       <div className="space-y-2">
-                         <label className="text-sm font-medium text-gray-700">البريد الإلكتروني</label>
-                         <input type="email" value={formData.email} onChange={e => handleChange('email', e.target.value)} className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
+                         <label className="text-sm font-medium text-gray-700 dark:text-gray-300">البريد الإلكتروني</label>
+                         <input type="email" value={formData.email} onChange={e => handleChange('email', e.target.value)} className="cf-input" />
                       </div>
                       <div className="space-y-2">
-                         <label className="text-sm font-medium text-gray-700">رقم الهاتف</label>
-                         <input type="text" value={formData.phone} onChange={e => handleChange('phone', e.target.value)} className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
+                         <label className="text-sm font-medium text-gray-700 dark:text-gray-300">رقم الهاتف</label>
+                         <input type="text" value={formData.phone} onChange={e => handleChange('phone', e.target.value)} className="cf-input" />
                       </div>
                       <div className="space-y-2">
-                         <label className="text-sm font-medium text-gray-700">نوع الصلاحية</label>
+                         <label className="text-sm font-medium text-gray-700 dark:text-gray-300">نوع الصلاحية</label>
                          <select 
                             value={formData.role || 'student'} 
                             onChange={e => handleChange('role', e.target.value)}
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                            className="cf-input"
                          >
                             <option value="student">طالب (Student)</option>
                             <option value="admin">مسؤول (Admin)</option>
@@ -280,22 +279,22 @@ const UserEditorModal: React.FC<{ user: User, onClose: () => void, onDelete: () 
               {/* TAB: ACADEMIC */}
               {activeTab === 'academic' && (
                 <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-300">
-                   <h3 className="text-lg font-bold text-gray-900 border-b pb-2 mb-6">البيانات الدراسية</h3>
+                   <h3 className="text-lg font-bold text-gray-900 dark:text-white border-b dark:border-[#333] pb-2 mb-6">البيانات الدراسية</h3>
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
-                         <label className="text-sm font-medium text-gray-700">الجامعة / المعهد</label>
-                         <input type="text" value={formData.university || ''} onChange={e => handleChange('university', e.target.value)} placeholder="مثال: جامعة القاهرة" className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none" />
+                         <label className="text-sm font-medium text-gray-700 dark:text-gray-300">الجامعة / المعهد</label>
+                         <input type="text" value={formData.university || ''} onChange={e => handleChange('university', e.target.value)} placeholder="مثال: جامعة القاهرة" className="cf-input" />
                       </div>
                       <div className="space-y-2">
-                         <label className="text-sm font-medium text-gray-700">الكلية</label>
-                         <input type="text" value={formData.faculty || ''} onChange={e => handleChange('faculty', e.target.value)} placeholder="مثال: كلية التمريض" className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none" />
+                         <label className="text-sm font-medium text-gray-700 dark:text-gray-300">الكلية</label>
+                         <input type="text" value={formData.faculty || ''} onChange={e => handleChange('faculty', e.target.value)} placeholder="مثال: كلية التمريض" className="cf-input" />
                       </div>
                       <div className="space-y-2">
-                         <label className="text-sm font-medium text-gray-700">الفرقة الدراسية</label>
+                         <label className="text-sm font-medium text-gray-700 dark:text-gray-300">الفرقة الدراسية</label>
                          <select 
                             value={formData.academicYear || ''} 
                             onChange={e => handleChange('academicYear', e.target.value)}
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                            className="cf-input"
                          >
                             <option value="">اختر الفرقة...</option>
                             <option value="First Year">الفرقة الأولى</option>
@@ -312,46 +311,46 @@ const UserEditorModal: React.FC<{ user: User, onClose: () => void, onDelete: () 
               {/* TAB: SUBSCRIPTION */}
               {activeTab === 'subscription' && (
                 <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-300">
-                   <h3 className="text-lg font-bold text-gray-900 border-b pb-2 mb-6">التحكم في الاشتراك</h3>
+                   <h3 className="text-lg font-bold text-gray-900 dark:text-white border-b dark:border-[#333] pb-2 mb-6">التحكم في الاشتراك</h3>
                    
-                   <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-100 flex items-center justify-between mb-6">
+                   <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-6 rounded-xl border border-blue-100 dark:border-blue-900/30 flex items-center justify-between mb-6">
                       <div>
-                         <p className="text-sm text-blue-600 font-bold uppercase tracking-wider mb-1">الحالة الحالية</p>
-                         <h2 className="text-3xl font-black text-blue-900 uppercase">{formData.subscriptionTier}</h2>
+                         <p className="text-sm text-blue-600 dark:text-blue-400 font-bold uppercase tracking-wider mb-1">الحالة الحالية</p>
+                         <h2 className="text-3xl font-black text-blue-900 dark:text-blue-300 uppercase">{formData.subscriptionTier}</h2>
                       </div>
-                      <div className="p-4 bg-white rounded-full shadow-md text-blue-600">
+                      <div className="p-4 bg-white dark:bg-[#252525] rounded-full shadow-md text-blue-600 dark:text-blue-400">
                          {formData.subscriptionTier === 'pro' ? <Zap size={32} fill="currentColor" /> : <Lock size={32} />}
                       </div>
                    </div>
 
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
-                         <label className="text-sm font-medium text-gray-700">نوع الاشتراك</label>
+                         <label className="text-sm font-medium text-gray-700 dark:text-gray-300">نوع الاشتراك</label>
                          <select 
                             value={formData.subscriptionTier} 
                             onChange={e => handleChange('subscriptionTier', e.target.value)}
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                            className="cf-input"
                          >
                             <option value="free">مجاني (Free)</option>
                             <option value="pro">مدفوع (PRO)</option>
                          </select>
                       </div>
                       <div className="space-y-2">
-                         <label className="text-sm font-medium text-gray-700">تاريخ انتهاء الصلاحية</label>
+                         <label className="text-sm font-medium text-gray-700 dark:text-gray-300">تاريخ انتهاء الصلاحية</label>
                          <input 
                            type="date" 
                            value={formData.subscriptionExpiry || ''} 
                            onChange={e => handleChange('subscriptionExpiry', e.target.value)} 
-                           className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none" 
+                           className="cf-input" 
                          />
                       </div>
                       <div className="space-y-2">
-                         <label className="text-sm font-medium text-gray-700">رصيد المحفظة (ج.م)</label>
+                         <label className="text-sm font-medium text-gray-700 dark:text-gray-300">رصيد المحفظة (ج.م)</label>
                          <input 
                            type="number" 
                            value={formData.walletBalance || 0} 
                            onChange={e => handleChange('walletBalance', Number(e.target.value))} 
-                           className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none font-mono" 
+                           className="cf-input font-mono" 
                          />
                       </div>
                    </div>
@@ -361,33 +360,33 @@ const UserEditorModal: React.FC<{ user: User, onClose: () => void, onDelete: () 
               {/* TAB: STATS */}
               {activeTab === 'stats' && (
                 <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-300">
-                   <h3 className="text-lg font-bold text-gray-900 border-b pb-2 mb-6">إحصائيات التقدم (Gamification)</h3>
+                   <h3 className="text-lg font-bold text-gray-900 dark:text-white border-b dark:border-[#333] pb-2 mb-6">إحصائيات التقدم (Gamification)</h3>
                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="p-4 bg-yellow-50 border border-yellow-100 rounded-xl">
-                         <label className="text-xs font-bold text-yellow-600 uppercase">نقاط الخبرة (XP)</label>
+                      <div className="p-4 bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-100 dark:border-yellow-900/30 rounded-xl">
+                         <label className="text-xs font-bold text-yellow-600 dark:text-yellow-400 uppercase">نقاط الخبرة (XP)</label>
                          <input 
                            type="number" 
                            value={formData.xp || 0} 
                            onChange={e => handleChange('xp', Number(e.target.value))}
-                           className="w-full mt-2 bg-white border border-yellow-200 rounded px-2 py-1 text-lg font-bold"
+                           className="w-full mt-2 bg-white dark:bg-[#252525] border border-yellow-200 dark:border-yellow-900 rounded px-2 py-1 text-lg font-bold text-gray-900 dark:text-white"
                          />
                       </div>
-                      <div className="p-4 bg-green-50 border border-green-100 rounded-xl">
-                         <label className="text-xs font-bold text-green-600 uppercase">المستوى (Level)</label>
+                      <div className="p-4 bg-green-50 dark:bg-green-900/10 border border-green-100 dark:border-green-900/30 rounded-xl">
+                         <label className="text-xs font-bold text-green-600 dark:text-green-400 uppercase">المستوى (Level)</label>
                          <input 
                            type="number" 
                            value={formData.level || 1} 
                            onChange={e => handleChange('level', Number(e.target.value))}
-                           className="w-full mt-2 bg-white border border-green-200 rounded px-2 py-1 text-lg font-bold"
+                           className="w-full mt-2 bg-white dark:bg-[#252525] border border-green-200 dark:border-green-900 rounded px-2 py-1 text-lg font-bold text-gray-900 dark:text-white"
                          />
                       </div>
-                      <div className="p-4 bg-orange-50 border border-orange-100 rounded-xl">
-                         <label className="text-xs font-bold text-orange-600 uppercase">Streak (أيام)</label>
+                      <div className="p-4 bg-orange-50 dark:bg-orange-900/10 border border-orange-100 dark:border-orange-900/30 rounded-xl">
+                         <label className="text-xs font-bold text-orange-600 dark:text-orange-400 uppercase">Streak (أيام)</label>
                          <input 
                            type="number" 
                            value={formData.streak || 0} 
                            onChange={e => handleChange('streak', Number(e.target.value))}
-                           className="w-full mt-2 bg-white border border-orange-200 rounded px-2 py-1 text-lg font-bold"
+                           className="w-full mt-2 bg-white dark:bg-[#252525] border border-orange-200 dark:border-orange-900 rounded px-2 py-1 text-lg font-bold text-gray-900 dark:text-white"
                          />
                       </div>
                    </div>
@@ -397,19 +396,19 @@ const UserEditorModal: React.FC<{ user: User, onClose: () => void, onDelete: () 
               {/* TAB: DANGER */}
               {activeTab === 'danger' && (
                 <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-300">
-                   <h3 className="text-lg font-bold text-red-600 border-b border-red-100 pb-2 mb-6">منطقة الخطر</h3>
+                   <h3 className="text-lg font-bold text-red-600 border-b border-red-100 dark:border-red-900/30 pb-2 mb-6">منطقة الخطر</h3>
                    
-                   <div className="bg-red-50 border border-red-100 rounded-xl p-6 space-y-6">
+                   <div className="bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/30 rounded-xl p-6 space-y-6">
                       <div className="flex items-center justify-between">
                          <div>
-                            <h4 className="font-bold text-gray-900">حظر الطالب مؤقتاً</h4>
-                            <p className="text-sm text-gray-500">سيمنع الطالب من تسجيل الدخول للمنصة.</p>
+                            <h4 className="font-bold text-gray-900 dark:text-white">حظر الطالب مؤقتاً</h4>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">سيمنع الطالب من تسجيل الدخول للمنصة.</p>
                          </div>
                          <button 
                            onClick={() => handleChange('isBlocked', !formData.isBlocked)}
                            className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${
                               formData.isBlocked 
-                              ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' 
+                              ? 'bg-gray-200 dark:bg-[#333] text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-[#444]' 
                               : 'bg-red-600 text-white hover:bg-red-700'
                            }`}
                          >
@@ -417,16 +416,16 @@ const UserEditorModal: React.FC<{ user: User, onClose: () => void, onDelete: () 
                          </button>
                       </div>
                       
-                      <div className="w-full h-px bg-red-200"></div>
+                      <div className="w-full h-px bg-red-200 dark:bg-red-900/30"></div>
 
                       <div className="flex items-center justify-between">
                          <div>
-                            <h4 className="font-bold text-red-700">حذف الحساب نهائياً</h4>
-                            <p className="text-sm text-red-500">هذا الإجراء لا يمكن التراجع عنه. سيتم حذف جميع البيانات.</p>
+                            <h4 className="font-bold text-red-700 dark:text-red-400">حذف الحساب نهائياً</h4>
+                            <p className="text-sm text-red-500 dark:text-red-300/80">هذا الإجراء لا يمكن التراجع عنه. سيتم حذف جميع البيانات.</p>
                          </div>
                          <button 
                            onClick={onDelete}
-                           className="px-4 py-2 border border-red-300 text-red-600 bg-white rounded-lg font-bold text-sm hover:bg-red-50 transition-colors flex items-center gap-2"
+                           className="px-4 py-2 border border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 bg-white dark:bg-[#1E1E1E] rounded-lg font-bold text-sm hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors flex items-center gap-2"
                          >
                            <Trash2 size={16} /> حذف نهائي
                          </button>
@@ -438,8 +437,8 @@ const UserEditorModal: React.FC<{ user: User, onClose: () => void, onDelete: () 
         </div>
 
         {/* Footer Actions */}
-        <div className="p-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
-           <button onClick={onClose} className="px-6 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors">
+        <div className="p-4 border-t border-gray-100 dark:border-[#333] bg-gray-50 dark:bg-[#252525] flex justify-end gap-3">
+           <button onClick={onClose} className="px-6 py-2.5 bg-white dark:bg-[#333] border border-gray-300 dark:border-[#444] text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-[#404040] transition-colors">
               إلغاء
            </button>
            <button 

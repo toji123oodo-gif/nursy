@@ -53,21 +53,21 @@ export const Admin: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#F3F4F6] dark:bg-[#0a0a0a] pb-20">
+    <div className="min-h-screen bg-[#F3F4F6] dark:bg-[#0a0a0a] pb-20 transition-colors duration-200">
       {/* Professional Header */}
-      <div className="bg-white dark:bg-[#1E1E1E] border-b border-gray-200 dark:border-[#333] sticky top-0 z-30 px-6 py-4 shadow-sm">
+      <div className="bg-white dark:bg-[#1E1E1E] border-b border-gray-200 dark:border-[#333] sticky top-0 z-30 px-6 py-4 shadow-sm transition-colors duration-200">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-             <div className="w-10 h-10 bg-gray-900 dark:bg-white text-white dark:text-black rounded-lg flex items-center justify-center shadow-lg">
+             <div className="w-10 h-10 bg-gray-900 dark:bg-white text-white dark:text-black rounded-lg flex items-center justify-center shadow-lg transition-colors">
                 <Shield size={20} strokeWidth={2.5} />
              </div>
              <div>
                 <h1 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">Admin Console</h1>
-                <p className="text-xs text-gray-500 font-medium">System Control & Management v2.4</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">System Control & Management v2.4</p>
              </div>
           </div>
           
-          <div className="flex bg-gray-100 dark:bg-[#2C2C2C] p-1 rounded-lg border border-gray-200 dark:border-[#333] overflow-x-auto">
+          <div className="flex bg-gray-100 dark:bg-[#2C2C2C] p-1 rounded-lg border border-gray-200 dark:border-[#333] overflow-x-auto transition-colors">
              {tabs.map(tab => (
                <button
                  key={tab.id}
@@ -75,7 +75,7 @@ export const Admin: React.FC = () => {
                  className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-bold transition-all whitespace-nowrap ${
                    activeTab === tab.id 
                    ? 'bg-white dark:bg-[#1E1E1E] text-[#F38020] shadow-sm' 
-                   : 'text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200/50 dark:hover:bg-[#333]'
+                   : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200/50 dark:hover:bg-[#333]'
                  }`}
                >
                  <tab.icon size={16} /> {tab.label}
