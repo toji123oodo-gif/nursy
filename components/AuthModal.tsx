@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { X, Mail, Lock, User, Phone, Loader2, Cloud, AlertCircle } from 'lucide-react';
+import { X, Mail, Lock, User, Phone, Loader2, Cloud, AlertCircle, Globe } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -37,8 +37,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialVi
       } else {
         await signup(email, password, name, phone);
       }
-      // Successful auth will trigger user state change in AppContext
-      // The parent component or App.tsx handles redirection based on user state
       onClose();
       navigate('/dashboard');
     } catch (err: any) {
@@ -68,8 +66,20 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialVi
       console.error("Google Auth Error:", err);
       if (err.code === 'auth/popup-closed-by-user') {
         setError('تم إلغاء تسجيل الدخول');
+      } else if (err.code === 'auth/unauthorized-domain') {
+        // Smart domain suggestion for Cloudflare Pages
+        const host = window.location.hostname;
+        let suggestion = host;
+        if (host.includes('.pages.dev')) {
+           const parts = host.split('.');
+           // If subdomain is like hash.project.pages.dev, grab project.pages.dev
+           if (parts.length >= 3) {
+             suggestion = parts.slice(-3).join('.');
+           }
+        }
+        setError(`خطأ: الدومين غير مصرح به.\nالحل: اذهب إلى Firebase Console > Auth > Settings > Authorized Domains وأضف هذا الدومين: ${suggestion}`);
       } else {
-        setError('فشل الاتصال بجوجل. تأكد من اتصال الإنترنت');
+        setError('فشل الاتصال بجوجل. تأكد من إعدادات Firebase واتصال الإنترنت.');
       }
     } finally {
       setIsLoading(false);
@@ -128,9 +138,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialVi
         {/* Form Body */}
         <div className="p-6 pt-0">
           {error && (
-            <div className="mb-4 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 p-3 rounded-lg flex items-center gap-3">
-               <AlertCircle size={18} className="text-red-600 dark:text-red-400 shrink-0" />
-               <p className="text-xs text-red-700 dark:text-red-300 font-medium">{error}</p>
+            <div className="mb-4 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 p-3 rounded-lg flex items-start gap-3">
+               <AlertCircle size={18} className="text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+               <div className="flex flex-col gap-1">
+                 <p className="text-xs text-red-700 dark:text-red-300 font-medium whitespace-pre-wrap">{error}</p>
+                 {error.includes('Settings') && (
+                   <div className="flex items-center gap-1 mt-1 p-1 bg-white/50 rounded border border-red-100 text-[10px] font-mono select-all">
+                     <Globe size={10} />
+                     {window.location.hostname.includes('.pages.dev') 
+                       ? window.location.hostname.split('.').slice(-3).join('.') 
+                       : window.location.hostname}
+                   </div>
+                 )}
+               </div>
             </div>
           )}
 

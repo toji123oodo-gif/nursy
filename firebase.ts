@@ -46,6 +46,9 @@ googleProvider.setCustomParameters({
 let analytics: any;
 if (typeof window !== 'undefined') {
   analytics = firebase.analytics();
+  // Debug: Log current domain for Authorized Domain setup
+  console.log("%c[Firebase Auth] Current Domain:", "color: #F38020; font-weight: bold;", window.location.hostname);
+  console.log("Add this domain to Firebase Console > Authentication > Settings > Authorized domains if you see 'auth/unauthorized-domain' error.");
 }
 
 export { auth, db, googleProvider, analytics };

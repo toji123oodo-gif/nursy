@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 const { useNavigate, Link } = ReactRouterDOM as any;
-import { Cloud, Loader2, AlertCircle, ArrowLeft, ShieldCheck } from 'lucide-react';
+import { Cloud, Loader2, AlertCircle, ArrowLeft, ShieldCheck, Globe } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import firebase from 'firebase/compat/app';
 import { auth } from '../firebase';
@@ -56,6 +56,7 @@ export const Login: React.FC = () => {
 
   const handleGoogle = async () => {
      try {
+        setError('');
         setIsLoading(true);
         const googlePromise = loginWithGoogle();
         const timeoutPromise = new Promise((_, reject) => 
@@ -65,8 +66,21 @@ export const Login: React.FC = () => {
      } catch (e: any) {
         if (e.message === "TIMEOUT") {
            setError('فشل الاتصال بجوجل. تحقق من الإنترنت.');
+        } else if (e.code === 'auth/unauthorized-domain') {
+           // Smart domain suggestion
+           const host = window.location.hostname;
+           let suggestion = host;
+           if (host.includes('.pages.dev')) {
+              const parts = host.split('.');
+              if (parts.length >= 3) {
+                suggestion = parts.slice(-3).join('.');
+              }
+           }
+           setError(`الدومين غير مصرح به. أضف هذا الدومين في Firebase Console: ${suggestion}`);
+        } else if (e.code === 'auth/popup-closed-by-user') {
+           setError('تم إلغاء عملية الدخول.');
         } else {
-           setError('تم إلغاء تسجيل الدخول.');
+           setError('فشل تسجيل الدخول باستخدام Google.');
         }
         setIsLoading(false);
      }
@@ -89,8 +103,18 @@ export const Login: React.FC = () => {
         <div className="cf-card p-8 bg-white dark:bg-[#1E1E1E] shadow-md">
            {error && (
              <div className="mb-4 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 p-3 rounded-[4px] flex items-start gap-3">
-                <AlertCircle size={16} className="text-red-600 dark:text-red-400 mt-0.5" />
-                <p className="text-xs text-red-700 dark:text-red-300 font-medium">{error}</p>
+                <AlertCircle size={16} className="text-red-600 dark:text-red-400 mt-0.5 shrink-0" />
+                <div className="flex flex-col gap-1 w-full">
+                  <p className="text-xs text-red-700 dark:text-red-300 font-medium whitespace-pre-wrap">{error}</p>
+                  {error.includes('Firebase Console') && (
+                    <div className="flex items-center gap-1 mt-1 p-1 bg-white/50 rounded border border-red-100 text-[10px] font-mono select-all w-fit">
+                      <Globe size={10} />
+                      {window.location.hostname.includes('.pages.dev') 
+                        ? window.location.hostname.split('.').slice(-3).join('.') 
+                        : window.location.hostname}
+                    </div>
+                  )}
+                </div>
              </div>
            )}
 
