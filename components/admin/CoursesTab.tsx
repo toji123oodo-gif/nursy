@@ -16,6 +16,8 @@ export const CoursesTab: React.FC = () => {
 
   const handleSave = async () => {
     if (!editingCourse?.title) return;
+    
+    // Ensure all required fields exist to prevent future crashes
     const courseData = {
         ...editingCourse,
         id: editingCourse.id || 'c' + Date.now(),
@@ -40,13 +42,14 @@ export const CoursesTab: React.FC = () => {
     reader.onload = (event) => {
       try {
         const json = JSON.parse(event.target?.result as string);
-        // Expecting array of Questions
         if (Array.isArray(json)) {
            const newLessons = [...(editingCourse?.lessons || [])];
+           
+           // Ensure quiz object exists
            if (!newLessons[lessonIndex].quiz) {
              newLessons[lessonIndex].quiz = { id: 'q'+Date.now(), title: 'Quiz', questions: [] };
            }
-           // Map JSON to Question type to ensure compatibility
+           
            const newQuestions: Question[] = json.map((q: any, i) => ({
              id: q.id || `qn-${Date.now()}-${i}`,
              text: q.text || 'No question text',
@@ -79,6 +82,7 @@ export const CoursesTab: React.FC = () => {
          </div>
          <button 
            onClick={() => {
+             // Initialize with safe defaults to prevent blank screen
              setEditingCourse({
                lessons: [], price: 0, subject: '', 
                image: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=800', 
@@ -192,7 +196,14 @@ export const CoursesTab: React.FC = () => {
                          <button 
                            onClick={() => setEditingCourse({
                              ...editingCourse, 
-                             lessons: [...(editingCourse.lessons || []), {id: 'l'+Date.now(), title: 'New Lesson', isLocked: false, contents: [], quiz: { id: 'q'+Date.now(), title: 'Quiz', questions: [] }}]
+                             // SAFELY add new lesson
+                             lessons: [...(editingCourse.lessons || []), {
+                               id: 'l'+Date.now(), 
+                               title: 'New Lesson', 
+                               isLocked: false, 
+                               contents: [], 
+                               quiz: { id: 'q'+Date.now(), title: 'Quiz', questions: [] }
+                             }]
                            })}
                            className="text-sm font-bold text-brand-blue bg-blue-50 dark:bg-[#2B3A4F] hover:bg-blue-100 dark:hover:bg-[#333] px-4 py-2 rounded-lg transition-colors border border-blue-200 dark:border-blue-900"
                          >
