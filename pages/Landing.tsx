@@ -7,12 +7,26 @@ import {
   ArrowRight, CheckCircle2, BarChart3, Users
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { AuthModal } from '../components/AuthModal';
 
 export const Landing: React.FC = () => {
   const { user } = useApp();
+  const [isAuthModalOpen, setAuthModalOpen] = useState(false);
+  const [initialAuthView, setInitialAuthView] = useState<'login' | 'signup'>('login');
+
+  const openAuth = (view: 'login' | 'signup') => {
+    setInitialAuthView(view);
+    setAuthModalOpen(true);
+  };
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#101010]">
+      <AuthModal 
+        isOpen={isAuthModalOpen} 
+        onClose={() => setAuthModalOpen(false)} 
+        initialView={initialAuthView}
+      />
+
       {/* Navigation */}
       <nav className="border-b border-[#E5E5E5] dark:border-[#333] sticky top-0 bg-white/80 dark:bg-[#101010]/80 backdrop-blur-md z-50">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
@@ -34,8 +48,8 @@ export const Landing: React.FC = () => {
                 <Link to="/dashboard" className="btn-primary">Dashboard <ArrowRight size={14}/></Link>
               ) : (
                 <>
-                  <Link to="/login" className="text-sm font-medium text-muted hover:text-main px-3 py-2">Log In</Link>
-                  <Link to="/signup" className="btn-primary">Get Started</Link>
+                  <button onClick={() => openAuth('login')} className="text-sm font-medium text-muted hover:text-main px-3 py-2">Log In</button>
+                  <button onClick={() => openAuth('signup')} className="btn-primary">Get Started</button>
                 </>
               )}
            </div>
@@ -59,9 +73,15 @@ export const Landing: React.FC = () => {
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-               <Link to="/signup" className="h-12 px-8 rounded-[4px] bg-[#1a1a1a] dark:bg-white text-white dark:text-black font-semibold flex items-center justify-center hover:bg-black/80 dark:hover:bg-gray-200 transition-colors w-full sm:w-auto">
-                  Start Learning Free
-               </Link>
+               {user ? (
+                 <Link to="/dashboard" className="h-12 px-8 rounded-[4px] bg-[#1a1a1a] dark:bg-white text-white dark:text-black font-semibold flex items-center justify-center hover:bg-black/80 dark:hover:bg-gray-200 transition-colors w-full sm:w-auto">
+                    Go to Dashboard
+                 </Link>
+               ) : (
+                 <button onClick={() => openAuth('signup')} className="h-12 px-8 rounded-[4px] bg-[#1a1a1a] dark:bg-white text-white dark:text-black font-semibold flex items-center justify-center hover:bg-black/80 dark:hover:bg-gray-200 transition-colors w-full sm:w-auto">
+                    Start Learning Free
+                 </button>
+               )}
                <button className="h-12 px-8 rounded-[4px] border border-[#E5E5E5] dark:border-[#333] text-main font-semibold flex items-center justify-center hover:bg-gray-50 dark:hover:bg-[#202020] transition-colors w-full sm:w-auto">
                   <Play size={16} className="mr-2" /> View Demo
                </button>
