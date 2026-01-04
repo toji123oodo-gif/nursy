@@ -22,16 +22,10 @@ const app = !firebase.apps.length ? firebase.initializeApp(firebaseConfig) : fir
 const auth = firebase.auth();
 auth.languageCode = 'ar'; 
 
-// Initialize Firestore with robust settings for restricted networks
+// Initialize Firestore
 const db = firebase.firestore();
 
-// Apply advanced settings to help with connectivity issues
-db.settings({
-  cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED,
-  experimentalForceLongPolling: true // Forced long polling improves connection reliability in some environments
-});
-
-// Enable offline persistence
+// Standard persistence settings - removed experimentalForceLongPolling as it causes hangs
 if (typeof window !== 'undefined') {
   db.enablePersistence({ synchronizeTabs: true }).catch((err) => {
     if (err.code === 'failed-precondition') {

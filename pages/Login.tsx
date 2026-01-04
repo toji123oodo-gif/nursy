@@ -33,11 +33,23 @@ export const Login: React.FC = () => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
+
     try {
-      await login(email, password);
-      // Navigation handled by useEffect
-    } catch (err) {
-      setError('Invalid credentials. Please verify your email and password.');
+      // Race the login against a 10s timeout to prevent infinite spinning
+      const loginPromise = login(email, password);
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("TIMEOUT")), 10000)
+      );
+
+      await Promise.race([loginPromise, timeoutPromise]);
+      // If successful, useEffect will handle navigation when 'user' updates
+    } catch (err: any) {
+      console.error(err);
+      if (err.message === "TIMEOUT") {
+        setError('اتصال الإنترنت ضعيف. يرجى المحاولة مرة أخرى.');
+      } else {
+        setError('بيانات الدخول غير صحيحة.');
+      }
       setIsLoading(false);
     }
   };
@@ -45,10 +57,17 @@ export const Login: React.FC = () => {
   const handleGoogle = async () => {
      try {
         setIsLoading(true);
-        await loginWithGoogle();
-        // Navigation handled by useEffect
-     } catch (e) {
-        setError('Google authentication failed.');
+        const googlePromise = loginWithGoogle();
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error("TIMEOUT")), 15000)
+        );
+        await Promise.race([googlePromise, timeoutPromise]);
+     } catch (e: any) {
+        if (e.message === "TIMEOUT") {
+           setError('فشل الاتصال بجوجل. تحقق من الإنترنت.');
+        } else {
+           setError('تم إلغاء تسجيل الدخول.');
+        }
         setIsLoading(false);
      }
   };
