@@ -101,17 +101,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const syncUserToCloud = async (userData: User) => {
     if (!db || !userData.id) return;
     try {
-      await db.collection("users").doc(userData.id).set({
+      // Fire and forget - don't await to prevent blocking UI
+      db.collection("users").doc(userData.id).set({
           ...userData,
           lastSeen: new Date().toISOString(),
           lastDevice: getDeviceInfo()
-      }, { merge: true });
+      }, { merge: true }).catch(err => console.error("Background sync failed", err));
     } catch (e) {
       console.error("Sync Error:", e);
     }
   };
 
-  // Critical Fix: Consolidated Auth State Management
+  // Critical Fix: Consolidated Auth State Management with Timeout
   useEffect(() => {
     if (!auth) {
       setIsLoading(false);
@@ -121,50 +122,71 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
       try {
         if (firebaseUser) {
-          // 1. Fetch User Data
+          // Fallback user object (Optimistic UI)
+          const fallbackUser: User = {
+            id: firebaseUser.uid,
+            name: firebaseUser.displayName || 'Student',
+            email: firebaseUser.email || '',
+            phone: '',
+            xp: 0,
+            level: 1,
+            streak: 0,
+            joinedAt: new Date().toISOString(),
+            subscriptionTier: 'free'
+          };
+
+          // 1. Fetch User Data with Timeout Strategy
+          // Prevents hanging if Firestore is unreachable/slow
           const docRef = db.collection("users").doc(firebaseUser.uid);
-          const docSnap = await docRef.get();
           
-          let baseUser: User;
+          // Timeout promise: rejects after 4 seconds
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error("Request timed out")), 4000)
+          );
+
+          let finalUser = fallbackUser;
+
+          try {
+            // Race the DB fetch against the timeout
+            const docSnap: any = await Promise.race([
+              docRef.get(),
+              timeoutPromise
+            ]);
           
-          if (docSnap.exists) {
-            baseUser = { id: firebaseUser.uid, ...docSnap.data() } as User;
-          } else {
-            // 2. Auto-create if missing (Self-healing)
-            baseUser = {
-              id: firebaseUser.uid,
-              name: firebaseUser.displayName || 'Student',
-              email: firebaseUser.email || '',
-              phone: '',
-              xp: 0,
-              level: 1,
-              streak: 0,
-              joinedAt: new Date().toISOString(),
-              subscriptionTier: 'free'
-            };
-            await syncUserToCloud(baseUser);
+            if (docSnap.exists) {
+               finalUser = { id: firebaseUser.uid, ...docSnap.data() } as User;
+            } else {
+               // New user, save to DB in background
+               syncUserToCloud(finalUser);
+            }
+          } catch (err) {
+            console.warn("Firestore fetch failed or timed out, using fallback user data:", err);
+            // On error/timeout, we proceed with fallbackUser so user can still login
+            syncUserToCloud(fallbackUser);
           }
           
-          setUser(baseUser);
+          setUser(finalUser);
           
-          // 3. Generate Token
-          const newToken = jwtUtils.sign({ sub: baseUser.id, name: baseUser.name, email: baseUser.email });
+          // Generate Token
+          const newToken = jwtUtils.sign({ 
+             sub: finalUser.id, 
+             name: finalUser.name, 
+             email: finalUser.email 
+          });
           jwtUtils.saveToken(newToken);
           setToken(newToken);
           
         } else {
-          // 4. Clean Logout
+          // Logout
           setUser(null);
           setToken(null);
           jwtUtils.removeToken();
         }
       } catch (error) {
-        console.error("Auth State Change Error:", error);
-        // Fallback safety
+        console.error("Auth State Change Critical Error:", error);
         setUser(null);
         setToken(null);
       } finally {
-        // 5. Release Loading Lock
         setIsLoading(false);
       }
     });
@@ -185,7 +207,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       };
       // Optimistic update
       setUser(newUser);
-      await syncUserToCloud(newUser);
+      syncUserToCloud(newUser);
     }
   };
 
@@ -196,7 +218,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!user) return;
     const updatedUser = { ...user, ...data };
     setUser(updatedUser);
-    await syncUserToCloud(updatedUser);
+    syncUserToCloud(updatedUser);
   };
 
   const addCourse = async (course: Course) => { await db.collection("courses").doc(course.id).set(course); };

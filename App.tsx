@@ -30,7 +30,16 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   const { user, token, isLoading } = useApp();
   const location = useLocation();
 
-  if (isLoading) return null; 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#F9FAFB] dark:bg-[#101010]">
+         <div className="flex flex-col items-center gap-4">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#F38020]"></div>
+            <p className="text-sm text-gray-500 animate-pulse">جاري التحميل...</p>
+         </div>
+      </div>
+    );
+  }
 
   const isAuthenticated = user && token && !jwtUtils.isExpired(token);
 
