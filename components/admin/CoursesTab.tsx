@@ -15,7 +15,8 @@ export const CoursesTab: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   
   // Editor State
-  const [editingCourse, setEditingCourse] = useState<Partial<Course> | null>(null);
+  // We initialize with a safe default object to avoid null checks everywhere
+  const [editingCourse, setEditingCourse] = useState<Partial<Course>>({});
   const [expandedLesson, setExpandedLesson] = useState<string | null>(null);
   const [activeLessonTab, setActiveLessonTab] = useState<'content' | 'quiz' | 'settings'>('content');
 
@@ -34,37 +35,50 @@ export const CoursesTab: React.FC = () => {
       lessons: []
     });
     setIsModalOpen(true);
+    setExpandedLesson(null);
+  };
+
+  const handleEditClick = (course: Course) => {
+    if (!isOwner) return;
+    // Deep copy to avoid mutating state directly
+    setEditingCourse(JSON.parse(JSON.stringify(course)));
+    setIsModalOpen(true);
+    setExpandedLesson(null);
   };
 
   const handleSave = async () => {
     if (!editingCourse?.title || !isOwner) return;
     
-    const courseData: Course = {
-        id: editingCourse.id || 'c-' + Date.now(),
-        title: editingCourse.title,
-        instructor: editingCourse.instructor || 'Instructor',
-        subject: editingCourse.subject || 'General',
-        image: editingCourse.image || 'https://placehold.co/600x400',
-        price: Number(editingCourse.price) || 0,
-        lessons: (editingCourse.lessons || []).map(l => ({
-            ...l,
-            contents: l.contents || [],
-            quiz: l.quiz ? {
-                ...l.quiz,
-                timeLimit: Number(l.quiz.timeLimit) || 0,
-                passingScore: Number(l.quiz.passingScore) || 50
-            } : undefined
-        }))
-    };
+    try {
+        const courseData: Course = {
+            id: editingCourse.id || 'c-' + Date.now(),
+            title: editingCourse.title || 'Untitled Course',
+            instructor: editingCourse.instructor || 'Instructor',
+            subject: editingCourse.subject || 'General',
+            image: editingCourse.image || 'https://placehold.co/600x400',
+            price: Number(editingCourse.price) || 0,
+            lessons: (editingCourse.lessons || []).map(l => ({
+                ...l,
+                contents: l.contents || [],
+                quiz: l.quiz ? {
+                    ...l.quiz,
+                    timeLimit: Number(l.quiz.timeLimit) || 0,
+                    passingScore: Number(l.quiz.passingScore) || 50
+                } : undefined
+            }))
+        };
 
-    if (editingCourse.id) await updateCourse(courseData);
-    else await addCourse(courseData);
-    
-    setIsModalOpen(false);
+        if (editingCourse.id) await updateCourse(courseData);
+        else await addCourse(courseData);
+        
+        setIsModalOpen(false);
+    } catch (error) {
+        console.error("Failed to save course:", error);
+        alert("Error saving course. Please check the console.");
+    }
   };
 
   const addLesson = () => {
-    if (!editingCourse) return;
     const newLesson: Lesson = {
       id: 'l-' + Date.now(),
       title: 'New Lesson',
@@ -79,23 +93,23 @@ export const CoursesTab: React.FC = () => {
           passingScore: 50
       }
     };
-    setEditingCourse({
-      ...editingCourse,
-      lessons: [...(editingCourse.lessons || []), newLesson]
-    });
+    setEditingCourse(prev => ({
+      ...prev,
+      lessons: [...(prev.lessons || []), newLesson]
+    }));
     setExpandedLesson(newLesson.id);
     setActiveLessonTab('content');
   };
 
   const updateLesson = (index: number, field: keyof Lesson, value: any) => {
-    if (!editingCourse?.lessons) return;
+    if (!editingCourse.lessons) return;
     const updatedLessons = [...editingCourse.lessons];
     updatedLessons[index] = { ...updatedLessons[index], [field]: value };
-    setEditingCourse({ ...editingCourse, lessons: updatedLessons });
+    setEditingCourse(prev => ({ ...prev, lessons: updatedLessons }));
   };
 
   const addResource = (lessonIndex: number, type: 'video' | 'audio' | 'pdf' | 'article') => {
-    if (!editingCourse?.lessons) return;
+    if (!editingCourse.lessons) return;
     const updatedLessons = [...editingCourse.lessons];
     const newContent: ContentItem = {
       id: 'r-' + Date.now(),
@@ -104,13 +118,17 @@ export const CoursesTab: React.FC = () => {
       url: '',
       textContent: type === 'article' ? '' : undefined
     };
-    updatedLessons[lessonIndex].contents = [...(updatedLessons[lessonIndex].contents || []), newContent];
-    setEditingCourse({ ...editingCourse, lessons: updatedLessons });
+    
+    // Ensure contents array exists
+    const currentContents = updatedLessons[lessonIndex].contents || [];
+    updatedLessons[lessonIndex].contents = [...currentContents, newContent];
+    
+    setEditingCourse(prev => ({ ...prev, lessons: updatedLessons }));
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, lessonIndex: number) => {
     const file = e.target.files?.[0];
-    if (!file || !editingCourse?.lessons) return;
+    if (!file || !editingCourse.lessons) return;
 
     const reader = new FileReader();
     reader.onload = (event) => {
@@ -130,7 +148,7 @@ export const CoursesTab: React.FC = () => {
            
            currentQuiz.questions = [...currentQuiz.questions, ...newQuestions];
            updatedLessons[lessonIndex].quiz = currentQuiz;
-           setEditingCourse({...editingCourse, lessons: updatedLessons});
+           setEditingCourse(prev => ({ ...prev, lessons: updatedLessons }));
            alert(`Imported ${newQuestions.length} questions.`);
         }
       } catch (err) {
@@ -147,7 +165,7 @@ export const CoursesTab: React.FC = () => {
          <div>
             <h2 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">Course Management</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              {isOwner ? 'Build and manage your educational curriculum.' : 'View course curriculum and status.'}
+              {isOwner ? 'Build and manage your educational curriculum.' : 'View available curriculum.'}
             </p>
          </div>
          {isOwner && (
@@ -160,7 +178,7 @@ export const CoursesTab: React.FC = () => {
          )}
       </div>
       
-      {/* Course Grid */}
+      {/* Course Grid - Safe Rendering */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {courses.map(course => (
           <div key={course.id} className="group bg-white dark:bg-[#1E1E1E] rounded-xl border border-gray-200 dark:border-[#333] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col relative">
@@ -174,13 +192,18 @@ export const CoursesTab: React.FC = () => {
             )}
 
             <div className="h-48 bg-gray-100 dark:bg-[#252525] relative overflow-hidden">
-               <img src={course.image} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="" />
+               <img 
+                 src={course.image || 'https://placehold.co/600x400'} 
+                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                 alt={course.title}
+                 onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=No+Image'; }}
+               />
                
                {/* Only show edit actions if user is Owner */}
                {isOwner && (
                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3 backdrop-blur-sm">
                     <button 
-                      onClick={() => { setEditingCourse(JSON.parse(JSON.stringify(course))); setIsModalOpen(true); }} 
+                      onClick={() => handleEditClick(course)} 
                       className="p-3 bg-white rounded-full text-gray-900 hover:text-blue-600 hover:scale-110 transition-all shadow-lg"
                       title="Edit Course"
                     >
@@ -197,21 +220,21 @@ export const CoursesTab: React.FC = () => {
                )}
                
                <span className="absolute bottom-3 left-3 bg-black/60 text-white text-[10px] font-bold px-2.5 py-1 rounded backdrop-blur-md border border-white/10">
-                  {course.subject}
+                  {course.subject || 'General'}
                </span>
             </div>
             <div className="p-5 flex-1 flex flex-col">
               <h4 className="text-gray-900 dark:text-white font-bold mb-1 line-clamp-1 text-lg">{course.title}</h4>
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-4 flex items-center gap-1">
                  <span className="w-5 h-5 rounded-full bg-gray-100 dark:bg-[#333] flex items-center justify-center text-[10px] font-bold text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-[#444]">
-                    {course.instructor.charAt(0)}
+                    {(course.instructor || 'I').charAt(0)}
                  </span> 
-                 {course.instructor}
+                 {course.instructor || 'Unknown Instructor'}
               </p>
               
               <div className="mt-auto flex items-center justify-between border-t border-gray-100 dark:border-[#333] pt-4">
                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-[#252525] px-2 py-1 rounded border border-gray-100 dark:border-[#333]">
-                    {course.lessons.length} Lessons
+                    {course.lessons?.length || 0} Lessons
                  </span>
                  <span className="text-sm font-bold text-gray-900 dark:text-white">
                     {course.price === 0 ? 'Free' : `${course.price} EGP`}
@@ -222,8 +245,8 @@ export const CoursesTab: React.FC = () => {
         ))}
       </div>
 
-      {/* FULL SCREEN EDITOR MODAL - Only render if Owner */}
-      {isModalOpen && editingCourse && isOwner && (
+      {/* FULL SCREEN EDITOR MODAL */}
+      {isModalOpen && isOwner && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-gray-900/80 backdrop-blur-md p-4">
           <div className="bg-white dark:bg-[#1E1E1E] rounded-2xl shadow-2xl w-full max-w-7xl h-[95vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-200 dark:border-[#333]">
              
@@ -260,24 +283,53 @@ export const CoursesTab: React.FC = () => {
                    <div className="space-y-5">
                       <div>
                          <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-2">Title</label>
-                         <input type="text" value={editingCourse.title || ''} onChange={e => setEditingCourse({...editingCourse, title: e.target.value})} className="cf-input bg-white dark:bg-[#252525]" placeholder="Course Title" />
+                         <input 
+                           type="text" 
+                           value={editingCourse.title || ''} 
+                           onChange={e => setEditingCourse(prev => ({...prev, title: e.target.value}))} 
+                           className="cf-input bg-white dark:bg-[#252525]" 
+                           placeholder="Course Title" 
+                         />
                       </div>
                       <div>
                          <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-2">Instructor</label>
-                         <input type="text" value={editingCourse.instructor || ''} onChange={e => setEditingCourse({...editingCourse, instructor: e.target.value})} className="cf-input bg-white dark:bg-[#252525]" placeholder="Dr. Name" />
+                         <input 
+                           type="text" 
+                           value={editingCourse.instructor || ''} 
+                           onChange={e => setEditingCourse(prev => ({...prev, instructor: e.target.value}))} 
+                           className="cf-input bg-white dark:bg-[#252525]" 
+                           placeholder="Dr. Name" 
+                         />
                       </div>
                       <div>
                          <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-2">Subject</label>
-                         <input type="text" value={editingCourse.subject || ''} onChange={e => setEditingCourse({...editingCourse, subject: e.target.value})} className="cf-input bg-white dark:bg-[#252525]" placeholder="e.g. Anatomy" />
+                         <input 
+                           type="text" 
+                           value={editingCourse.subject || ''} 
+                           onChange={e => setEditingCourse(prev => ({...prev, subject: e.target.value}))} 
+                           className="cf-input bg-white dark:bg-[#252525]" 
+                           placeholder="e.g. Anatomy" 
+                         />
                       </div>
                       <div>
                          <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-2">Cover Image</label>
                          <div className="space-y-2">
                             <div className="aspect-video w-full rounded-lg bg-gray-200 dark:bg-[#252525] overflow-hidden border border-gray-200 dark:border-[#333]">
-                               {editingCourse.image && <img src={editingCourse.image} className="w-full h-full object-cover" />}
+                               <img 
+                                 src={editingCourse.image || 'https://placehold.co/600x400'} 
+                                 className="w-full h-full object-cover" 
+                                 alt="Cover"
+                                 onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=No+Image'; }}
+                               />
                             </div>
                             <div className="flex gap-2">
-                               <input type="text" value={editingCourse.image || ''} onChange={e => setEditingCourse({...editingCourse, image: e.target.value})} className="cf-input bg-white dark:bg-[#252525] text-xs" placeholder="Image URL" />
+                               <input 
+                                 type="text" 
+                                 value={editingCourse.image || ''} 
+                                 onChange={e => setEditingCourse(prev => ({...prev, image: e.target.value}))} 
+                                 className="cf-input bg-white dark:bg-[#252525] text-xs" 
+                                 placeholder="Image URL" 
+                               />
                             </div>
                          </div>
                       </div>
@@ -285,7 +337,12 @@ export const CoursesTab: React.FC = () => {
                          <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-2">Price (EGP)</label>
                          <div className="relative">
                             <DollarSign size={14} className="absolute left-3 top-2.5 text-gray-400" />
-                            <input type="number" value={editingCourse.price || 0} onChange={e => setEditingCourse({...editingCourse, price: Number(e.target.value)})} className="cf-input bg-white dark:bg-[#252525] pl-8" />
+                            <input 
+                              type="number" 
+                              value={editingCourse.price || 0} 
+                              onChange={e => setEditingCourse(prev => ({...prev, price: Number(e.target.value)}))} 
+                              className="cf-input bg-white dark:bg-[#252525] pl-8" 
+                            />
                          </div>
                       </div>
                    </div>
@@ -345,9 +402,10 @@ export const CoursesTab: React.FC = () => {
                                  </span>
                                  <button 
                                    onClick={() => {
-                                      const updated = [...editingCourse.lessons!];
+                                      if (!editingCourse.lessons) return;
+                                      const updated = [...editingCourse.lessons];
                                       updated.splice(index, 1);
-                                      setEditingCourse({...editingCourse, lessons: updated});
+                                      setEditingCourse(prev => ({...prev, lessons: updated}));
                                    }}
                                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                                  >
@@ -415,18 +473,20 @@ export const CoursesTab: React.FC = () => {
                                                                     <input 
                                                                         value={content.title}
                                                                         onChange={(e) => {
-                                                                            const updated = [...editingCourse.lessons!];
+                                                                            if (!editingCourse.lessons) return;
+                                                                            const updated = [...editingCourse.lessons];
                                                                             updated[index].contents[cIdx].title = e.target.value;
-                                                                            setEditingCourse({...editingCourse, lessons: updated});
+                                                                            setEditingCourse(prev => ({...prev, lessons: updated}));
                                                                         }}
                                                                         className="w-full text-sm font-bold bg-transparent outline-none text-gray-900 dark:text-white placeholder:text-gray-300"
                                                                         placeholder="Resource Title"
                                                                     />
                                                                     <button 
                                                                         onClick={() => {
-                                                                            const updated = [...editingCourse.lessons!];
+                                                                            if (!editingCourse.lessons) return;
+                                                                            const updated = [...editingCourse.lessons];
                                                                             updated[index].contents.splice(cIdx, 1);
-                                                                            setEditingCourse({...editingCourse, lessons: updated});
+                                                                            setEditingCourse(prev => ({...prev, lessons: updated}));
                                                                         }}
                                                                         className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100"
                                                                     >
@@ -438,9 +498,10 @@ export const CoursesTab: React.FC = () => {
                                                                     <input 
                                                                         value={content.url}
                                                                         onChange={(e) => {
-                                                                            const updated = [...editingCourse.lessons!];
+                                                                            if (!editingCourse.lessons) return;
+                                                                            const updated = [...editingCourse.lessons];
                                                                             updated[index].contents[cIdx].url = e.target.value;
-                                                                            setEditingCourse({...editingCourse, lessons: updated});
+                                                                            setEditingCourse(prev => ({...prev, lessons: updated}));
                                                                         }}
                                                                         className="w-full text-xs bg-gray-50 dark:bg-[#252525] border border-gray-200 dark:border-[#333] rounded px-3 py-2 outline-none focus:border-brand-orange text-gray-600 dark:text-gray-300 font-mono"
                                                                         placeholder="https://..."
@@ -449,9 +510,10 @@ export const CoursesTab: React.FC = () => {
                                                                     <textarea 
                                                                         value={content.textContent || ''}
                                                                         onChange={(e) => {
-                                                                            const updated = [...editingCourse.lessons!];
+                                                                            if (!editingCourse.lessons) return;
+                                                                            const updated = [...editingCourse.lessons];
                                                                             updated[index].contents[cIdx].textContent = e.target.value;
-                                                                            setEditingCourse({...editingCourse, lessons: updated});
+                                                                            setEditingCourse(prev => ({...prev, lessons: updated}));
                                                                         }}
                                                                         className="w-full h-24 text-xs bg-gray-50 dark:bg-[#252525] border border-gray-200 dark:border-[#333] rounded px-3 py-2 outline-none focus:border-brand-orange text-gray-600 dark:text-gray-300 resize-none"
                                                                         placeholder="Write article content here..."
@@ -474,7 +536,13 @@ export const CoursesTab: React.FC = () => {
                                                     <label className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase mb-1 block">Quiz Title</label>
                                                     <input 
                                                         value={lesson.quiz?.title || 'Lesson Quiz'}
-                                                        onChange={(e) => updateLesson(index, 'quiz', { ...lesson.quiz, title: e.target.value })}
+                                                        onChange={(e) => {
+                                                            if (!editingCourse.lessons) return;
+                                                            const updated = [...editingCourse.lessons];
+                                                            const quiz = updated[index].quiz || { id: 'q-'+Date.now(), title: '', questions: [] };
+                                                            updated[index].quiz = { ...quiz, title: e.target.value };
+                                                            setEditingCourse(prev => ({...prev, lessons: updated}));
+                                                        }}
                                                         className="w-full bg-white dark:bg-[#2d3748] border border-blue-200 dark:border-[#4a5568] rounded px-3 py-1.5 text-sm outline-none"
                                                     />
                                                 </div>
@@ -483,7 +551,13 @@ export const CoursesTab: React.FC = () => {
                                                     <input 
                                                         type="number"
                                                         value={lesson.quiz?.passingScore || 50}
-                                                        onChange={(e) => updateLesson(index, 'quiz', { ...lesson.quiz, passingScore: e.target.value })}
+                                                        onChange={(e) => {
+                                                            if (!editingCourse.lessons) return;
+                                                            const updated = [...editingCourse.lessons];
+                                                            const quiz = updated[index].quiz || { id: 'q-'+Date.now(), title: '', questions: [] };
+                                                            updated[index].quiz = { ...quiz, passingScore: Number(e.target.value) };
+                                                            setEditingCourse(prev => ({...prev, lessons: updated}));
+                                                        }}
                                                         className="w-full bg-white dark:bg-[#2d3748] border border-blue-200 dark:border-[#4a5568] rounded px-3 py-1.5 text-sm outline-none text-center"
                                                     />
                                                 </div>
@@ -492,7 +566,13 @@ export const CoursesTab: React.FC = () => {
                                                     <input 
                                                         type="number"
                                                         value={lesson.quiz?.timeLimit || 10}
-                                                        onChange={(e) => updateLesson(index, 'quiz', { ...lesson.quiz, timeLimit: e.target.value })}
+                                                        onChange={(e) => {
+                                                            if (!editingCourse.lessons) return;
+                                                            const updated = [...editingCourse.lessons];
+                                                            const quiz = updated[index].quiz || { id: 'q-'+Date.now(), title: '', questions: [] };
+                                                            updated[index].quiz = { ...quiz, timeLimit: Number(e.target.value) };
+                                                            setEditingCourse(prev => ({...prev, lessons: updated}));
+                                                        }}
                                                         className="w-full bg-white dark:bg-[#2d3748] border border-blue-200 dark:border-[#4a5568] rounded px-3 py-1.5 text-sm outline-none text-center"
                                                     />
                                                 </div>
@@ -503,13 +583,14 @@ export const CoursesTab: React.FC = () => {
                                                     </label>
                                                     <button 
                                                         onClick={() => {
-                                                            const updated = [...editingCourse.lessons!];
+                                                            if (!editingCourse.lessons) return;
+                                                            const updated = [...editingCourse.lessons];
                                                             const quiz = updated[index].quiz || { id: 'q-'+Date.now(), title: 'Quiz', questions: [] };
                                                             quiz.questions.push({
                                                                 id: 'qn-'+Date.now(), text: '', options: ['', '', '', ''], correctOptionIndex: 0
                                                             });
                                                             updated[index].quiz = quiz;
-                                                            setEditingCourse({...editingCourse, lessons: updated});
+                                                            setEditingCourse(prev => ({...prev, lessons: updated}));
                                                         }}
                                                         className="p-2 bg-brand-orange text-white rounded hover:bg-orange-600 shadow-sm flex items-center gap-2 text-xs font-bold px-4"
                                                     >
@@ -532,9 +613,10 @@ export const CoursesTab: React.FC = () => {
                                                         <div className="absolute top-4 right-4">
                                                             <button 
                                                                 onClick={() => {
-                                                                    const updated = [...editingCourse.lessons!];
+                                                                    if (!editingCourse.lessons) return;
+                                                                    const updated = [...editingCourse.lessons];
                                                                     updated[index].quiz!.questions.splice(qIdx, 1);
-                                                                    setEditingCourse({...editingCourse, lessons: updated});
+                                                                    setEditingCourse(prev => ({...prev, lessons: updated}));
                                                                 }}
                                                                 className="text-gray-400 hover:text-red-500"
                                                             >
@@ -547,9 +629,10 @@ export const CoursesTab: React.FC = () => {
                                                             <textarea 
                                                                 value={q.text}
                                                                 onChange={(e) => {
-                                                                    const updated = [...editingCourse.lessons!];
+                                                                    if (!editingCourse.lessons) return;
+                                                                    const updated = [...editingCourse.lessons];
                                                                     updated[index].quiz!.questions[qIdx].text = e.target.value;
-                                                                    setEditingCourse({...editingCourse, lessons: updated});
+                                                                    setEditingCourse(prev => ({...prev, lessons: updated}));
                                                                 }}
                                                                 className="w-full bg-transparent text-sm font-medium outline-none resize-none border-b border-transparent focus:border-gray-200 dark:focus:border-[#333]"
                                                                 placeholder="Enter question text here..."
@@ -565,9 +648,10 @@ export const CoursesTab: React.FC = () => {
                                                                         name={`q-${q.id}`}
                                                                         checked={q.correctOptionIndex === oIdx}
                                                                         onChange={() => {
-                                                                            const updated = [...editingCourse.lessons!];
+                                                                            if (!editingCourse.lessons) return;
+                                                                            const updated = [...editingCourse.lessons];
                                                                             updated[index].quiz!.questions[qIdx].correctOptionIndex = oIdx;
-                                                                            setEditingCourse({...editingCourse, lessons: updated});
+                                                                            setEditingCourse(prev => ({...prev, lessons: updated}));
                                                                         }}
                                                                         className="accent-brand-orange cursor-pointer w-4 h-4"
                                                                     />
@@ -575,9 +659,10 @@ export const CoursesTab: React.FC = () => {
                                                                         type="text" 
                                                                         value={opt}
                                                                         onChange={(e) => {
-                                                                            const updated = [...editingCourse.lessons!];
+                                                                            if (!editingCourse.lessons) return;
+                                                                            const updated = [...editingCourse.lessons];
                                                                             updated[index].quiz!.questions[qIdx].options[oIdx] = e.target.value;
-                                                                            setEditingCourse({...editingCourse, lessons: updated});
+                                                                            setEditingCourse(prev => ({...prev, lessons: updated}));
                                                                         }}
                                                                         className={`flex-1 text-xs px-3 py-2 rounded bg-gray-50 dark:bg-[#252525] border outline-none transition-colors ${
                                                                             q.correctOptionIndex === oIdx 
@@ -595,9 +680,10 @@ export const CoursesTab: React.FC = () => {
                                                                 type="text" 
                                                                 value={q.explanation || ''}
                                                                 onChange={(e) => {
-                                                                    const updated = [...editingCourse.lessons!];
+                                                                    if (!editingCourse.lessons) return;
+                                                                    const updated = [...editingCourse.lessons];
                                                                     updated[index].quiz!.questions[qIdx].explanation = e.target.value;
-                                                                    setEditingCourse({...editingCourse, lessons: updated});
+                                                                    setEditingCourse(prev => ({...prev, lessons: updated}));
                                                                 }}
                                                                 className="w-full text-xs text-gray-500 bg-transparent outline-none italic"
                                                                 placeholder="Add explanation for the correct answer (optional)..."
