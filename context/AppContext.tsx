@@ -111,31 +111,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  // Critical Fix: Consolidated Auth State Management
   useEffect(() => {
-    const initAuth = async () => {
-      const storedToken = jwtUtils.getToken();
-      if (storedToken && !jwtUtils.isExpired(storedToken)) {
-        setToken(storedToken);
-      }
+    if (!auth) {
       setIsLoading(false);
-    };
-    initAuth();
-  }, []);
+      return;
+    }
 
-  useEffect(() => {
-    if (!auth) return;
     const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
-      if (firebaseUser) {
-        try {
+      try {
+        if (firebaseUser) {
+          // 1. Fetch User Data
           const docRef = db.collection("users").doc(firebaseUser.uid);
           const docSnap = await docRef.get();
+          
           let baseUser: User;
+          
           if (docSnap.exists) {
             baseUser = { id: firebaseUser.uid, ...docSnap.data() } as User;
           } else {
+            // 2. Auto-create if missing (Self-healing)
             baseUser = {
               id: firebaseUser.uid,
-              name: firebaseUser.displayName || 'طالب نيرسي',
+              name: firebaseUser.displayName || 'Student',
               email: firebaseUser.email || '',
               phone: '',
               xp: 0,
@@ -144,24 +142,38 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               joinedAt: new Date().toISOString(),
               subscriptionTier: 'free'
             };
+            await syncUserToCloud(baseUser);
           }
+          
           setUser(baseUser);
+          
+          // 3. Generate Token
           const newToken = jwtUtils.sign({ sub: baseUser.id, name: baseUser.name, email: baseUser.email });
           jwtUtils.saveToken(newToken);
           setToken(newToken);
-          await syncUserToCloud(baseUser); // Await this to ensure db write attempts finish
-        } catch (error) {
-          console.error("Auth State Change Error:", error);
+          
+        } else {
+          // 4. Clean Logout
+          setUser(null);
+          setToken(null);
+          jwtUtils.removeToken();
         }
-      } else {
+      } catch (error) {
+        console.error("Auth State Change Error:", error);
+        // Fallback safety
         setUser(null);
         setToken(null);
+      } finally {
+        // 5. Release Loading Lock
+        setIsLoading(false);
       }
     });
+
     return () => unsubscribe();
   }, []);
 
   const login = async (email: string, pass: string) => { await auth.signInWithEmailAndPassword(email, pass); };
+  
   const signup = async (email: string, pass: string, name: string, phone: string) => {
     const userCredential = await auth.createUserWithEmailAndPassword(email, pass);
     const firebaseUser = userCredential.user;
@@ -171,6 +183,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         id: firebaseUser.uid, name, email, phone, xp: 0, level: 1, streak: 0, joinedAt: new Date().toISOString(),
         subscriptionTier: 'free'
       };
+      // Optimistic update
       setUser(newUser);
       await syncUserToCloud(newUser);
     }
@@ -178,6 +191,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const loginWithGoogle = async () => { await auth.signInWithPopup(googleProvider); };
   const logout = async () => { await auth.signOut(); jwtUtils.removeToken(); setUser(null); setToken(null); };
+  
   const updateUserData = async (data: Partial<User>) => {
     if (!user) return;
     const updatedUser = { ...user, ...data };
