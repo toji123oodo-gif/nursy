@@ -29,7 +29,7 @@ export const Dashboard: React.FC = () => {
   return (
     <div className="space-y-8 pb-10">
       {/* 1. Welcome Section */}
-      <div className="flex flex-col md:flex-row justify-between items-end gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2">
              أهلاً بك، {user.name.split(' ')[0]} 👋
@@ -38,9 +38,9 @@ export const Dashboard: React.FC = () => {
              جاهز تكمل رحلتك التعليمية النهاردة؟
            </p>
         </div>
-        <div className="flex gap-3">
-           <button className="btn-secondary rounded-full px-6">الجدول</button>
-           <button className="btn-primary rounded-full px-6 shadow-lg shadow-orange-500/20">
+        <div className="flex gap-3 w-full md:w-auto">
+           <button className="flex-1 md:flex-none btn-secondary rounded-full px-6">الجدول</button>
+           <button className="flex-1 md:flex-none btn-primary rounded-full px-6 shadow-lg shadow-orange-500/20">
              استكمل المذاكرة <Play size={16} fill="currentColor" />
            </button>
         </div>
@@ -69,12 +69,12 @@ export const Dashboard: React.FC = () => {
                  <img src={courses[0].image} alt="Course" className="w-full h-full object-cover" />
               </div>
               
-              <div className="flex-1 text-center md:text-right">
+              <div className="flex-1 text-center md:text-right w-full">
                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/10 text-xs font-medium mb-3">
                     <Zap size={12} className="text-[#F38020]" fill="currentColor" /> استكمل آخر درس
                  </div>
-                 <h2 className="text-xl md:text-2xl font-bold mb-2">{courses[0].title}</h2>
-                 <p className="text-gray-400 text-sm mb-4">المحاضرة 3: مقدمة في علم التشريح ووظائف الأعضاء</p>
+                 <h2 className="text-xl md:text-2xl font-bold mb-2 line-clamp-1">{courses[0].title}</h2>
+                 <p className="text-gray-400 text-sm mb-4 line-clamp-1">المحاضرة 3: مقدمة في علم التشريح ووظائف الأعضاء</p>
                  
                  <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden mb-2">
                     <div className="bg-[#F38020] h-full w-[65%] shadow-[0_0_10px_rgba(243,128,32,0.5)]"></div>
@@ -92,17 +92,17 @@ export const Dashboard: React.FC = () => {
         </div>
       )}
 
-      {/* 4. Course Grid (Replacing the Table) */}
+      {/* 4. Course Grid & Search */}
       <div>
-         <div className="flex justify-between items-center mb-6">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">كورساتي المشترك بها</h3>
+         <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white w-full md:w-auto text-right">كورساتي المشترك بها</h3>
             
-            <div className="relative hidden md:block">
-               <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+            <div className="relative w-full md:w-64">
+               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                <input 
                  type="text" 
                  placeholder="بحث في الكورسات..." 
-                 className="bg-white dark:bg-[#1E1E1E] border border-gray-200 dark:border-[#333] rounded-full px-4 pr-10 py-2 text-sm w-64 focus:outline-none focus:border-[#F38020]"
+                 className="bg-white dark:bg-[#1E1E1E] border border-gray-200 dark:border-[#333] rounded-full px-4 pl-10 py-2 text-sm w-full focus:outline-none focus:border-[#F38020]"
                  value={searchTerm}
                  onChange={(e) => setSearchTerm(e.target.value)}
                />

@@ -156,7 +156,47 @@ export const CodesTab: React.FC<Props> = ({ initialCodes }) => {
             </div>
          </div>
 
-         <div className="flex-1 overflow-y-auto">
+         {/* MOBILE VIEW: Cards */}
+         <div className="md:hidden flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50 dark:bg-[#121212]">
+            {filteredCodes.map(c => (
+               <div key={c.id} className="bg-white dark:bg-[#1E1E1E] p-4 rounded-lg border border-gray-200 dark:border-[#333] shadow-sm flex flex-col gap-2">
+                  <div className="flex justify-between items-start">
+                     <span className="font-mono font-bold text-lg text-gray-800 dark:text-gray-200">{c.code}</span>
+                     {c.isUsed ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-red-50 text-red-600 border border-red-100">
+                           <CheckCircle2 size={10}/> Used
+                        </span>
+                     ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-green-50 text-green-600 border border-green-100">
+                           <Ticket size={10}/> Available
+                        </span>
+                     )}
+                  </div>
+                  
+                  <div className="flex justify-between items-center text-xs text-gray-500 border-t border-gray-100 dark:border-[#333] pt-2 mt-1">
+                     <span className="flex items-center gap-1"><Clock size={12}/> {c.days} Days</span>
+                     <span className="flex items-center gap-1"><Calendar size={12}/> {new Date(c.createdAt).toLocaleDateString()}</span>
+                  </div>
+
+                  {!c.isUsed && (
+                     <button 
+                        onClick={() => copyToClipboard(c.code, c.id)} 
+                        className={`w-full py-2 rounded mt-2 text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                           copiedId === c.id 
+                           ? 'bg-green-100 text-green-700' 
+                           : 'bg-gray-100 dark:bg-[#333] text-gray-600 dark:text-gray-300'
+                        }`}
+                     >
+                        {copiedId === c.id ? <Check size={14}/> : <Copy size={14}/>}
+                        {copiedId === c.id ? 'Copied' : 'Copy Code'}
+                     </button>
+                  )}
+               </div>
+            ))}
+         </div>
+
+         {/* DESKTOP VIEW: Table */}
+         <div className="hidden md:block flex-1 overflow-y-auto">
             <table className="w-full text-left">
               <thead className="bg-gray-50/80 dark:bg-[#252525] backdrop-blur-sm border-b border-gray-200 dark:border-[#333] sticky top-0 z-10">
                 <tr>

@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { User } from '../../types';
-import { Brain, Search, GraduationCap, BarChart3, TrendingUp, UserCheck, AlertCircle } from 'lucide-react';
+import { Brain, Search, GraduationCap, BarChart3, TrendingUp, UserCheck, AlertCircle, Calendar } from 'lucide-react';
 
 interface Props {
   users: User[];
@@ -83,8 +83,9 @@ export const ExamsTab: React.FC<Props> = ({ users }) => {
          </div>
       </div>
 
-      {/* 2. Results Table */}
+      {/* 2. Results Section */}
       <div className="bg-white dark:bg-[#1E1E1E] border border-gray-200 dark:border-[#333] rounded-xl shadow-sm overflow-hidden transition-colors">
+         {/* Filter Header */}
          <div className="p-4 border-b border-gray-200 dark:border-[#333] flex flex-col md:flex-row justify-between items-center gap-4 bg-white dark:bg-[#1E1E1E] sticky top-0 z-10">
             <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
               <GraduationCap size={20} className="text-gray-400" /> Student Performance
@@ -114,7 +115,42 @@ export const ExamsTab: React.FC<Props> = ({ users }) => {
             </div>
          </div>
 
-         <div className="overflow-x-auto">
+         {/* MOBILE VIEW: Cards */}
+         <div className="md:hidden p-4 space-y-4 bg-gray-50 dark:bg-[#121212]">
+            {filteredResults.map((result, i) => (
+                <div key={i} className="bg-white dark:bg-[#1E1E1E] p-4 rounded-lg border border-gray-200 dark:border-[#333] shadow-sm">
+                    <div className="flex justify-between items-start mb-3">
+                        <div>
+                            <h4 className="font-bold text-gray-900 dark:text-white text-sm">{result.userName}</h4>
+                            <p className="text-xs text-gray-500">{result.phone || 'No Phone'}</p>
+                        </div>
+                        <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-bold ${
+                            result.status === 'pass' 
+                            ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
+                            : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                        }`}>
+                            {result.score}%
+                        </span>
+                    </div>
+                    <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1 border-t border-gray-100 dark:border-[#333] pt-2">
+                        <div className="flex justify-between">
+                            <span>Exam ID:</span>
+                            <span className="font-mono bg-gray-100 dark:bg-[#2C2C2C] px-1 rounded">{result.lessonId}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>Date:</span>
+                            <span>{result.date}</span>
+                        </div>
+                    </div>
+                </div>
+            ))}
+            {filteredResults.length === 0 && (
+                <div className="text-center py-8 text-gray-400 text-sm">No results found.</div>
+            )}
+         </div>
+
+         {/* DESKTOP VIEW: Table */}
+         <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left">
               <thead className="bg-gray-50/80 dark:bg-[#252525] backdrop-blur-sm border-b border-gray-200 dark:border-[#333]">
                 <tr>

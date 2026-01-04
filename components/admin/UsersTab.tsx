@@ -5,7 +5,8 @@ import { db } from '../../firebase';
 import { 
   Search, Filter, Trash2, Shield, Zap, Mail, Smartphone, 
   MoreHorizontal, Edit3, X, Save, Ban, CheckCircle, 
-  GraduationCap, Wallet, FileText, Calendar, Lock, UserCheck
+  GraduationCap, Wallet, FileText, Calendar, Lock, UserCheck,
+  ChevronDown
 } from 'lucide-react';
 
 interface Props {
@@ -64,13 +65,58 @@ export const UsersTab: React.FC<Props> = ({ users, searchTerm }) => {
              </button>
            ))}
          </div>
-         <div className="text-xs font-medium text-gray-500 dark:text-gray-400 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 px-3 py-1.5 rounded-full border border-blue-100 dark:border-blue-800">
+         <div className="text-xs font-medium text-gray-500 dark:text-gray-400 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 px-3 py-1.5 rounded-full border border-blue-100 dark:border-blue-800 self-start sm:self-center">
             {filtered.length} مستخدم
          </div>
        </div>
 
-       {/* Enhanced Data Table */}
-       <div className="bg-white dark:bg-[#1E1E1E] border border-gray-200 dark:border-[#333] rounded-xl shadow-sm overflow-hidden transition-colors">
+       {/* MOBILE VIEW: Card List (Visible only on small screens) */}
+       <div className="grid grid-cols-1 gap-4 md:hidden">
+          {filtered.map(u => (
+            <div key={u.id} className={`bg-white dark:bg-[#1E1E1E] p-4 rounded-xl border border-gray-200 dark:border-[#333] shadow-sm ${u.isBlocked ? 'border-red-200 bg-red-50/10' : ''}`}>
+               <div className="flex justify-between items-start mb-3">
+                  <div className="flex items-center gap-3">
+                     <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shadow-sm border border-gray-100 dark:border-[#444] ${u.isBlocked ? 'bg-red-100 text-red-600' : (u.role === 'admin' ? 'bg-purple-100 text-purple-600' : 'bg-gray-100 dark:bg-[#252525] text-gray-700 dark:text-gray-300')}`}>
+                        {(u.name || 'U').charAt(0).toUpperCase()}
+                     </div>
+                     <div>
+                        <h4 className="font-bold text-gray-900 dark:text-white text-sm flex items-center gap-1">
+                           {u.name}
+                           {u.role === 'admin' && <Shield size={12} className="text-purple-600" fill="currentColor"/>}
+                        </h4>
+                        <div className="flex items-center gap-2 mt-0.5">
+                           <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${u.subscriptionTier === 'pro' ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-gray-50 text-gray-500 border-gray-100'}`}>
+                              {u.subscriptionTier.toUpperCase()}
+                           </span>
+                           {u.isBlocked && <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-bold">BLOCKED</span>}
+                        </div>
+                     </div>
+                  </div>
+                  <button 
+                     onClick={() => { setSelectedUser(u); setIsEditorOpen(true); }}
+                     className="p-2 bg-gray-50 dark:bg-[#252525] rounded-lg text-gray-500 hover:text-blue-600 border border-gray-200 dark:border-[#444]"
+                  >
+                     <Edit3 size={16} />
+                  </button>
+               </div>
+               
+               <div className="space-y-2 text-xs text-gray-500 dark:text-gray-400 border-t border-gray-100 dark:border-[#333] pt-3">
+                  <div className="flex items-center gap-2">
+                     <Mail size={12} /> {u.email}
+                  </div>
+                  <div className="flex items-center gap-2">
+                     <Smartphone size={12} /> {u.phone || 'No Phone'}
+                  </div>
+                  <div className="flex items-center gap-2">
+                     <GraduationCap size={12} /> {u.university || 'No University'}
+                  </div>
+               </div>
+            </div>
+          ))}
+       </div>
+
+       {/* DESKTOP VIEW: Table (Hidden on small screens) */}
+       <div className="hidden md:block bg-white dark:bg-[#1E1E1E] border border-gray-200 dark:border-[#333] rounded-xl shadow-sm overflow-hidden transition-colors">
           <div className="overflow-x-auto">
             <table className="w-full text-right">
               <thead className="bg-gray-50/80 dark:bg-[#252525] border-b border-gray-200 dark:border-[#333] backdrop-blur-sm">
@@ -215,10 +261,10 @@ const UserEditorModal: React.FC<{ user: User, onClose: () => void, onDelete: () 
         </div>
 
         {/* Layout: Sidebar + Content */}
-        <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 flex overflow-hidden flex-col md:flex-row">
            
-           {/* Sidebar Tabs */}
-           <div className="w-64 bg-gray-50 dark:bg-[#1A1A1A] border-l border-gray-200 dark:border-[#333] p-4 space-y-1 overflow-y-auto hidden md:block">
+           {/* Sidebar Tabs - Horizontal on Mobile, Vertical on Desktop */}
+           <div className="w-full md:w-64 bg-gray-50 dark:bg-[#1A1A1A] border-b md:border-r border-gray-200 dark:border-[#333] p-4 flex md:block overflow-x-auto gap-2 md:space-y-1 md:overflow-y-auto shrink-0 scrollbar-hide">
               {[
                 { id: 'profile', label: 'البيانات الشخصية', icon: MoreHorizontal },
                 { id: 'academic', label: 'البيانات الأكاديمية', icon: GraduationCap },
@@ -229,17 +275,17 @@ const UserEditorModal: React.FC<{ user: User, onClose: () => void, onDelete: () 
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as any)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+                  className={`flex-shrink-0 md:w-full flex items-center gap-2 md:gap-3 px-3 py-2 md:px-4 md:py-3 rounded-lg text-xs md:text-sm font-medium transition-all whitespace-nowrap ${
                     activeTab === tab.id 
                     ? 'bg-white dark:bg-[#2C2C2C] text-blue-600 dark:text-blue-400 shadow-sm border border-gray-200 dark:border-[#444]' 
                     : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200/50 dark:hover:bg-[#252525] hover:text-gray-900 dark:hover:text-white'
                   }`}
                 >
-                  <tab.icon size={18} /> {tab.label}
+                  <tab.icon size={16} /> {tab.label}
                 </button>
               ))}
               
-              <div className="mt-8 p-4 bg-blue-50 dark:bg-blue-900/10 rounded-xl border border-blue-100 dark:border-blue-900/30">
+              <div className="hidden md:block mt-8 p-4 bg-blue-50 dark:bg-blue-900/10 rounded-xl border border-blue-100 dark:border-blue-900/30">
                  <h4 className="text-xs font-bold text-blue-800 dark:text-blue-300 mb-2">ملاحظات الإدارة</h4>
                  <textarea 
                    className="w-full text-xs bg-white dark:bg-[#2C2C2C] border border-blue-200 dark:border-blue-800 rounded p-2 h-24 resize-none focus:outline-none focus:border-blue-400 text-gray-900 dark:text-white placeholder:text-gray-400"
@@ -251,7 +297,7 @@ const UserEditorModal: React.FC<{ user: User, onClose: () => void, onDelete: () 
            </div>
 
            {/* Content Area */}
-           <div className="flex-1 overflow-y-auto p-8 bg-white dark:bg-[#1E1E1E]">
+           <div className="flex-1 overflow-y-auto p-6 md:p-8 bg-white dark:bg-[#1E1E1E]">
               
               {/* TAB: PROFILE */}
               {activeTab === 'profile' && (
@@ -289,7 +335,7 @@ const UserEditorModal: React.FC<{ user: User, onClose: () => void, onDelete: () 
                 </div>
               )}
 
-              {/* TAB: ACADEMIC */}
+              {/* ... (Other Tabs remain the same, just wrapped in the responsive container) ... */}
               {activeTab === 'academic' && (
                 <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-300">
                    <h3 className="text-lg font-bold text-gray-900 dark:text-white border-b dark:border-[#333] pb-2 mb-6">البيانات الدراسية</h3>
@@ -321,7 +367,6 @@ const UserEditorModal: React.FC<{ user: User, onClose: () => void, onDelete: () 
                 </div>
               )}
 
-              {/* TAB: SUBSCRIPTION */}
               {activeTab === 'subscription' && (
                 <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-300">
                    <h3 className="text-lg font-bold text-gray-900 dark:text-white border-b dark:border-[#333] pb-2 mb-6">التحكم في الاشتراك</h3>
@@ -370,10 +415,9 @@ const UserEditorModal: React.FC<{ user: User, onClose: () => void, onDelete: () 
                 </div>
               )}
 
-              {/* TAB: STATS */}
               {activeTab === 'stats' && (
                 <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-300">
-                   <h3 className="text-lg font-bold text-gray-900 dark:text-white border-b dark:border-[#333] pb-2 mb-6">إحصائيات التقدم (Gamification)</h3>
+                   <h3 className="text-lg font-bold text-gray-900 dark:text-white border-b dark:border-[#333] pb-2 mb-6">إحصائيات التقدم</h3>
                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="p-4 bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-100 dark:border-yellow-900/30 rounded-xl">
                          <label className="text-xs font-bold text-yellow-600 dark:text-yellow-400 uppercase">نقاط الخبرة (XP)</label>
@@ -406,20 +450,18 @@ const UserEditorModal: React.FC<{ user: User, onClose: () => void, onDelete: () 
                 </div>
               )}
 
-              {/* TAB: DANGER */}
               {activeTab === 'danger' && (
                 <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-300">
                    <h3 className="text-lg font-bold text-red-600 border-b border-red-100 dark:border-red-900/30 pb-2 mb-6">منطقة الخطر</h3>
-                   
                    <div className="bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/30 rounded-xl p-6 space-y-6">
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                          <div>
                             <h4 className="font-bold text-gray-900 dark:text-white">حظر الطالب مؤقتاً</h4>
                             <p className="text-sm text-gray-500 dark:text-gray-400">سيمنع الطالب من تسجيل الدخول للمنصة.</p>
                          </div>
                          <button 
                            onClick={() => handleChange('isBlocked', !formData.isBlocked)}
-                           className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${
+                           className={`w-full md:w-auto px-4 py-2 rounded-lg font-bold text-sm transition-colors ${
                               formData.isBlocked 
                               ? 'bg-gray-200 dark:bg-[#333] text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-[#444]' 
                               : 'bg-red-600 text-white hover:bg-red-700'
@@ -431,14 +473,14 @@ const UserEditorModal: React.FC<{ user: User, onClose: () => void, onDelete: () 
                       
                       <div className="w-full h-px bg-red-200 dark:bg-red-900/30"></div>
 
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                          <div>
                             <h4 className="font-bold text-red-700 dark:text-red-400">حذف الحساب نهائياً</h4>
-                            <p className="text-sm text-red-500 dark:text-red-300/80">هذا الإجراء لا يمكن التراجع عنه. سيتم حذف جميع البيانات.</p>
+                            <p className="text-sm text-red-500 dark:text-red-300/80">هذا الإجراء لا يمكن التراجع عنه.</p>
                          </div>
                          <button 
                            onClick={onDelete}
-                           className="px-4 py-2 border border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 bg-white dark:bg-[#1E1E1E] rounded-lg font-bold text-sm hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors flex items-center gap-2"
+                           className="w-full md:w-auto px-4 py-2 border border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 bg-white dark:bg-[#1E1E1E] rounded-lg font-bold text-sm hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors flex items-center justify-center gap-2"
                          >
                            <Trash2 size={16} /> حذف نهائي
                          </button>

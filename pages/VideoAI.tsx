@@ -66,10 +66,10 @@ export const VideoAI: React.FC = () => {
   };
 
   return (
-    <div className="h-[calc(100vh-3.5rem)] flex flex-col md:flex-row overflow-hidden bg-[#FAFAFA] dark:bg-[#101010]">
+    <div className="min-h-[calc(100vh-3.5rem)] md:h-[calc(100vh-3.5rem)] flex flex-col md:flex-row overflow-hidden bg-[#FAFAFA] dark:bg-[#101010]">
       
       {/* Left Panel: Workspace / Video Preview */}
-      <div className="flex-1 flex flex-col border-r border-[#E5E5E5] dark:border-[#333] bg-white dark:bg-[#1E1E1E]">
+      <div className="flex-1 flex flex-col border-r border-[#E5E5E5] dark:border-[#333] bg-white dark:bg-[#1E1E1E] min-h-[400px] md:min-h-0">
          <div className="h-12 border-b border-[#E5E5E5] dark:border-[#333] flex items-center px-4 justify-between bg-[#FAFAFA] dark:bg-[#252525]">
             <span className="text-xs font-bold text-muted uppercase tracking-wider flex items-center gap-2">
                <Video size={14} /> Source Media
@@ -103,7 +103,7 @@ export const VideoAI: React.FC = () => {
             )}
          </div>
 
-         <div className="p-4 border-t border-[#E5E5E5] dark:border-[#333] bg-white dark:bg-[#1E1E1E] flex justify-between items-center">
+         <div className="p-4 border-t border-[#E5E5E5] dark:border-[#333] bg-white dark:bg-[#1E1E1E] flex justify-between items-center sticky bottom-0 z-10">
             <div className="text-xs text-muted">
                {file ? `${(file.size / 1024 / 1024).toFixed(2)} MB selected` : 'No file selected'}
             </div>
@@ -119,14 +119,14 @@ export const VideoAI: React.FC = () => {
       </div>
 
       {/* Right Panel: Analysis Output */}
-      <div className="w-full md:w-[450px] flex flex-col bg-white dark:bg-[#1E1E1E]">
+      <div className="w-full md:w-[450px] flex flex-col bg-white dark:bg-[#1E1E1E] h-auto md:h-full">
          <div className="h-12 border-b border-[#E5E5E5] dark:border-[#333] flex items-center px-4 bg-[#FAFAFA] dark:bg-[#252525]">
             <span className="text-xs font-bold text-muted uppercase tracking-wider flex items-center gap-2">
                <Terminal size={14} /> Diagnostic Output
             </span>
          </div>
 
-         <div className="flex-1 overflow-y-auto p-6 font-mono text-sm">
+         <div className="flex-1 overflow-y-auto p-6 font-mono text-sm min-h-[300px]">
             {isAnalyzing ? (
                <div className="space-y-4 animate-pulse">
                   <div className="h-4 bg-gray-100 dark:bg-[#333] rounded w-3/4"></div>
@@ -152,7 +152,7 @@ export const VideoAI: React.FC = () => {
                   <span>{error}</span>
                </div>
             ) : (
-               <div className="text-center text-muted mt-20">
+               <div className="text-center text-muted mt-10 md:mt-20">
                   <Brain size={32} className="mx-auto mb-4 opacity-20" />
                   <p>Ready for input.</p>
                   <p className="text-xs mt-2">Upload a video to see clinical breakdown.</p>
