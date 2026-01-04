@@ -2,7 +2,10 @@
 import React, { useState, useMemo } from 'react';
 import { ActivationCode } from '../../types';
 import { db } from '../../firebase';
-import { Copy, Ticket, CheckCircle, Trash2, Search, Filter, History, Calendar, Hash, RefreshCw } from 'lucide-react';
+import { 
+  Copy, Ticket, Trash2, Search, RefreshCw, 
+  CheckCircle2, Clock, Calendar, Check
+} from 'lucide-react';
 
 interface Props {
   initialCodes: ActivationCode[];
@@ -14,6 +17,7 @@ export const CodesTab: React.FC<Props> = ({ initialCodes }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [codeSearch, setCodeSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'used' | 'unused'>('all');
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const generate = async () => {
     if (count <= 0) return;
@@ -34,8 +38,14 @@ export const CodesTab: React.FC<Props> = ({ initialCodes }) => {
     setIsGenerating(false);
   };
 
+  const copyToClipboard = (code: string, id: string) => {
+    navigator.clipboard.writeText(code);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
   const deleteUsedCodes = async () => {
-    if (!window.confirm('هل تريد مسح جميع الأكواد المستخدمة من القائمة؟')) return;
+    if (!window.confirm('Are you sure you want to delete ALL used codes? This keeps the database clean.')) return;
     const used = initialCodes.filter(c => c.isUsed);
     const batch = db.batch();
     used.forEach(c => batch.delete(db.collection("activation_codes").doc(c.id)));
@@ -51,110 +61,145 @@ export const CodesTab: React.FC<Props> = ({ initialCodes }) => {
   }, [initialCodes, codeSearch, statusFilter]);
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Generation Form */}
-        <div className="lg:col-span-2 bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
-           <div className="flex items-center gap-2 mb-6 border-b border-gray-100 pb-4">
-              <div className="p-2 bg-blue-50 text-brand-blue rounded-md">
-                <Ticket size={20} />
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4">
+      {/* 1. Generator Panel */}
+      <div className="lg:col-span-1 space-y-6">
+        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+           <div className="flex items-center gap-3 mb-6">
+              <div className="p-2.5 bg-blue-50 text-brand-blue rounded-lg">
+                <Ticket size={24} />
               </div>
-              <h3 className="font-bold text-gray-900">توليد أكواد تفعيل جديدة</h3>
+              <div>
+                 <h3 className="font-bold text-gray-900 leading-tight">Code Generator</h3>
+                 <p className="text-xs text-gray-500">Create bulk access keys.</p>
+              </div>
            </div>
 
-           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-gray-700">الكمية</label>
-                <input type="number" value={count} onChange={e => setCount(Number(e.target.value))} className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-brand-blue outline-none" />
+           <div className="space-y-4">
+              <div>
+                <label className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5 block">Quantity</label>
+                <input 
+                  type="number" 
+                  value={count} 
+                  onChange={e => setCount(Number(e.target.value))} 
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 text-sm font-medium focus:bg-white focus:ring-2 focus:ring-blue-100 outline-none transition-all" 
+                />
               </div>
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-gray-700">الصلاحية (يوم)</label>
-                <input type="number" value={days} onChange={e => setDays(Number(e.target.value))} className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-brand-blue outline-none" />
+              <div>
+                <label className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5 block">Validity Period (Days)</label>
+                <input 
+                  type="number" 
+                  value={days} 
+                  onChange={e => setDays(Number(e.target.value))} 
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 text-sm font-medium focus:bg-white focus:ring-2 focus:ring-blue-100 outline-none transition-all" 
+                />
               </div>
-              <div className="flex items-end">
+              
+              <div className="pt-2">
                 <button 
                   onClick={generate} 
                   disabled={isGenerating} 
-                  className="w-full btn-primary flex items-center justify-center gap-2"
+                  className="w-full btn-primary py-3 rounded-lg flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20"
                 >
-                  {isGenerating ? <RefreshCw className="animate-spin" size={16}/> : <Ticket size={16}/>}
-                  {isGenerating ? 'جاري التوليد...' : 'توليد الأكواد'}
+                  {isGenerating ? <RefreshCw className="animate-spin" size={18}/> : <Ticket size={18}/>}
+                  {isGenerating ? 'Generating...' : 'Generate Codes'}
                 </button>
               </div>
            </div>
         </div>
 
-        {/* Quick Actions Panel */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm flex flex-col justify-center">
-           <h4 className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-4">إجراءات سريعة</h4>
-           <div className="space-y-3">
-              <button onClick={deleteUsedCodes} className="w-full py-2 px-4 rounded-md border border-red-200 text-red-600 text-sm font-medium hover:bg-red-50 transition-colors flex items-center justify-center gap-2">
-                <Trash2 size={16} /> مسح الأكواد المستخدمة
-              </button>
-              <div className="p-3 bg-gray-50 rounded-md border border-gray-100 text-center">
-                <p className="text-xs text-gray-500">الأكواد المتاحة حالياً</p>
-                <p className="text-xl font-bold text-gray-900 mt-1">{initialCodes.filter(c => !c.isUsed).length}</p>
+        <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl p-6 text-white shadow-lg">
+           <h4 className="text-sm font-bold opacity-90 mb-4">Quick Actions</h4>
+           <div className="flex justify-between items-center mb-6">
+              <div>
+                 <p className="text-3xl font-bold">{initialCodes.filter(c => !c.isUsed).length}</p>
+                 <p className="text-xs opacity-60 uppercase tracking-wider font-medium">Available Codes</p>
+              </div>
+              <div className="h-10 w-px bg-white/20"></div>
+              <div>
+                 <p className="text-3xl font-bold">{initialCodes.filter(c => c.isUsed).length}</p>
+                 <p className="text-xs opacity-60 uppercase tracking-wider font-medium">Used Codes</p>
               </div>
            </div>
+           <button 
+             onClick={deleteUsedCodes} 
+             className="w-full py-2.5 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-200 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-colors"
+           >
+             <Trash2 size={16} /> Purge Used Codes
+           </button>
         </div>
       </div>
 
-      {/* Codes List */}
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-         <div className="p-4 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4 bg-gray-50">
-            <div className="relative w-full sm:w-64">
-               <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+      {/* 2. Data Table */}
+      <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col overflow-hidden h-[600px]">
+         <div className="p-4 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4 bg-white sticky top-0 z-10">
+            <div className="relative w-full sm:w-72">
+               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                <input 
                  type="text" 
-                 placeholder="بحث عن كود..." 
+                 placeholder="Search code..." 
                  value={codeSearch} 
                  onChange={(e) => setCodeSearch(e.target.value)} 
-                 className="w-full bg-white border border-gray-300 rounded-md pr-9 pl-3 py-2 text-sm outline-none focus:border-brand-blue" 
+                 className="w-full bg-gray-50 border border-gray-200 rounded-lg pl-9 pr-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-50 transition-all" 
                />
             </div>
-            <div className="flex bg-white p-1 rounded-md border border-gray-200">
+            <div className="flex bg-gray-100 p-1 rounded-lg border border-gray-200">
                {['all', 'unused', 'used'].map(f => (
                  <button 
                    key={f} 
                    onClick={() => setStatusFilter(f as any)} 
-                   className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${statusFilter === f ? 'bg-gray-100 text-gray-900' : 'text-gray-500 hover:text-gray-900'}`}
+                   className={`px-4 py-1.5 rounded-md text-xs font-bold capitalize transition-all ${statusFilter === f ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
                  >
-                   {f === 'unused' ? 'متاحة' : f === 'used' ? 'مستخدمة' : 'الكل'}
+                   {f}
                  </button>
                ))}
             </div>
          </div>
 
-         <div className="max-h-[500px] overflow-y-auto">
-            <table className="w-full text-right">
-              <thead className="bg-gray-50 border-b border-gray-200 sticky top-0">
+         <div className="flex-1 overflow-y-auto">
+            <table className="w-full text-left">
+              <thead className="bg-gray-50/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-10">
                 <tr>
-                  <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">الكود</th>
-                  <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">الحالة</th>
-                  <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">المدة</th>
-                  <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">تاريخ الإنشاء</th>
-                  <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase"></th>
+                  <th className="px-6 py-3 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Activation Code</th>
+                  <th className="px-6 py-3 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Duration</th>
+                  <th className="px-6 py-3 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Created</th>
+                  <th className="px-6 py-3 text-[11px] font-bold text-gray-500 uppercase tracking-wider text-right">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200 bg-white">
+              <tbody className="divide-y divide-gray-100">
                 {filteredCodes.map(c => (
-                  <tr key={c.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-3 font-mono text-sm font-medium text-gray-900">{c.code}</td>
-                    <td className="px-6 py-3">
-                       <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${c.isUsed ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
-                         {c.isUsed ? 'مستخدم' : 'متاح'}
-                       </span>
+                  <tr key={c.id} className="hover:bg-blue-50/30 transition-colors group">
+                    <td className="px-6 py-3.5 font-mono text-sm font-bold text-gray-800 tracking-wide">{c.code}</td>
+                    <td className="px-6 py-3.5">
+                       {c.isUsed ? (
+                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-red-50 text-red-600 border border-red-100">
+                           <CheckCircle2 size={12}/> Used
+                         </span>
+                       ) : (
+                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-green-50 text-green-600 border border-green-100">
+                           <Ticket size={12}/> Available
+                         </span>
+                       )}
                     </td>
-                    <td className="px-6 py-3 text-sm text-gray-600">{c.days} يوم</td>
-                    <td className="px-6 py-3 text-sm text-gray-500">{new Date(c.createdAt).toLocaleDateString('ar-EG')}</td>
-                    <td className="px-6 py-3 text-left">
+                    <td className="px-6 py-3.5 text-xs font-medium text-gray-600 flex items-center gap-1">
+                       <Clock size={14} className="text-gray-400" /> {c.days} Days
+                    </td>
+                    <td className="px-6 py-3.5 text-xs text-gray-500">
+                       <span className="flex items-center gap-1"><Calendar size={14} className="text-gray-400"/> {new Date(c.createdAt).toLocaleDateString()}</span>
+                    </td>
+                    <td className="px-6 py-3.5 text-right">
                       {!c.isUsed && (
                         <button 
-                          onClick={() => navigator.clipboard.writeText(c.code)} 
-                          className="text-gray-400 hover:text-brand-blue transition-colors"
-                          title="نسخ الكود"
+                          onClick={() => copyToClipboard(c.code, c.id)} 
+                          className={`p-2 rounded-lg transition-all ${
+                             copiedId === c.id 
+                             ? 'bg-green-100 text-green-600' 
+                             : 'text-gray-400 hover:bg-white hover:text-blue-600 hover:shadow-sm border border-transparent hover:border-gray-200'
+                          }`}
+                          title="Copy Code"
                         >
-                          <Copy size={16}/>
+                          {copiedId === c.id ? <Check size={16}/> : <Copy size={16}/>}
                         </button>
                       )}
                     </td>
