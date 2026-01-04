@@ -5,28 +5,47 @@ import { Course, Lesson, ContentItem, Question } from '../../types';
 import { 
   Plus, Edit2, Trash2, X, Save, FileText, Mic, 
   Video, Upload, Check, ChevronDown, ChevronRight,
-  MoreVertical, FileJson, Brain, Layout
+  MoreVertical, FileJson, Brain, Layout, DollarSign, Image as ImageIcon
 } from 'lucide-react';
 
 export const CoursesTab: React.FC = () => {
   const { courses, addCourse, updateCourse, deleteCourse } = useApp();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  // Initialize with safe default values to prevent undefined errors
   const [editingCourse, setEditingCourse] = useState<Partial<Course> | null>(null);
   const [expandedLesson, setExpandedLesson] = useState<string | null>(null);
+
+  const openNewCourseModal = () => {
+    setEditingCourse({
+      id: '',
+      title: '',
+      instructor: '',
+      subject: '',
+      image: 'https://placehold.co/600x400',
+      price: 0,
+      lessons: []
+    });
+    setIsModalOpen(true);
+  };
 
   const handleSave = async () => {
     if (!editingCourse?.title) return;
     
-    // Ensure all required fields exist to prevent future crashes
-    const courseData = {
-        ...editingCourse,
-        id: editingCourse.id || 'c' + Date.now(),
-        lessons: editingCourse.lessons || [],
-        price: editingCourse.price || 0,
-        image: editingCourse.image || 'https://placehold.co/600x400',
+    // Ensure data integrity before saving
+    const courseData: Course = {
+        id: editingCourse.id || 'c-' + Date.now(),
+        title: editingCourse.title,
+        instructor: editingCourse.instructor || 'Instructor',
         subject: editingCourse.subject || 'General',
-        instructor: editingCourse.instructor || 'Staff'
-    } as Course;
+        image: editingCourse.image || 'https://placehold.co/600x400',
+        price: Number(editingCourse.price) || 0,
+        lessons: (editingCourse.lessons || []).map(l => ({
+            ...l,
+            contents: l.contents || [],
+            quiz: l.quiz || { id: 'q-'+Date.now(), title: 'Quiz', questions: [] }
+        }))
+    };
 
     if (editingCourse.id) await updateCourse(courseData);
     else await addCourse(courseData);
@@ -34,39 +53,69 @@ export const CoursesTab: React.FC = () => {
     setIsModalOpen(false);
   };
 
+  const addLesson = () => {
+    if (!editingCourse) return;
+    const newLesson: Lesson = {
+      id: 'l-' + Date.now(),
+      title: 'New Lesson',
+      isLocked: false,
+      contents: [],
+      quiz: { id: 'q-' + Date.now(), title: 'Quiz', questions: [] }
+    };
+    setEditingCourse({
+      ...editingCourse,
+      lessons: [...(editingCourse.lessons || []), newLesson]
+    });
+    setExpandedLesson(newLesson.id);
+  };
+
+  const updateLesson = (index: number, field: keyof Lesson, value: any) => {
+    if (!editingCourse?.lessons) return;
+    const updatedLessons = [...editingCourse.lessons];
+    updatedLessons[index] = { ...updatedLessons[index], [field]: value };
+    setEditingCourse({ ...editingCourse, lessons: updatedLessons });
+  };
+
+  const addResource = (lessonIndex: number, type: 'video' | 'audio' | 'pdf') => {
+    if (!editingCourse?.lessons) return;
+    const updatedLessons = [...editingCourse.lessons];
+    const newContent: ContentItem = {
+      id: 'r-' + Date.now(),
+      type,
+      title: `New ${type}`,
+      url: ''
+    };
+    updatedLessons[lessonIndex].contents = [...(updatedLessons[lessonIndex].contents || []), newContent];
+    setEditingCourse({ ...editingCourse, lessons: updatedLessons });
+  };
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, lessonIndex: number) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || !editingCourse?.lessons) return;
 
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
         const json = JSON.parse(event.target?.result as string);
         if (Array.isArray(json)) {
-           const newLessons = [...(editingCourse?.lessons || [])];
-           
-           // Ensure quiz object exists
-           if (!newLessons[lessonIndex].quiz) {
-             newLessons[lessonIndex].quiz = { id: 'q'+Date.now(), title: 'Quiz', questions: [] };
-           }
+           const updatedLessons = [...editingCourse.lessons!];
+           const currentQuiz = updatedLessons[lessonIndex].quiz || { id: 'q-'+Date.now(), title: 'Quiz', questions: [] };
            
            const newQuestions: Question[] = json.map((q: any, i) => ({
              id: q.id || `qn-${Date.now()}-${i}`,
-             text: q.text || 'No question text',
+             text: q.text || 'Question text',
              options: q.options || [],
              correctOptionIndex: typeof q.correctOptionIndex === 'number' ? q.correctOptionIndex : 0,
              explanation: q.explanation
            }));
            
-           newLessons[lessonIndex].quiz!.questions = [
-             ...newLessons[lessonIndex].quiz!.questions, 
-             ...newQuestions
-           ];
-           setEditingCourse({...editingCourse, lessons: newLessons});
-           alert(`Successfully imported ${newQuestions.length} questions.`);
+           currentQuiz.questions = [...currentQuiz.questions, ...newQuestions];
+           updatedLessons[lessonIndex].quiz = currentQuiz;
+           setEditingCourse({...editingCourse, lessons: updatedLessons});
+           alert(`Imported ${newQuestions.length} questions.`);
         }
       } catch (err) {
-        alert("Invalid JSON format. Expected an array of questions.");
+        alert("Invalid JSON format.");
       }
     };
     reader.readAsText(file);
@@ -74,22 +123,14 @@ export const CoursesTab: React.FC = () => {
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
-      {/* Header Action */}
-      <div className="flex justify-between items-center bg-white dark:bg-[#1E1E1E] p-4 rounded-xl border border-gray-200 dark:border-[#333] shadow-sm transition-colors">
+      {/* Top Header */}
+      <div className="flex justify-between items-center bg-white dark:bg-[#1E1E1E] p-5 rounded-xl border border-gray-200 dark:border-[#333] shadow-sm transition-colors">
          <div>
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white">Course Management</h2>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Create, edit, and organize curriculum content.</p>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">Course Management</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Create, edit, and organize curriculum content.</p>
          </div>
          <button 
-           onClick={() => {
-             // Initialize with safe defaults to prevent blank screen
-             setEditingCourse({
-               lessons: [], price: 0, subject: '', 
-               image: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=800', 
-               instructor: '', title: ''
-             }); 
-             setIsModalOpen(true);
-           }} 
+           onClick={openNewCourseModal} 
            className="btn-primary flex items-center gap-2 px-6 py-2.5 shadow-lg shadow-orange-500/20"
          >
            <Plus size={18}/> Create New Course
@@ -100,339 +141,347 @@ export const CoursesTab: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {courses.map(course => (
           <div key={course.id} className="group bg-white dark:bg-[#1E1E1E] rounded-xl border border-gray-200 dark:border-[#333] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col">
-            <div className="h-40 bg-gray-100 dark:bg-[#252525] relative overflow-hidden">
+            <div className="h-48 bg-gray-100 dark:bg-[#252525] relative overflow-hidden">
                <img src={course.image} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="" />
-               <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button onClick={() => {setEditingCourse(course); setIsModalOpen(true);}} className="p-2 bg-white/90 dark:bg-black/90 rounded-full text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 shadow-sm">
-                    <Edit2 size={16}/>
+               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3 backdrop-blur-sm">
+                  <button 
+                    onClick={() => { setEditingCourse(JSON.parse(JSON.stringify(course))); setIsModalOpen(true); }} 
+                    className="p-3 bg-white rounded-full text-gray-900 hover:text-blue-600 hover:scale-110 transition-all shadow-lg"
+                    title="Edit Course"
+                  >
+                    <Edit2 size={20}/>
                   </button>
-                  <button onClick={() => { if(confirm('Delete course?')) deleteCourse(course.id); }} className="p-2 bg-white/90 dark:bg-black/90 rounded-full text-gray-700 dark:text-gray-200 hover:text-red-600 dark:hover:text-red-400 shadow-sm">
-                    <Trash2 size={16}/>
+                  <button 
+                    onClick={() => { if(confirm('Delete course?')) deleteCourse(course.id); }} 
+                    className="p-3 bg-white rounded-full text-gray-900 hover:text-red-600 hover:scale-110 transition-all shadow-lg"
+                    title="Delete Course"
+                  >
+                    <Trash2 size={20}/>
                   </button>
                </div>
-               <span className="absolute bottom-2 left-2 bg-black/60 text-white text-[10px] px-2 py-1 rounded backdrop-blur-sm">
+               <span className="absolute bottom-3 left-3 bg-black/60 text-white text-[10px] font-bold px-2.5 py-1 rounded backdrop-blur-md border border-white/10">
                   {course.subject}
                </span>
             </div>
             <div className="p-5 flex-1 flex flex-col">
               <h4 className="text-gray-900 dark:text-white font-bold mb-1 line-clamp-1 text-lg">{course.title}</h4>
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-4 flex items-center gap-1">
-                 <span className="w-4 h-4 rounded-full bg-gray-200 dark:bg-[#333] flex items-center justify-center text-[8px] font-bold text-gray-600 dark:text-gray-300">
+                 <span className="w-5 h-5 rounded-full bg-gray-100 dark:bg-[#333] flex items-center justify-center text-[10px] font-bold text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-[#444]">
                     {course.instructor.charAt(0)}
                  </span> 
                  {course.instructor}
               </p>
               
               <div className="mt-auto flex items-center justify-between border-t border-gray-100 dark:border-[#333] pt-4">
-                 <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{course.lessons.length} Lessons</span>
-                 <span className="text-sm font-bold text-gray-900 dark:text-white">{course.price === 0 ? 'Free' : `$${course.price}`}</span>
+                 <span className="text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-[#252525] px-2 py-1 rounded border border-gray-100 dark:border-[#333]">
+                    {course.lessons.length} Lessons
+                 </span>
+                 <span className="text-sm font-bold text-gray-900 dark:text-white">
+                    {course.price === 0 ? 'Free' : `${course.price} EGP`}
+                 </span>
               </div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* FULL SCREEN COURSE EDITOR MODAL */}
+      {/* FULL SCREEN EDITOR MODAL */}
       {isModalOpen && editingCourse && (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-gray-900/70 backdrop-blur-sm p-4">
-          <div className="bg-white dark:bg-[#1E1E1E] rounded-2xl shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-200 dark:border-[#333]">
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-gray-900/80 backdrop-blur-md p-4">
+          <div className="bg-white dark:bg-[#1E1E1E] rounded-2xl shadow-2xl w-full max-w-7xl h-[95vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-200 dark:border-[#333]">
              
              {/* Modal Header */}
-             <div className="p-4 border-b border-gray-200 dark:border-[#333] flex justify-between items-center bg-gray-50 dark:bg-[#252525]">
-               <div>
-                  <h3 className="font-bold text-lg text-gray-900 dark:text-white">
-                    {editingCourse.id ? 'Edit Course Content' : 'Create New Course'}
-                  </h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Manage lessons, quizzes, and resources.</p>
+             <div className="px-6 py-4 border-b border-gray-200 dark:border-[#333] flex justify-between items-center bg-white dark:bg-[#1E1E1E]">
+               <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-brand-orange/10 text-brand-orange rounded-lg flex items-center justify-center">
+                     <Layout size={20} />
+                  </div>
+                  <div>
+                      <h3 className="font-bold text-lg text-gray-900 dark:text-white">
+                        {editingCourse.id ? 'Edit Course Content' : 'Create New Course'}
+                      </h3>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {editingCourse.lessons?.length || 0} Lessons • {editingCourse.subject || 'Uncategorized'}
+                      </p>
+                  </div>
                </div>
                <div className="flex gap-3">
-                  <button onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#333] rounded-lg transition-colors">Cancel</button>
-                  <button onClick={handleSave} className="btn-primary px-6 py-2 rounded-lg flex items-center gap-2 shadow-md">
+                  <button onClick={() => setIsModalOpen(false)} className="px-5 py-2.5 text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#333] rounded-lg transition-colors">
+                    Discard
+                  </button>
+                  <button onClick={handleSave} className="btn-primary px-6 py-2.5 rounded-lg flex items-center gap-2 shadow-lg shadow-orange-500/20">
                      <Save size={18}/> Save Changes
                   </button>
                </div>
              </div>
 
              <div className="flex-1 flex overflow-hidden">
-                {/* Left Sidebar: Course Metadata */}
-                <div className="w-80 border-r border-gray-200 dark:border-[#333] p-6 overflow-y-auto bg-white dark:bg-[#1E1E1E]">
-                   <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Basic Info</h4>
-                   <div className="space-y-4">
+                {/* Left Sidebar: Metadata */}
+                <div className="w-80 border-r border-gray-200 dark:border-[#333] overflow-y-auto bg-gray-50/50 dark:bg-[#181818] p-6">
+                   <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">Course Settings</h4>
+                   
+                   <div className="space-y-5">
                       <div>
-                         <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1.5">Course Title</label>
-                         <input type="text" value={editingCourse.title || ''} onChange={e => setEditingCourse({...editingCourse, title: e.target.value})} className="cf-input" placeholder="e.g. Anatomy 101" />
+                         <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-2">Title</label>
+                         <input type="text" value={editingCourse.title || ''} onChange={e => setEditingCourse({...editingCourse, title: e.target.value})} className="cf-input bg-white dark:bg-[#252525]" placeholder="Course Title" />
                       </div>
                       <div>
-                         <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1.5">Instructor Name</label>
-                         <input type="text" value={editingCourse.instructor || ''} onChange={e => setEditingCourse({...editingCourse, instructor: e.target.value})} className="cf-input" placeholder="Dr. Name" />
+                         <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-2">Instructor</label>
+                         <input type="text" value={editingCourse.instructor || ''} onChange={e => setEditingCourse({...editingCourse, instructor: e.target.value})} className="cf-input bg-white dark:bg-[#252525]" placeholder="Dr. Name" />
                       </div>
                       <div>
-                         <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1.5">Subject Category</label>
-                         <input type="text" value={editingCourse.subject || ''} onChange={e => setEditingCourse({...editingCourse, subject: e.target.value})} className="cf-input" placeholder="e.g. Physiology" />
+                         <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-2">Subject</label>
+                         <input type="text" value={editingCourse.subject || ''} onChange={e => setEditingCourse({...editingCourse, subject: e.target.value})} className="cf-input bg-white dark:bg-[#252525]" placeholder="e.g. Anatomy" />
                       </div>
                       <div>
-                         <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1.5">Cover Image URL</label>
-                         <div className="flex gap-2">
-                            <input type="text" value={editingCourse.image || ''} onChange={e => setEditingCourse({...editingCourse, image: e.target.value})} className="cf-input text-xs" />
-                            <div className="w-10 h-10 rounded bg-gray-100 dark:bg-[#333] shrink-0 overflow-hidden border border-gray-200 dark:border-[#444]">
-                               <img src={editingCourse.image} className="w-full h-full object-cover" />
+                         <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-2">Cover Image</label>
+                         <div className="space-y-2">
+                            <div className="aspect-video w-full rounded-lg bg-gray-200 dark:bg-[#252525] overflow-hidden border border-gray-200 dark:border-[#333]">
+                               {editingCourse.image && <img src={editingCourse.image} className="w-full h-full object-cover" />}
+                            </div>
+                            <div className="flex gap-2">
+                               <input type="text" value={editingCourse.image || ''} onChange={e => setEditingCourse({...editingCourse, image: e.target.value})} className="cf-input bg-white dark:bg-[#252525] text-xs" placeholder="Image URL" />
                             </div>
                          </div>
                       </div>
                       <div>
-                         <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1.5">Price (EGP)</label>
-                         <input type="number" value={editingCourse.price || 0} onChange={e => setEditingCourse({...editingCourse, price: Number(e.target.value)})} className="cf-input" />
+                         <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-2">Price (EGP)</label>
+                         <div className="relative">
+                            <DollarSign size={14} className="absolute left-3 top-2.5 text-gray-400" />
+                            <input type="number" value={editingCourse.price || 0} onChange={e => setEditingCourse({...editingCourse, price: Number(e.target.value)})} className="cf-input bg-white dark:bg-[#252525] pl-8" />
+                         </div>
                       </div>
                    </div>
                 </div>
 
-                {/* Main Content: Lessons & Quizzes */}
-                <div className="flex-1 bg-gray-50 dark:bg-[#151515] p-8 overflow-y-auto">
-                   <div className="max-w-3xl mx-auto">
-                      <div className="flex justify-between items-center mb-6">
-                         <h4 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                            <Layout size={18} className="text-gray-400" /> Syllabus & Content
-                         </h4>
-                         <button 
-                           onClick={() => setEditingCourse({
-                             ...editingCourse, 
-                             // SAFELY add new lesson
-                             lessons: [...(editingCourse.lessons || []), {
-                               id: 'l'+Date.now(), 
-                               title: 'New Lesson', 
-                               isLocked: false, 
-                               contents: [], 
-                               quiz: { id: 'q'+Date.now(), title: 'Quiz', questions: [] }
-                             }]
-                           })}
-                           className="text-sm font-bold text-brand-blue bg-blue-50 dark:bg-[#2B3A4F] hover:bg-blue-100 dark:hover:bg-[#333] px-4 py-2 rounded-lg transition-colors border border-blue-200 dark:border-blue-900"
-                         >
-                           + Add Lesson
-                         </button>
+                {/* Main Content: Lessons */}
+                <div className="flex-1 bg-white dark:bg-[#1E1E1E] flex flex-col min-w-0">
+                   {/* Lessons Toolbar */}
+                   <div className="px-8 py-6 border-b border-gray-200 dark:border-[#333] flex justify-between items-center">
+                      <div>
+                         <h4 className="text-lg font-bold text-gray-900 dark:text-white">Syllabus</h4>
+                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Manage lessons, videos, and quizzes.</p>
                       </div>
+                      <button 
+                        onClick={addLesson}
+                        className="flex items-center gap-2 px-4 py-2 bg-gray-900 dark:bg-white text-white dark:text-black rounded-lg text-sm font-bold hover:opacity-90 transition-all"
+                      >
+                        <Plus size={16} /> Add Lesson
+                      </button>
+                   </div>
 
-                      <div className="space-y-4">
-                         {(editingCourse.lessons || []).length === 0 && (
-                            <div className="text-center py-12 border-2 border-dashed border-gray-300 dark:border-[#333] rounded-xl">
-                               <p className="text-gray-400">No lessons yet. Add one to get started.</p>
-                            </div>
-                         )}
+                   <div className="flex-1 overflow-y-auto p-8 space-y-4 bg-gray-50 dark:bg-[#161616]">
+                      {(editingCourse.lessons || []).length === 0 && (
+                         <div className="flex flex-col items-center justify-center h-64 border-2 border-dashed border-gray-300 dark:border-[#333] rounded-xl text-gray-400">
+                            <Layout size={48} className="mb-4 opacity-20" />
+                            <p className="font-bold">No lessons yet</p>
+                            <p className="text-xs mt-1">Click "Add Lesson" to start building curriculum.</p>
+                         </div>
+                      )}
 
-                         {(editingCourse.lessons || []).map((lesson, lIdx) => (
-                           <div key={lesson.id} className="bg-white dark:bg-[#1E1E1E] border border-gray-200 dark:border-[#333] rounded-xl shadow-sm overflow-hidden transition-all">
-                              {/* Lesson Header */}
-                              <div 
-                                className="p-4 flex items-center gap-4 bg-white dark:bg-[#1E1E1E] cursor-pointer hover:bg-gray-50 dark:hover:bg-[#252525]"
-                                onClick={() => setExpandedLesson(expandedLesson === lesson.id ? null : lesson.id)}
-                              >
-                                 <div className="p-1 text-gray-400">
-                                    {expandedLesson === lesson.id ? <ChevronDown size={20}/> : <ChevronRight size={20}/>}
-                                 </div>
-                                 <span className="font-mono text-xs font-bold text-gray-400">#{lIdx + 1}</span>
+                      {(editingCourse.lessons || []).map((lesson, index) => (
+                        <div key={lesson.id} className="bg-white dark:bg-[#1E1E1E] border border-gray-200 dark:border-[#333] rounded-xl shadow-sm overflow-hidden transition-all">
+                           {/* Lesson Header */}
+                           <div 
+                             className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-[#252525] border-b border-transparent hover:border-gray-200 dark:hover:border-[#333] transition-colors"
+                             onClick={() => setExpandedLesson(expandedLesson === lesson.id ? null : lesson.id)}
+                           >
+                              <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-[#252525] flex items-center justify-center text-gray-500 border border-gray-200 dark:border-[#333]">
+                                 {index + 1}
+                              </div>
+                              <div className="flex-1 min-w-0">
                                  <input 
                                    type="text" 
                                    value={lesson.title}
                                    onClick={(e) => e.stopPropagation()}
-                                   onChange={(e) => {
-                                      const ls = [...(editingCourse.lessons || [])];
-                                      ls[lIdx].title = e.target.value;
-                                      setEditingCourse({...editingCourse, lessons: ls});
-                                   }}
-                                   className="flex-1 font-bold text-gray-900 dark:text-white bg-transparent outline-none border-b border-transparent focus:border-blue-500"
-                                   placeholder="Lesson Title..."
+                                   onChange={(e) => updateLesson(index, 'title', e.target.value)}
+                                   className="w-full bg-transparent border-none outline-none font-bold text-gray-900 dark:text-white placeholder:text-gray-400"
+                                   placeholder="Lesson Title"
                                  />
-                                 <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                                    <button 
-                                      onClick={() => {
-                                         const ls = [...(editingCourse.lessons || [])];
-                                         ls[lIdx].isLocked = !ls[lIdx].isLocked;
-                                         setEditingCourse({...editingCourse, lessons: ls});
-                                      }}
-                                      className={`text-xs px-2 py-1 rounded font-bold border ${lesson.isLocked ? 'bg-gray-100 dark:bg-[#333] border-gray-300 dark:border-[#444] text-gray-600 dark:text-gray-400' : 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-700 dark:text-green-400'}`}
-                                    >
-                                       {lesson.isLocked ? 'Locked' : 'Published'}
-                                    </button>
-                                    <button 
-                                      onClick={() => {
-                                         const ls = [...(editingCourse.lessons || [])];
-                                         ls.splice(lIdx, 1);
-                                         setEditingCourse({...editingCourse, lessons: ls});
-                                      }}
-                                      className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors"
-                                    >
-                                       <Trash2 size={16}/>
-                                    </button>
-                                 </div>
                               </div>
+                              <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                                 <button 
+                                   onClick={() => updateLesson(index, 'isLocked', !lesson.isLocked)}
+                                   className={`px-3 py-1.5 rounded-md text-xs font-bold border transition-colors ${
+                                      lesson.isLocked 
+                                      ? 'bg-gray-100 dark:bg-[#333] text-gray-500 border-gray-200 dark:border-[#444]' 
+                                      : 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800'
+                                   }`}
+                                 >
+                                    {lesson.isLocked ? 'Locked' : 'Published'}
+                                 </button>
+                                 <button 
+                                   onClick={() => {
+                                      const updated = [...editingCourse.lessons!];
+                                      updated.splice(index, 1);
+                                      setEditingCourse({...editingCourse, lessons: updated});
+                                   }}
+                                   className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                 >
+                                    <Trash2 size={16}/>
+                                 </button>
+                                 {expandedLesson === lesson.id ? <ChevronDown size={18} className="text-gray-400"/> : <ChevronRight size={18} className="text-gray-400"/>}
+                              </div>
+                           </div>
 
-                              {/* Expanded Content Editor */}
-                              {expandedLesson === lesson.id && (
-                                 <div className="p-6 border-t border-gray-100 dark:border-[#333] bg-gray-50/50 dark:bg-[#151515] space-y-6 animate-in slide-in-from-top-2">
+                           {/* Lesson Body */}
+                           {expandedLesson === lesson.id && (
+                              <div className="p-6 bg-gray-50/50 dark:bg-[#151515] border-t border-gray-200 dark:border-[#333] grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in slide-in-from-top-2">
+                                 
+                                 {/* Column 1: Media Content */}
+                                 <div className="space-y-4">
+                                    <div className="flex justify-between items-center">
+                                       <h5 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Media & Resources</h5>
+                                       <div className="flex gap-2">
+                                          <button onClick={() => addResource(index, 'video')} className="p-1.5 bg-white dark:bg-[#252525] border border-gray-200 dark:border-[#333] rounded hover:text-blue-500"><Video size={14}/></button>
+                                          <button onClick={() => addResource(index, 'audio')} className="p-1.5 bg-white dark:bg-[#252525] border border-gray-200 dark:border-[#333] rounded hover:text-purple-500"><Mic size={14}/></button>
+                                          <button onClick={() => addResource(index, 'pdf')} className="p-1.5 bg-white dark:bg-[#252525] border border-gray-200 dark:border-[#333] rounded hover:text-red-500"><FileText size={14}/></button>
+                                       </div>
+                                    </div>
                                     
-                                    {/* 1. Resources Section */}
-                                    <div>
-                                       <h5 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Lesson Resources</h5>
-                                       <div className="space-y-3">
-                                          {(lesson.contents || []).map((content, cIdx) => (
-                                             <div key={content.id} className="flex gap-2 items-center">
-                                                <div className="w-8 h-8 rounded bg-white dark:bg-[#252525] border border-gray-200 dark:border-[#333] flex items-center justify-center text-gray-500">
+                                    <div className="space-y-2">
+                                       {(lesson.contents || []).length === 0 && <div className="text-xs text-gray-400 italic text-center py-4 border border-dashed border-gray-300 dark:border-[#444] rounded">No resources added</div>}
+                                       
+                                       {(lesson.contents || []).map((content, cIdx) => (
+                                          <div key={content.id} className="bg-white dark:bg-[#1E1E1E] p-3 rounded-lg border border-gray-200 dark:border-[#333] space-y-2">
+                                             <div className="flex items-center gap-2">
+                                                <div className="text-gray-400">
                                                    {content.type === 'video' ? <Video size={14}/> : content.type === 'audio' ? <Mic size={14}/> : <FileText size={14}/>}
                                                 </div>
-                                                <select 
-                                                  value={content.type}
-                                                  onChange={e => {
-                                                     const ls = [...(editingCourse.lessons || [])];
-                                                     ls[lIdx].contents[cIdx].type = e.target.value as any;
-                                                     setEditingCourse({...editingCourse, lessons: ls});
-                                                  }}
-                                                  className="bg-white dark:bg-[#252525] border border-gray-200 dark:border-[#333] rounded text-xs py-1.5 px-2 outline-none text-gray-900 dark:text-white"
-                                                >
-                                                   <option value="video">Video</option>
-                                                   <option value="audio">Audio</option>
-                                                   <option value="pdf">PDF</option>
-                                                </select>
                                                 <input 
-                                                  type="text" 
                                                   value={content.title}
-                                                  onChange={e => {
-                                                     const ls = [...(editingCourse.lessons || [])];
-                                                     ls[lIdx].contents[cIdx].title = e.target.value;
-                                                     setEditingCourse({...editingCourse, lessons: ls});
+                                                  onChange={(e) => {
+                                                     const updated = [...editingCourse.lessons!];
+                                                     updated[index].contents[cIdx].title = e.target.value;
+                                                     setEditingCourse({...editingCourse, lessons: updated});
                                                   }}
-                                                  className="flex-1 bg-white dark:bg-[#252525] border border-gray-200 dark:border-[#333] rounded text-xs py-1.5 px-3 outline-none focus:border-blue-500 text-gray-900 dark:text-white"
+                                                  className="flex-1 text-xs font-bold bg-transparent outline-none text-gray-900 dark:text-white"
                                                   placeholder="Resource Title"
-                                                />
-                                                <input 
-                                                  type="text" 
-                                                  value={content.url}
-                                                  onChange={e => {
-                                                     const ls = [...(editingCourse.lessons || [])];
-                                                     ls[lIdx].contents[cIdx].url = e.target.value;
-                                                     setEditingCourse({...editingCourse, lessons: ls});
-                                                  }}
-                                                  className="flex-1 bg-white dark:bg-[#252525] border border-gray-200 dark:border-[#333] rounded text-xs py-1.5 px-3 outline-none focus:border-blue-500 text-gray-900 dark:text-white"
-                                                  placeholder="URL (https://...)"
                                                 />
                                                 <button 
                                                   onClick={() => {
-                                                     const ls = [...(editingCourse.lessons || [])];
-                                                     ls[lIdx].contents.splice(cIdx, 1);
-                                                     setEditingCourse({...editingCourse, lessons: ls});
+                                                     const updated = [...editingCourse.lessons!];
+                                                     updated[index].contents.splice(cIdx, 1);
+                                                     setEditingCourse({...editingCourse, lessons: updated});
                                                   }}
                                                   className="text-gray-400 hover:text-red-500"
                                                 >
-                                                   <X size={16}/>
+                                                   <X size={14}/>
                                                 </button>
                                              </div>
-                                          ))}
-                                          <div className="flex gap-2 mt-2">
-                                             <button 
-                                               onClick={() => {
-                                                  const ls = [...(editingCourse.lessons || [])];
-                                                  ls[lIdx].contents = [...(ls[lIdx].contents || []), {id: 'c'+Date.now(), type: 'video', title: 'New Video', url: ''}];
-                                                  setEditingCourse({...editingCourse, lessons: ls});
-                                               }}
-                                               className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
-                                             >
-                                                <Plus size={12}/> Add Resource
-                                             </button>
+                                             <input 
+                                                value={content.url}
+                                                onChange={(e) => {
+                                                   const updated = [...editingCourse.lessons!];
+                                                   updated[index].contents[cIdx].url = e.target.value;
+                                                   setEditingCourse({...editingCourse, lessons: updated});
+                                                }}
+                                                className="w-full text-xs bg-gray-50 dark:bg-[#252525] border border-gray-200 dark:border-[#333] rounded px-2 py-1.5 outline-none focus:border-brand-orange text-gray-600 dark:text-gray-300"
+                                                placeholder="URL (https://...)"
+                                             />
                                           </div>
-                                       </div>
-                                    </div>
-
-                                    {/* 2. Quiz Section */}
-                                    <div className="bg-white dark:bg-[#1E1E1E] border border-gray-200 dark:border-[#333] rounded-lg p-4">
-                                       <div className="flex justify-between items-center mb-4">
-                                          <h5 className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-                                             <Brain size={14} className="text-[#F38020]" /> Quiz & Questions
-                                          </h5>
-                                          <div className="flex gap-2">
-                                             <label className="cursor-pointer text-xs font-bold text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white flex items-center gap-1 px-3 py-1.5 bg-gray-100 dark:bg-[#333] rounded-md hover:bg-gray-200 dark:hover:bg-[#444] transition-colors">
-                                                <FileJson size={14}/> Import JSON
-                                                <input type="file" className="hidden" accept=".json" onChange={(e) => handleFileUpload(e, lIdx)} />
-                                             </label>
-                                             <button 
-                                               onClick={() => {
-                                                  const ls = [...(editingCourse.lessons || [])];
-                                                  if (!ls[lIdx].quiz) ls[lIdx].quiz = { id: 'q'+Date.now(), title: 'Quiz', questions: [] };
-                                                  ls[lIdx].quiz!.questions = [...(ls[lIdx].quiz!.questions || []), {
-                                                     id: 'qn'+Date.now(), text: '', options: ['', '', '', ''], correctOptionIndex: 0
-                                                  }];
-                                                  setEditingCourse({...editingCourse, lessons: ls});
-                                               }}
-                                               className="text-xs font-bold text-white bg-[#F38020] hover:bg-[#c7620e] px-3 py-1.5 rounded-md flex items-center gap-1 transition-colors"
-                                             >
-                                                <Plus size={14}/> Add Question
-                                             </button>
-                                          </div>
-                                       </div>
-
-                                       <div className="space-y-4">
-                                          {(lesson.quiz?.questions || []).length === 0 && (
-                                             <p className="text-xs text-gray-400 italic text-center py-2">No questions added yet.</p>
-                                          )}
-                                          {(lesson.quiz?.questions || []).map((q, qIdx) => (
-                                             <div key={q.id} className="bg-gray-50 dark:bg-[#252525] border border-gray-200 dark:border-[#333] rounded p-3">
-                                                <div className="flex gap-2 mb-2">
-                                                   <span className="font-mono text-xs text-gray-400 pt-2">Q{qIdx+1}</span>
-                                                   <textarea 
-                                                     value={q.text}
-                                                     onChange={e => {
-                                                        const ls = [...(editingCourse.lessons || [])];
-                                                        ls[lIdx].quiz!.questions[qIdx].text = e.target.value;
-                                                        setEditingCourse({...editingCourse, lessons: ls});
-                                                     }}
-                                                     className="flex-1 bg-white dark:bg-[#1E1E1E] border border-gray-200 dark:border-[#333] rounded p-2 text-sm outline-none focus:border-blue-500 text-gray-900 dark:text-white resize-none h-16"
-                                                     placeholder="Question Text..."
-                                                   />
-                                                   <button 
-                                                     onClick={() => {
-                                                        const ls = [...(editingCourse.lessons || [])];
-                                                        ls[lIdx].quiz!.questions.splice(qIdx, 1);
-                                                        setEditingCourse({...editingCourse, lessons: ls});
-                                                     }}
-                                                     className="text-gray-400 hover:text-red-500 h-fit"
-                                                   >
-                                                      <X size={14}/>
-                                                   </button>
-                                                </div>
-                                                <div className="grid grid-cols-2 gap-2 pl-6">
-                                                   {q.options.map((opt, oIdx) => (
-                                                      <div key={oIdx} className="flex items-center gap-2">
-                                                         <input 
-                                                           type="radio" 
-                                                           name={`q-${q.id}`} 
-                                                           checked={q.correctOptionIndex === oIdx}
-                                                           onChange={() => {
-                                                              const ls = [...(editingCourse.lessons || [])];
-                                                              ls[lIdx].quiz!.questions[qIdx].correctOptionIndex = oIdx;
-                                                              setEditingCourse({...editingCourse, lessons: ls});
-                                                           }}
-                                                           className="accent-green-600 cursor-pointer"
-                                                         />
-                                                         <input 
-                                                           type="text" 
-                                                           value={opt}
-                                                           onChange={e => {
-                                                              const ls = [...(editingCourse.lessons || [])];
-                                                              ls[lIdx].quiz!.questions[qIdx].options[oIdx] = e.target.value;
-                                                              setEditingCourse({...editingCourse, lessons: ls});
-                                                           }}
-                                                           className={`flex-1 text-xs border rounded px-2 py-1 outline-none dark:bg-[#1E1E1E] dark:text-white ${q.correctOptionIndex === oIdx ? 'border-green-300 bg-green-50 dark:bg-green-900/20' : 'border-gray-200 dark:border-[#333]'}`}
-                                                           placeholder={`Option ${oIdx+1}`}
-                                                         />
-                                                      </div>
-                                                   ))}
-                                                </div>
-                                             </div>
-                                          ))}
-                                       </div>
+                                       ))}
                                     </div>
                                  </div>
-                              )}
-                           </div>
-                         ))}
-                      </div>
+
+                                 {/* Column 2: Quiz Editor */}
+                                 <div className="space-y-4">
+                                    <div className="flex justify-between items-center">
+                                       <h5 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Quiz Questions</h5>
+                                       <div className="flex gap-2">
+                                          <label className="cursor-pointer p-1.5 bg-white dark:bg-[#252525] border border-gray-200 dark:border-[#333] rounded hover:text-green-500 text-xs flex items-center gap-1">
+                                             <FileJson size={14}/> Import
+                                             <input type="file" className="hidden" accept=".json" onChange={(e) => handleFileUpload(e, index)} />
+                                          </label>
+                                          <button 
+                                            onClick={() => {
+                                               const updated = [...editingCourse.lessons!];
+                                               const quiz = updated[index].quiz || { id: 'q-'+Date.now(), title: 'Quiz', questions: [] };
+                                               quiz.questions.push({
+                                                  id: 'qn-'+Date.now(), text: '', options: ['', '', '', ''], correctOptionIndex: 0
+                                               });
+                                               updated[index].quiz = quiz;
+                                               setEditingCourse({...editingCourse, lessons: updated});
+                                            }}
+                                            className="p-1.5 bg-brand-orange/10 text-brand-orange border border-brand-orange/20 rounded hover:bg-brand-orange/20"
+                                          >
+                                             <Plus size={14}/>
+                                          </button>
+                                       </div>
+                                    </div>
+
+                                    <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
+                                       {(!lesson.quiz?.questions || lesson.quiz.questions.length === 0) && (
+                                          <div className="text-xs text-gray-400 italic text-center py-4 border border-dashed border-gray-300 dark:border-[#444] rounded">No questions added</div>
+                                       )}
+
+                                       {(lesson.quiz?.questions || []).map((q, qIdx) => (
+                                          <div key={q.id} className="bg-white dark:bg-[#1E1E1E] p-3 rounded-lg border border-gray-200 dark:border-[#333] group">
+                                             <div className="flex gap-2 mb-2">
+                                                <span className="text-xs font-bold text-brand-orange mt-1">Q{qIdx+1}</span>
+                                                <textarea 
+                                                  value={q.text}
+                                                  onChange={(e) => {
+                                                     const updated = [...editingCourse.lessons!];
+                                                     updated[index].quiz!.questions[qIdx].text = e.target.value;
+                                                     setEditingCourse({...editingCourse, lessons: updated});
+                                                  }}
+                                                  className="flex-1 text-sm bg-transparent outline-none resize-none h-10 border-b border-transparent focus:border-brand-orange text-gray-900 dark:text-white"
+                                                  placeholder="Enter question text..."
+                                                />
+                                                <button 
+                                                  onClick={() => {
+                                                     const updated = [...editingCourse.lessons!];
+                                                     updated[index].quiz!.questions.splice(qIdx, 1);
+                                                     setEditingCourse({...editingCourse, lessons: updated});
+                                                  }}
+                                                  className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                >
+                                                   <Trash2 size={14}/>
+                                                </button>
+                                             </div>
+                                             
+                                             <div className="grid grid-cols-2 gap-2 pl-6">
+                                                {q.options.map((opt, oIdx) => (
+                                                   <div key={oIdx} className="flex items-center gap-2">
+                                                      <input 
+                                                        type="radio" 
+                                                        name={`q-${q.id}`}
+                                                        checked={q.correctOptionIndex === oIdx}
+                                                        onChange={() => {
+                                                           const updated = [...editingCourse.lessons!];
+                                                           updated[index].quiz!.questions[qIdx].correctOptionIndex = oIdx;
+                                                           setEditingCourse({...editingCourse, lessons: updated});
+                                                        }}
+                                                        className="accent-brand-orange cursor-pointer"
+                                                      />
+                                                      <input 
+                                                        type="text" 
+                                                        value={opt}
+                                                        onChange={(e) => {
+                                                           const updated = [...editingCourse.lessons!];
+                                                           updated[index].quiz!.questions[qIdx].options[oIdx] = e.target.value;
+                                                           setEditingCourse({...editingCourse, lessons: updated});
+                                                        }}
+                                                        className={`flex-1 text-xs px-2 py-1 rounded bg-gray-50 dark:bg-[#252525] border outline-none text-gray-700 dark:text-gray-300 ${
+                                                           q.correctOptionIndex === oIdx 
+                                                           ? 'border-green-400 bg-green-50 dark:bg-green-900/10' 
+                                                           : 'border-gray-200 dark:border-[#333] focus:border-brand-orange'
+                                                        }`}
+                                                        placeholder={`Option ${oIdx+1}`}
+                                                      />
+                                                   </div>
+                                                ))}
+                                             </div>
+                                          </div>
+                                       ))}
+                                    </div>
+                                 </div>
+
+                              </div>
+                           )}
+                        </div>
+                      ))}
                    </div>
                 </div>
              </div>

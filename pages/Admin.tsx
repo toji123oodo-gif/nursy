@@ -48,7 +48,7 @@ export const Admin: React.FC = () => {
     { id: 'overview', label: 'Overview', icon: BarChart3 },
     { id: 'users', label: 'Students & Users', icon: Users },
     { id: 'exams', label: 'Exam Results', icon: GraduationCap },
-    { id: 'courses', label: 'Curriculum & Content', icon: Layout },
+    { id: 'courses', label: 'Curriculum', icon: Layout },
     { id: 'codes', label: 'Access Codes', icon: Ticket },
   ];
 
