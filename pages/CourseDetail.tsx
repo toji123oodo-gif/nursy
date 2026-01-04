@@ -8,7 +8,7 @@ import {
   Play, Lock, Clock, CheckCircle2, AlertCircle,
   BarChart3, Settings, Download, ArrowLeft,
   Layout as LayoutIcon, Maximize2, Menu, Share2,
-  MessageSquare, Info, BookOpen
+  MessageSquare, Info, BookOpen, Image as ImageIcon
 } from 'lucide-react';
 import { AudioPlayer } from '../components/AudioPlayer';
 import { QuizPlayer } from '../components/QuizPlayer';
@@ -190,8 +190,15 @@ export const CourseDetail: React.FC = () => {
                                     className="flex items-center justify-between p-4 bg-white dark:bg-[#1E1E1E] border border-gray-200 dark:border-[#333] rounded-xl hover:border-[#F38020] hover:shadow-md transition-all group"
                                  >
                                     <div className="flex items-center gap-4">
-                                       <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${file.type === 'pdf' ? 'bg-red-50 text-red-500' : 'bg-blue-50 text-blue-500'} dark:bg-[#252525]`}>
-                                          <FileText size={20} />
+                                       <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                                          file.type === 'pdf' ? 'bg-red-50 text-red-500' : 
+                                          file.type === 'image' ? 'bg-green-50 text-green-500' :
+                                          'bg-blue-50 text-blue-500'
+                                       } dark:bg-[#252525]`}>
+                                          {file.type === 'pdf' && <FileText size={20} />}
+                                          {file.type === 'video' && <Play size={20} />}
+                                          {file.type === 'image' && <ImageIcon size={20} />}
+                                          {file.type === 'article' && <FileText size={20} />}
                                        </div>
                                        <div>
                                           <p className="font-bold text-gray-900 dark:text-white text-sm group-hover:text-[#F38020] transition-colors">{file.title}</p>

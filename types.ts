@@ -1,5 +1,5 @@
 
-export type ContentType = 'audio' | 'pdf' | 'video' | 'article';
+export type ContentType = 'audio' | 'pdf' | 'video' | 'article' | 'image';
 
 export interface Question {
   id: string;

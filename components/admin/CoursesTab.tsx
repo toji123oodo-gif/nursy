@@ -7,7 +7,7 @@ import {
   Video, Upload, Check, ChevronDown, ChevronRight,
   MoreVertical, FileJson, Brain, Layout, DollarSign, 
   Image as ImageIcon, Lock, Clock, AlertCircle, Settings, 
-  AlignLeft, List, HelpCircle, CheckCircle2, BookOpen
+  AlignLeft, List, HelpCircle, CheckCircle2, BookOpen, FolderOpen
 } from 'lucide-react';
 
 export const CoursesTab: React.FC = () => {
@@ -116,7 +116,7 @@ export const CoursesTab: React.FC = () => {
     setEditingCourse(prev => ({ ...prev, lessons: updatedLessons }));
   };
 
-  const addResource = (lessonIndex: number, type: 'video' | 'audio' | 'pdf' | 'article') => {
+  const addResource = (lessonIndex: number, type: 'video' | 'audio' | 'pdf' | 'article' | 'image') => {
     if (!editingCourse.lessons) return;
     const updatedLessons = [...editingCourse.lessons];
     const newContent: ContentItem = {
@@ -134,21 +134,37 @@ export const CoursesTab: React.FC = () => {
     setEditingCourse(prev => ({ ...prev, lessons: updatedLessons }));
   };
 
+  // Helper to handle file selection for a specific content item
+  const handleContentFileSelect = (e: React.ChangeEvent<HTMLInputElement>, lessonIndex: number, contentIndex: number) => {
+    const file = e.target.files?.[0];
+    if (!file || !editingCourse.lessons) return;
+
+    // Create a Blob URL for preview/usage within the session
+    // In a real app, you would upload this to Firebase Storage here and get a permanent URL
+    const objectUrl = URL.createObjectURL(file);
+    
+    const updatedLessons = [...editingCourse.lessons];
+    updatedLessons[lessonIndex].contents[contentIndex].url = objectUrl;
+    // Set a default title if it's "New..."
+    if (updatedLessons[lessonIndex].contents[contentIndex].title.startsWith('New')) {
+        updatedLessons[lessonIndex].contents[contentIndex].title = file.name;
+    }
+    // Set file size
+    updatedLessons[lessonIndex].contents[contentIndex].fileSize = (file.size / 1024 / 1024).toFixed(2) + ' MB';
+
+    setEditingCourse(prev => ({ ...prev, lessons: updatedLessons }));
+  };
+
   const handleBulkImport = (lessonIndex: number) => {
     if (!bulkImportText.trim() || !editingCourse.lessons) return;
     
     const newQuestions: Question[] = bulkImportText.trim().split('\n').filter(line => line.trim()).map((line, i) => {
         const parts = line.split('|').map(p => p.trim());
-        // Require: Question text | 4 options | Answer index
-        // Optional: Page Number (7th item)
         if (parts.length < 6) return null;
         
         const text = parts[0];
-        // Take next 4 parts as options
         const options = parts.slice(1, 5);
-        // Answer index
         const ansIndex = parseInt(parts[5]);
-        // Page Ref (Optional)
         const pageRef = parts.length > 6 ? parseInt(parts[6]) : undefined;
         
         const correctOptionIndex = isNaN(ansIndex) ? 0 : Math.min(Math.max(ansIndex, 0), 3);
@@ -302,7 +318,8 @@ export const CoursesTab: React.FC = () => {
       {isModalOpen && isOwner && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-gray-900/80 backdrop-blur-md p-4">
           <div className="bg-white dark:bg-[#121212] rounded-2xl shadow-2xl w-full max-w-7xl h-[95vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-200 dark:border-[#333]">
-             {/* ... Modal Header & Sidebar (Same as previous) ... */}
+             
+             {/* Modal Header */}
              <div className="px-6 py-4 border-b border-gray-200 dark:border-[#333] flex flex-col sm:flex-row justify-between items-center bg-white dark:bg-[#1E1E1E] gap-3">
                <div className="flex items-center gap-3 w-full sm:w-auto">
                   <div className="w-10 h-10 bg-brand-orange/10 text-brand-orange rounded-lg flex items-center justify-center shrink-0">
@@ -409,7 +426,7 @@ export const CoursesTab: React.FC = () => {
 
                 {/* Main Content: Lessons */}
                 <div className={`flex-1 bg-white dark:bg-[#1E1E1E] flex flex-col min-w-0 ${showMobileSettings ? 'hidden lg:flex' : 'flex'}`}>
-                   {/* ... Lessons Toolbar ... */}
+                   {/* Lessons Toolbar */}
                    <div className="px-4 md:px-8 py-6 border-b border-gray-200 dark:border-[#333] flex justify-between items-center bg-gray-50/30 dark:bg-[#202020]">
                       <div>
                          <h4 className="text-lg font-bold text-gray-900 dark:text-white">Curriculum</h4>
@@ -434,7 +451,7 @@ export const CoursesTab: React.FC = () => {
 
                       {(editingCourse.lessons || []).map((lesson, index) => (
                         <div key={lesson.id} className="bg-white dark:bg-[#1E1E1E] border border-gray-200 dark:border-[#333] rounded-xl shadow-sm overflow-hidden transition-all">
-                           {/* ... Lesson Header ... */}
+                           {/* Lesson Accordion Header */}
                            <div 
                              className={`flex items-center gap-4 p-4 cursor-pointer transition-colors ${expandedLesson === lesson.id ? 'bg-gray-50 dark:bg-[#252525] border-b border-gray-200 dark:border-[#333]' : 'hover:bg-gray-50 dark:hover:bg-[#252525]'}`}
                              onClick={() => {
@@ -503,7 +520,7 @@ export const CoursesTab: React.FC = () => {
                                     {/* TAB 1: CONTENT */}
                                     {activeLessonTab === 'content' && (
                                         <div className="space-y-6">
-                                            {/* ... Content Resources ... */}
+                                            {/* Content Resources Toolbar */}
                                             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                                                 <h5 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Lesson Materials</h5>
                                                 <div className="flex flex-wrap gap-2">
@@ -511,6 +528,8 @@ export const CoursesTab: React.FC = () => {
                                                     <button onClick={() => addResource(index, 'audio')} className="flex items-center gap-1 px-3 py-1.5 bg-white dark:bg-[#252525] border border-gray-200 dark:border-[#333] rounded hover:border-purple-400 hover:text-purple-500 text-xs font-medium transition-colors"><Mic size={14}/> Aud</button>
                                                     <button onClick={() => addResource(index, 'pdf')} className="flex items-center gap-1 px-3 py-1.5 bg-white dark:bg-[#252525] border border-gray-200 dark:border-[#333] rounded hover:border-red-400 hover:text-red-500 text-xs font-medium transition-colors"><FileText size={14}/> PDF</button>
                                                     <button onClick={() => addResource(index, 'article')} className="flex items-center gap-1 px-3 py-1.5 bg-white dark:bg-[#252525] border border-gray-200 dark:border-[#333] rounded hover:border-orange-400 hover:text-orange-500 text-xs font-medium transition-colors"><AlignLeft size={14}/> Txt</button>
+                                                    {/* Added Image Button */}
+                                                    <button onClick={() => addResource(index, 'image')} className="flex items-center gap-1 px-3 py-1.5 bg-white dark:bg-[#252525] border border-gray-200 dark:border-[#333] rounded hover:border-green-400 hover:text-green-500 text-xs font-medium transition-colors"><ImageIcon size={14}/> Img</button>
                                                 </div>
                                             </div>
 
@@ -526,7 +545,7 @@ export const CoursesTab: React.FC = () => {
                                                     <div key={content.id} className="bg-white dark:bg-[#1E1E1E] p-4 rounded-lg border border-gray-200 dark:border-[#333] shadow-sm group hover:border-blue-200 dark:hover:border-blue-900 transition-colors">
                                                         <div className="flex items-start gap-4">
                                                             <div className="mt-1 text-gray-400">
-                                                                {content.type === 'video' ? <Video size={18}/> : content.type === 'audio' ? <Mic size={18}/> : content.type === 'pdf' ? <FileText size={18}/> : <AlignLeft size={18}/>}
+                                                                {content.type === 'video' ? <Video size={18}/> : content.type === 'audio' ? <Mic size={18}/> : content.type === 'pdf' ? <FileText size={18}/> : content.type === 'image' ? <ImageIcon size={18}/> : <AlignLeft size={18}/>}
                                                             </div>
                                                             <div className="flex-1 space-y-3">
                                                                 <div className="flex justify-between">
@@ -555,17 +574,30 @@ export const CoursesTab: React.FC = () => {
                                                                 </div>
                                                                 
                                                                 {content.type !== 'article' ? (
-                                                                    <input 
-                                                                        value={content.url}
-                                                                        onChange={(e) => {
-                                                                            if (!editingCourse.lessons) return;
-                                                                            const updated = [...editingCourse.lessons];
-                                                                            updated[index].contents[cIdx].url = e.target.value;
-                                                                            setEditingCourse(prev => ({...prev, lessons: updated}));
-                                                                        }}
-                                                                        className="w-full text-xs bg-gray-50 dark:bg-[#252525] border border-gray-200 dark:border-[#333] rounded px-3 py-2 outline-none focus:border-brand-orange text-gray-600 dark:text-gray-300 font-mono"
-                                                                        placeholder="https://..."
-                                                                    />
+                                                                    <div className="flex items-center gap-2">
+                                                                        <div className="relative flex-1">
+                                                                            <input 
+                                                                                value={content.url}
+                                                                                onChange={(e) => {
+                                                                                    if (!editingCourse.lessons) return;
+                                                                                    const updated = [...editingCourse.lessons];
+                                                                                    updated[index].contents[cIdx].url = e.target.value;
+                                                                                    setEditingCourse(prev => ({...prev, lessons: updated}));
+                                                                                }}
+                                                                                className="w-full text-xs bg-gray-50 dark:bg-[#252525] border border-gray-200 dark:border-[#333] rounded px-3 py-2 outline-none focus:border-brand-orange text-gray-600 dark:text-gray-300 font-mono pr-10"
+                                                                                placeholder="https://..."
+                                                                            />
+                                                                            <label className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer p-1 text-gray-400 hover:text-blue-500 transition-colors" title="Select File from Media">
+                                                                                <FolderOpen size={14} />
+                                                                                <input 
+                                                                                    type="file" 
+                                                                                    className="hidden" 
+                                                                                    onChange={(e) => handleContentFileSelect(e, index, cIdx)} 
+                                                                                    accept={content.type === 'image' ? 'image/*' : content.type === 'pdf' ? '.pdf' : content.type === 'audio' ? 'audio/*' : content.type === 'video' ? 'video/*' : '*/*'}
+                                                                                />
+                                                                            </label>
+                                                                        </div>
+                                                                    </div>
                                                                 ) : (
                                                                     <textarea 
                                                                         value={content.textContent || ''}
@@ -590,7 +622,7 @@ export const CoursesTab: React.FC = () => {
                                     {/* TAB 2: QUIZ */}
                                     {activeLessonTab === 'quiz' && (
                                         <div className="space-y-6">
-                                            {/* Quiz Config Bar */}
+                                            {/* ... (Existing Quiz Code) ... */}
                                             <div className="bg-blue-50 dark:bg-[#1a202c] p-4 rounded-lg border border-blue-100 dark:border-[#2d3748] flex flex-col sm:flex-row flex-wrap gap-4 items-end">
                                                 <div className="flex-1 w-full sm:w-auto">
                                                     <label className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase mb-1 block">Quiz Title</label>
@@ -813,7 +845,6 @@ export const CoursesTab: React.FC = () => {
                                     {/* TAB 3: SETTINGS */}
                                     {activeLessonTab === 'settings' && (
                                         <div className="space-y-6">
-                                            {/* ... (Existing Settings UI) ... */}
                                             <div className="bg-white dark:bg-[#1E1E1E] p-6 rounded-lg border border-gray-200 dark:border-[#333]">
                                                 <h5 className="font-bold text-gray-900 dark:text-white mb-4">Lesson Visibility</h5>
                                                 
