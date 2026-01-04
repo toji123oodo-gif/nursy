@@ -19,6 +19,10 @@ export const CoursesTab: React.FC = () => {
   const [expandedLesson, setExpandedLesson] = useState<string | null>(null);
   const [activeLessonTab, setActiveLessonTab] = useState<'content' | 'quiz' | 'settings'>('content');
   const [showMobileSettings, setShowMobileSettings] = useState(false); // Mobile toggle for metadata
+  
+  // Bulk Import State
+  const [showBulkImport, setShowBulkImport] = useState(false);
+  const [bulkImportText, setBulkImportText] = useState('');
 
   const OWNERS = ["toji123oodo@gmail.com", "Mstfymdht542@gmail.com"];
   const isOwner = user && OWNERS.includes(user.email);
@@ -37,6 +41,8 @@ export const CoursesTab: React.FC = () => {
     setIsModalOpen(true);
     setExpandedLesson(null);
     setShowMobileSettings(false);
+    setShowBulkImport(false);
+    setBulkImportText('');
   };
 
   const handleEditClick = (course: Course) => {
@@ -45,6 +51,8 @@ export const CoursesTab: React.FC = () => {
     setIsModalOpen(true);
     setExpandedLesson(null);
     setShowMobileSettings(false);
+    setShowBulkImport(false);
+    setBulkImportText('');
   };
 
   const handleSave = async () => {
@@ -124,6 +132,47 @@ export const CoursesTab: React.FC = () => {
     updatedLessons[lessonIndex].contents = [...currentContents, newContent];
     
     setEditingCourse(prev => ({ ...prev, lessons: updatedLessons }));
+  };
+
+  const handleBulkImport = (lessonIndex: number) => {
+    if (!bulkImportText.trim() || !editingCourse.lessons) return;
+    
+    const newQuestions: Question[] = bulkImportText.trim().split('\n').filter(line => line.trim()).map((line, i) => {
+        const parts = line.split('|').map(p => p.trim());
+        // Require: Question text | 4 options | Answer index
+        if (parts.length < 6) return null;
+        
+        const text = parts[0];
+        // Take next 4 parts as options
+        const options = parts.slice(1, 5);
+        // Last part is index
+        const ansIndex = parseInt(parts[5]);
+        
+        const correctOptionIndex = isNaN(ansIndex) ? 0 : Math.min(Math.max(ansIndex, 0), 3);
+
+        return {
+            id: `qn-bulk-${Date.now()}-${i}`,
+            text,
+            options,
+            correctOptionIndex
+        };
+    }).filter(q => q !== null) as Question[];
+
+    if (newQuestions.length === 0) {
+        alert("لم يتم العثور على أسئلة صالحة. تأكد من الصيغة:\nالسؤال؟ | خيار 1 | خيار 2 | خيار 3 | خيار 4 | رقم الإجابة");
+        return;
+    }
+
+    const updatedLessons = [...editingCourse.lessons];
+    const currentQuiz = updatedLessons[lessonIndex].quiz || { id: 'q-'+Date.now(), title: 'Quiz', questions: [] };
+    
+    currentQuiz.questions = [...(currentQuiz.questions || []), ...newQuestions];
+    updatedLessons[lessonIndex].quiz = currentQuiz;
+    
+    setEditingCourse(prev => ({ ...prev, lessons: updatedLessons }));
+    setBulkImportText('');
+    setShowBulkImport(false);
+    alert(`تم استيراد ${newQuestions.length} سؤال بنجاح.`);
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, lessonIndex: number) => {
@@ -588,6 +637,12 @@ export const CoursesTab: React.FC = () => {
                                                     </div>
                                                 </div>
                                                 <div className="flex gap-2 w-full sm:w-auto">
+                                                    <button 
+                                                        onClick={() => setShowBulkImport(!showBulkImport)}
+                                                        className="p-2 bg-purple-50 dark:bg-purple-900/20 text-purple-600 border border-purple-200 dark:border-purple-800 rounded hover:bg-purple-100 flex-1 sm:flex-none flex justify-center text-xs font-bold gap-2 items-center"
+                                                    >
+                                                        <List size={16}/> Bulk Add
+                                                    </button>
                                                     <label className="cursor-pointer p-2 bg-white dark:bg-[#2d3748] border border-blue-200 dark:border-[#4a5568] rounded hover:text-green-500 text-blue-500 flex-1 sm:flex-none flex justify-center" title="Import JSON">
                                                         <FileJson size={18}/>
                                                         <input type="file" className="hidden" accept=".json" onChange={(e) => handleFileUpload(e, index)} />
@@ -609,6 +664,24 @@ export const CoursesTab: React.FC = () => {
                                                     </button>
                                                 </div>
                                             </div>
+
+                                            {showBulkImport && (
+                                                <div className="bg-purple-50 dark:bg-purple-900/10 p-4 rounded-lg border border-purple-100 dark:border-purple-900/30 mb-4 animate-in fade-in slide-in-from-top-2">
+                                                    <label className="text-xs font-bold text-purple-700 dark:text-purple-300 block mb-2">
+                                                        أضف الأسئلة (الصيغة: السؤال؟ | خيار 1 | خيار 2 | خيار 3 | خيار 4 | رقم الإجابة 0-3)
+                                                    </label>
+                                                    <textarea
+                                                        value={bulkImportText}
+                                                        onChange={(e) => setBulkImportText(e.target.value)}
+                                                        className="w-full h-32 text-xs font-mono p-3 rounded border border-purple-200 dark:border-purple-800 bg-white dark:bg-[#151515] outline-none focus:ring-2 focus:ring-purple-500"
+                                                        placeholder={`كم عدد عظام الجمجمة؟ | 20 | 22 | 24 | 30 | 1\nما هي وظيفة القلب؟ | التنفس | الهضم | ضخ الدم | التفكير | 2`}
+                                                    />
+                                                    <div className="flex justify-end gap-2 mt-2">
+                                                        <button onClick={() => setShowBulkImport(false)} className="px-3 py-1.5 bg-white dark:bg-[#252525] border border-gray-300 dark:border-[#444] rounded text-xs">إلغاء</button>
+                                                        <button onClick={() => handleBulkImport(index)} className="px-3 py-1.5 bg-purple-600 text-white rounded text-xs font-bold hover:bg-purple-700">استيراد الأسئلة</button>
+                                                    </div>
+                                                </div>
+                                            )}
 
                                             {/* Questions List */}
                                             <div className="space-y-4">
