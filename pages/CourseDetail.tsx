@@ -8,16 +8,17 @@ import {
   Play, Lock, Clock, CheckCircle2, AlertCircle,
   BarChart3, Settings, Download, ArrowLeft,
   Layout as LayoutIcon, Maximize2, Menu, Share2,
-  MessageSquare, Info, BookOpen, Image as ImageIcon
+  MessageSquare, Info, BookOpen, Image as ImageIcon, Zap
 } from 'lucide-react';
 import { AudioPlayer } from '../components/AudioPlayer';
 import { QuizPlayer } from '../components/QuizPlayer';
+import { FlashcardDeck } from '../components/flashcards/FlashcardDeck';
 
 export const CourseDetail: React.FC = () => {
   const { courseId } = useParams();
   const navigate = useNavigate();
   const { user, courses } = useApp();
-  const [activeTab, setActiveTab] = useState<'overview' | 'resources' | 'quiz'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'resources' | 'quiz' | 'flashcards'>('overview');
   const [activeLessonId, setActiveLessonId] = useState<string | null>(null);
   const [activeQuizId, setActiveQuizId] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true); // For mobile/desktop toggle if needed
@@ -139,6 +140,13 @@ export const CourseDetail: React.FC = () => {
                         <span className="bg-gray-100 dark:bg-[#333] text-gray-600 dark:text-gray-400 text-[10px] px-1.5 py-0.5 rounded-full">{activeLesson?.contents?.length || 0}</span>
                      </button>
                      <button 
+                        onClick={() => setActiveTab('flashcards')}
+                        className={`pb-3 text-sm font-bold flex items-center gap-2 transition-all whitespace-nowrap border-b-2 ${activeTab === 'flashcards' ? 'text-[#F38020] border-[#F38020]' : 'text-gray-500 border-transparent hover:text-gray-800 dark:hover:text-gray-300'}`}
+                     >
+                        <Zap size={16} /> Flashcards
+                        <span className="bg-gray-100 dark:bg-[#333] text-gray-600 dark:text-gray-400 text-[10px] px-1.5 py-0.5 rounded-full">{activeLesson?.flashcards?.length || 0}</span>
+                     </button>
+                     <button 
                         onClick={() => setActiveTab('quiz')}
                         className={`pb-3 text-sm font-bold flex items-center gap-2 transition-all whitespace-nowrap border-b-2 ${activeTab === 'quiz' ? 'text-[#F38020] border-[#F38020]' : 'text-gray-500 border-transparent hover:text-gray-800 dark:hover:text-gray-300'}`}
                      >
@@ -215,6 +223,19 @@ export const CourseDetail: React.FC = () => {
                                  </div>
                               )}
                            </div>
+                        </div>
+                     )}
+
+                     {activeTab === 'flashcards' && (
+                        <div className="space-y-4">
+                           {activeLesson?.flashcards && activeLesson.flashcards.length > 0 ? (
+                              <FlashcardDeck cards={activeLesson.flashcards} />
+                           ) : (
+                              <div className="text-center py-12 bg-gray-50 dark:bg-[#202020] rounded-2xl border border-dashed border-gray-200 dark:border-[#333]">
+                                 <Zap size={32} className="mx-auto text-gray-300 mb-2"/>
+                                 <p className="text-gray-500">لا توجد بطاقات تعليمية لهذا الدرس.</p>
+                              </div>
+                           )}
                         </div>
                      )}
 
@@ -305,6 +326,7 @@ export const CourseDetail: React.FC = () => {
                            <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
                               <span className="flex items-center gap-1"><Clock size={10} /> {lesson.duration || '15m'}</span>
                               {lesson.quiz && <span className="flex items-center gap-1 text-blue-500"><Brain size={10} /> Quiz</span>}
+                              {lesson.flashcards && lesson.flashcards.length > 0 && <span className="flex items-center gap-1 text-orange-500"><Zap size={10} /> {lesson.flashcards.length} Cards</span>}
                            </div>
                         </div>
                      </div>

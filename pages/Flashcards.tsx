@@ -1,9 +1,8 @@
 
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
-import { RotateCcw, Check, X, ChevronRight, ChevronLeft, BookOpen, Brain, Zap, ArrowLeft, Layers } from 'lucide-react';
-import { FlashcardItem } from '../components/flashcards/FlashcardItem';
-import { Course, Lesson } from '../types';
+import { BookOpen, Brain, Zap, ArrowLeft, Layers } from 'lucide-react';
+import { FlashcardDeck } from '../components/flashcards/FlashcardDeck';
 
 export const Flashcards: React.FC = () => {
   const { courses } = useApp();
@@ -11,10 +10,6 @@ export const Flashcards: React.FC = () => {
   // Navigation State
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
   const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
-  
-  // Deck State
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [score, setScore] = useState({ easy: 0, hard: 0 });
 
   // 1. Get Selected Course
   const selectedCourse = useMemo(() => 
@@ -33,19 +28,6 @@ export const Flashcards: React.FC = () => {
     const lesson = selectedCourse.lessons.find(l => l.id === selectedLessonId);
     return lesson?.flashcards || [];
   }, [selectedCourse, selectedLessonId]);
-
-  const handleRate = (rating: 'easy' | 'hard') => {
-    setScore(prev => ({ ...prev, [rating]: prev[rating] + 1 }));
-    if (currentIndex < activeDeck.length - 1) {
-        setTimeout(() => setCurrentIndex(prev => prev + 1), 300);
-    } else {
-        alert(`Session Complete! \nEasy: ${score.easy + (rating === 'easy' ? 1 : 0)} \nHard: ${score.hard + (rating === 'hard' ? 1 : 0)}`);
-        // Reset to lesson selection
-        setSelectedLessonId(null);
-        setCurrentIndex(0);
-        setScore({ easy: 0, hard: 0 });
-    }
-  };
 
   // VIEW 1: SUBJECT SELECTION
   if (!selectedCourseId) {
@@ -129,7 +111,7 @@ export const Flashcards: React.FC = () => {
                                     <p className="text-xs text-gray-500 dark:text-gray-400">{lesson.flashcards?.length} Terms</p>
                                 </div>
                             </div>
-                            <ChevronRight size={20} className="text-gray-400 group-hover:text-brand-blue" />
+                            <Layers size={20} className="text-gray-400 group-hover:text-brand-blue" />
                         </div>
                     ))
                 )}
@@ -140,52 +122,20 @@ export const Flashcards: React.FC = () => {
 
   // VIEW 3: THE DECK (PLAYER)
   return (
-    <div className="max-w-3xl mx-auto space-y-8 py-8 px-4 animate-in fade-in zoom-in-95">
-       {/* Header */}
+    <div className="max-w-4xl mx-auto space-y-8 py-8 px-4 animate-in fade-in zoom-in-95">
        <div className="flex items-center justify-between">
           <button 
-                onClick={() => { setSelectedLessonId(null); setCurrentIndex(0); }}
+                onClick={() => setSelectedLessonId(null)}
                 className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors"
             >
                 <ArrowLeft size={16} /> Exit Deck
           </button>
-          <div className="text-right">
-             <h2 className="text-sm font-bold text-gray-900 dark:text-white">Card {currentIndex + 1} of {activeDeck.length}</h2>
-             <p className="text-xs text-gray-500">Mastery Mode</p>
-          </div>
        </div>
 
-       {/* Progress Bar */}
-       <div className="h-1.5 bg-gray-200 dark:bg-[#333] rounded-full overflow-hidden w-full">
-          <div className="h-full bg-[#F38020] transition-all duration-300 ease-out shadow-[0_0_10px_rgba(243,128,32,0.5)]" style={{ width: `${((currentIndex + 1) / activeDeck.length) * 100}%` }}></div>
-       </div>
-
-       {/* Flashcard Component */}
-       {activeDeck[currentIndex] && (
-           <FlashcardItem 
-                card={activeDeck[currentIndex]} 
-                onRate={handleRate}
-           />
-       )}
-
-       {/* Manual Controls (Optional, if not using flip buttons) */}
-       <div className="flex justify-center items-center gap-6 mt-8 opacity-50 hover:opacity-100 transition-opacity">
-          <button 
-            disabled={currentIndex === 0}
-            onClick={() => setCurrentIndex(p => Math.max(0, p - 1))}
-            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-[#2C2C2C] disabled:opacity-30"
-          >
-             <ChevronLeft size={24} />
-          </button>
-          <span className="text-xs font-mono text-gray-400">NAVIGATE</span>
-          <button 
-            disabled={currentIndex === activeDeck.length - 1}
-            onClick={() => setCurrentIndex(p => Math.min(activeDeck.length - 1, p + 1))}
-            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-[#2C2C2C] disabled:opacity-30"
-          >
-             <ChevronRight size={24} />
-          </button>
-       </div>
+       <FlashcardDeck 
+          cards={activeDeck}
+          onExit={() => setSelectedLessonId(null)}
+       />
     </div>
   );
 };
