@@ -8,7 +8,7 @@ import {
   MoreVertical, FileJson, Brain, Layout, DollarSign, 
   Image as ImageIcon, Lock, Clock, AlertCircle, Settings, 
   AlignLeft, List, HelpCircle, CheckCircle2, BookOpen, FolderOpen,
-  Zap
+  Zap, FileSpreadsheet
 } from 'lucide-react';
 
 export const CoursesTab: React.FC = () => {
@@ -296,6 +296,68 @@ export const CoursesTab: React.FC = () => {
       }
     };
     reader.readAsText(file);
+  };
+
+  const handleFlashcardCSVUpload = (e: React.ChangeEvent<HTMLInputElement>, lessonIndex: number) => {
+    const file = e.target.files?.[0];
+    if (!file || !editingCourse.lessons) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      if (!text) return;
+
+      const lines = text.split(/\r\n|\n/);
+      const newFlashcards: Flashcard[] = [];
+
+      lines.forEach((line, i) => {
+        if (!line.trim()) return;
+        
+        // Basic CSV Parsing: Assume comma-separated: Front, Back, Hint
+        // To handle commas inside text, users should wrap text in quotes "..."
+        // Simple regex to split by comma outside quotes
+        const parts = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || line.split(','); 
+        
+        // Fallback simple split if match fails or just simple logic
+        // Let's do simple split for MVP, but clean quotes if present
+        const simpleParts = line.split(',');
+        
+        let front = simpleParts[0]?.trim();
+        let back = simpleParts[1]?.trim();
+        let hint = simpleParts.slice(2).join(',')?.trim(); // Join rest as hint just in case
+
+        // Clean quotes
+        const clean = (str: string) => str ? str.replace(/^"|"$/g, '').replace(/""/g, '"') : '';
+        
+        front = clean(front);
+        back = clean(back);
+        hint = clean(hint);
+
+        if (front && back) {
+            newFlashcards.push({
+                id: `fc-csv-${Date.now()}-${i}`,
+                front,
+                back,
+                hint: hint || ''
+            });
+        }
+      });
+
+      if (newFlashcards.length > 0) {
+          const updatedLessons = [...editingCourse.lessons];
+          updatedLessons[lessonIndex].flashcards = [
+              ...(updatedLessons[lessonIndex].flashcards || []), 
+              ...newFlashcards
+          ];
+          setEditingCourse(prev => ({ ...prev, lessons: updatedLessons }));
+          alert(`Successfully imported ${newFlashcards.length} flashcards from CSV.`);
+      } else {
+          alert("No valid flashcards found. Ensure format is: Front,Back,Hint (CSV)");
+      }
+    };
+    reader.readAsText(file);
+    // Reset input
+    e.target.value = '';
   };
 
   return (
@@ -917,9 +979,15 @@ export const CoursesTab: React.FC = () => {
                                     {activeLessonTab === 'flashcards' && (
                                         <div className="space-y-6 animate-in fade-in">
                                             <div className="bg-orange-50 dark:bg-orange-900/10 p-6 rounded-xl border border-orange-100 dark:border-orange-900/30">
-                                                <h5 className="text-sm font-bold text-orange-700 dark:text-orange-400 mb-4 flex items-center gap-2">
-                                                    <Zap size={16}/> Add New Flashcard
-                                                </h5>
+                                                <div className="flex items-center justify-between mb-4">
+                                                    <h5 className="text-sm font-bold text-orange-700 dark:text-orange-400 flex items-center gap-2">
+                                                        <Zap size={16}/> Add New Flashcard
+                                                    </h5>
+                                                    <label className="cursor-pointer px-3 py-1.5 bg-white dark:bg-[#1E1E1E] text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800 rounded-md text-xs font-bold hover:bg-orange-50 dark:hover:bg-orange-900/20 flex items-center gap-2 shadow-sm transition-all" title="Upload CSV">
+                                                        <FileSpreadsheet size={14}/> Import CSV
+                                                        <input type="file" className="hidden" accept=".csv" onChange={(e) => handleFlashcardCSVUpload(e, index)} />
+                                                    </label>
+                                                </div>
                                                 
                                                 <div className="space-y-4">
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
