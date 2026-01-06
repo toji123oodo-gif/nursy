@@ -8,9 +8,10 @@ import {
   Play, Lock, Clock, CheckCircle2, AlertCircle,
   BarChart3, Settings, Download, ArrowLeft,
   Layout as LayoutIcon, Maximize2, Menu, Share2,
-  MessageSquare, Info, BookOpen, Image as ImageIcon, Zap
+  MessageSquare, Info, BookOpen, Image as ImageIcon, Zap,
+  Music // Added Music icon
 } from 'lucide-react';
-import { AudioPlayer } from '../components/AudioPlayer';
+// AudioPlayer import removed as we are downloading audio now
 import { QuizPlayer } from '../components/QuizPlayer';
 import { FlashcardDeck } from '../components/flashcards/FlashcardDeck';
 
@@ -44,6 +45,25 @@ export const CourseDetail: React.FC = () => {
 
   // Find the first PDF in the active lesson to use as the quiz reference source
   const lessonPdfUrl = activeLesson?.contents?.find(c => c.type === 'pdf')?.url;
+
+  const handleDownload = async (e: React.MouseEvent<HTMLAnchorElement>, url: string, filename: string) => {
+    e.preventDefault();
+    try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+        console.warn("Download failed, opening in new tab", error);
+        window.open(url, '_blank');
+    }
+  };
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-4rem)] bg-[#F9FAFB] dark:bg-[#101010]">
@@ -183,37 +203,36 @@ export const CourseDetail: React.FC = () => {
                         <div className="space-y-4">
                            <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">مواد تعليمية قابلة للتحميل</h3>
                            
-                           {/* Audio Players */}
-                           {activeLesson?.contents?.filter(c => c.type === 'audio').map(audio => (
-                              <AudioPlayer key={audio.id} url={audio.url} title={audio.title} />
-                           ))}
-
-                           {/* Files List */}
+                           {/* All Content List (Downloadable) */}
                            <div className="grid grid-cols-1 gap-3">
-                              {activeLesson?.contents?.filter(c => c.type !== 'audio').map(file => (
+                              {activeLesson?.contents?.map(file => (
                                  <a 
                                     key={file.id} 
                                     href={file.url} 
-                                    target="_blank"
-                                    className="flex items-center justify-between p-4 bg-white dark:bg-[#1E1E1E] border border-gray-200 dark:border-[#333] rounded-xl hover:border-[#F38020] hover:shadow-md transition-all group"
+                                    onClick={(e) => handleDownload(e, file.url, file.title)}
+                                    className="flex items-center justify-between p-4 bg-white dark:bg-[#1E1E1E] border border-gray-200 dark:border-[#333] rounded-xl hover:border-[#F38020] hover:shadow-md transition-all group cursor-pointer"
                                  >
                                     <div className="flex items-center gap-4">
                                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
                                           file.type === 'pdf' ? 'bg-red-50 text-red-500' : 
                                           file.type === 'image' ? 'bg-green-50 text-green-500' :
+                                          file.type === 'audio' ? 'bg-purple-50 text-purple-500' :
                                           'bg-blue-50 text-blue-500'
                                        } dark:bg-[#252525]`}>
                                           {file.type === 'pdf' && <FileText size={20} />}
                                           {file.type === 'video' && <Play size={20} />}
                                           {file.type === 'image' && <ImageIcon size={20} />}
                                           {file.type === 'article' && <FileText size={20} />}
+                                          {file.type === 'audio' && <Music size={20} />}
                                        </div>
                                        <div>
                                           <p className="font-bold text-gray-900 dark:text-white text-sm group-hover:text-[#F38020] transition-colors">{file.title}</p>
                                           <p className="text-xs text-gray-500">{file.fileSize || 'Unknown Size'} • {file.type.toUpperCase()}</p>
                                        </div>
                                     </div>
-                                    <Download size={18} className="text-gray-400 group-hover:text-[#F38020]" />
+                                    <div className="flex items-center gap-2 text-sm text-gray-400 group-hover:text-[#F38020] font-bold">
+                                       تحميل <Download size={18} />
+                                    </div>
                                  </a>
                               ))}
                               {(!activeLesson?.contents || activeLesson.contents.length === 0) && (
