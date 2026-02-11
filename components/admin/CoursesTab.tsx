@@ -8,18 +8,20 @@ import {
   MoreVertical, FileJson, Brain, Layout, DollarSign, 
   Image as ImageIcon, Lock, Clock, AlertCircle, Settings, 
   AlignLeft, List, HelpCircle, CheckCircle2, BookOpen, FolderOpen,
-  Zap, FileSpreadsheet
+  Zap, FileSpreadsheet, Loader2, Sparkles
 } from 'lucide-react';
 
 export const CoursesTab: React.FC = () => {
   const { courses, addCourse, updateCourse, deleteCourse, user } = useApp();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showConfirmSave, setShowConfirmSave] = useState(false);
   
   // Editor State
   const [editingCourse, setEditingCourse] = useState<Partial<Course>>({});
   const [expandedLesson, setExpandedLesson] = useState<string | null>(null);
   const [activeLessonTab, setActiveLessonTab] = useState<'content' | 'quiz' | 'flashcards' | 'settings'>('content');
-  const [showMobileSettings, setShowMobileSettings] = useState(false); // Mobile toggle for metadata
+  const [showMobileSettings, setShowMobileSettings] = useState(false); 
   
   // Flashcard Temp State
   const [tempFlashcard, setTempFlashcard] = useState<Partial<Flashcard>>({ front: '', back: '', hint: '' });
@@ -59,23 +61,35 @@ export const CoursesTab: React.FC = () => {
     setBulkImportText('');
   };
 
-  const handleSave = async () => {
+  // Triggered by the "Save" button in the editor
+  const triggerSaveRequest = () => {
+    if (!editingCourse?.title) {
+        alert("يرجى إدخال عنوان الكورس أولاً");
+        return;
+    }
+    setShowConfirmSave(true);
+  };
+
+  // The actual execution after user confirms in the glass modal
+  const executeSave = async () => {
     if (!editingCourse?.title || !isOwner) return;
+    setIsSaving(true);
+    setShowConfirmSave(false); // Close the glass confirmation
+    
     try {
-        // Sanitize data to avoid Firestore errors
+        const isNewCourse = !editingCourse.id || editingCourse.id === '';
+        const courseId = isNewCourse ? 'c-' + Date.now() : editingCourse.id!;
+
         const cleanLessons = (editingCourse.lessons || []).map(l => {
-            // Ensure contents are clean
             const cleanContents = (l.contents || []).map(c => ({
                 ...c,
                 title: c.title || 'Untitled',
                 url: c.url || '',
-                // Ensure textContent is a string if it exists, or empty string, avoid undefined
                 textContent: c.textContent || '', 
                 duration: c.duration || '',
                 fileSize: c.fileSize || ''
             }));
 
-            // Ensure flashcards are clean
             const cleanFlashcards = (l.flashcards || []).map(f => ({
                 id: f.id,
                 front: f.front || '',
@@ -83,7 +97,6 @@ export const CoursesTab: React.FC = () => {
                 hint: f.hint || ''
             }));
 
-            // Construct valid Quiz object if exists
             let cleanQuiz = undefined;
             if (l.quiz) {
                 cleanQuiz = {
@@ -96,7 +109,7 @@ export const CoursesTab: React.FC = () => {
                         text: q.text || '',
                         options: q.options || [],
                         explanation: q.explanation || '',
-                        referencePage: q.referencePage || null // use null for optional numbers
+                        referencePage: q.referencePage || null 
                     }))
                 };
             }
@@ -114,7 +127,7 @@ export const CoursesTab: React.FC = () => {
         });
 
         const courseData: Course = {
-            id: editingCourse.id || 'c-' + Date.now(),
+            id: courseId,
             title: editingCourse.title || 'Untitled Course',
             instructor: editingCourse.instructor || 'Instructor',
             subject: editingCourse.subject || 'General',
@@ -123,16 +136,20 @@ export const CoursesTab: React.FC = () => {
             lessons: cleanLessons
         };
 
-        // Use JSON parse/stringify as a final safety net to strip undefineds
         const payload = JSON.parse(JSON.stringify(courseData));
 
-        if (editingCourse.id) await updateCourse(payload);
-        else await addCourse(payload);
+        if (isNewCourse) {
+          await addCourse(payload);
+        } else {
+          await updateCourse(payload);
+        }
         
         setIsModalOpen(false);
     } catch (error) {
         console.error("Failed to save course:", error);
-        alert(`Error saving course: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        alert(`خطأ أثناء الحفظ: ${error instanceof Error ? error.message : 'خطأ غير معروف'}`);
+    } finally {
+        setIsSaving(false);
     }
   };
 
@@ -178,7 +195,6 @@ export const CoursesTab: React.FC = () => {
       textContent: type === 'article' ? '' : undefined
     };
     
-    // Ensure contents array exists
     const currentContents = updatedLessons[lessonIndex].contents || [];
     updatedLessons[lessonIndex].contents = [...currentContents, newContent];
     
@@ -204,22 +220,17 @@ export const CoursesTab: React.FC = () => {
     setTempFlashcard({ front: '', back: '', hint: '' });
   };
 
-  // Helper to handle file selection for a specific content item
   const handleContentFileSelect = (e: React.ChangeEvent<HTMLInputElement>, lessonIndex: number, contentIndex: number) => {
     const file = e.target.files?.[0];
     if (!file || !editingCourse.lessons) return;
 
-    // Create a Blob URL for preview/usage within the session
-    // In a real app, you would upload this to Firebase Storage here and get a permanent URL
     const objectUrl = URL.createObjectURL(file);
     
     const updatedLessons = [...editingCourse.lessons];
     updatedLessons[lessonIndex].contents[contentIndex].url = objectUrl;
-    // Set a default title if it's "New..."
     if (updatedLessons[lessonIndex].contents[contentIndex].title.startsWith('New')) {
         updatedLessons[lessonIndex].contents[contentIndex].title = file.name;
     }
-    // Set file size
     updatedLessons[lessonIndex].contents[contentIndex].fileSize = (file.size / 1024 / 1024).toFixed(2) + ' MB';
 
     setEditingCourse(prev => ({ ...prev, lessons: updatedLessons }));
@@ -312,23 +323,12 @@ export const CoursesTab: React.FC = () => {
 
       lines.forEach((line, i) => {
         if (!line.trim()) return;
-        
-        // Basic CSV Parsing: Assume comma-separated: Front, Back, Hint
-        // To handle commas inside text, users should wrap text in quotes "..."
-        // Simple regex to split by comma outside quotes
-        const parts = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || line.split(','); 
-        
-        // Fallback simple split if match fails or just simple logic
-        // Let's do simple split for MVP, but clean quotes if present
         const simpleParts = line.split(',');
-        
         let front = simpleParts[0]?.trim();
         let back = simpleParts[1]?.trim();
-        let hint = simpleParts.slice(2).join(',')?.trim(); // Join rest as hint just in case
+        let hint = simpleParts.slice(2).join(',')?.trim();
 
-        // Clean quotes
         const clean = (str: string) => str ? str.replace(/^"|"$/g, '').replace(/""/g, '"') : '';
-        
         front = clean(front);
         back = clean(back);
         hint = clean(hint);
@@ -356,12 +356,50 @@ export const CoursesTab: React.FC = () => {
       }
     };
     reader.readAsText(file);
-    // Reset input
     e.target.value = '';
   };
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
+      {/* Save Confirmation Modal (Glass Effect) */}
+      {showConfirmSave && (
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-md animate-in fade-in duration-300">
+           <div className="relative w-full max-w-md bg-white/70 dark:bg-[#1E1E1E]/70 backdrop-blur-2xl rounded-3xl p-8 border border-white/20 dark:border-white/10 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+              {/* Subtle Animated Background Elements */}
+              <div className="absolute -top-24 -right-24 w-48 h-48 bg-brand-orange rounded-full blur-[80px] opacity-20 animate-pulse"></div>
+              <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-blue-500 rounded-full blur-[80px] opacity-20 animate-pulse"></div>
+
+              <div className="relative z-10 text-center space-y-6">
+                 <div className="w-20 h-20 bg-orange-50 dark:bg-orange-900/20 text-brand-orange rounded-full flex items-center justify-center mx-auto shadow-xl shadow-orange-500/10">
+                    <Sparkles size={40} />
+                 </div>
+                 
+                 <div className="space-y-2">
+                    <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">تأكيد حفظ التغييرات</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 font-medium leading-relaxed">
+                       هل أنت متأكد من حفظ التعديلات على هذا المحتوى؟ سيتم تطبيق التغييرات فوراً لتظهر لجميع الطلاب المشتركين.
+                    </p>
+                 </div>
+
+                 <div className="grid grid-cols-2 gap-4 pt-4">
+                    <button 
+                      onClick={() => setShowConfirmSave(false)}
+                      className="px-6 py-3.5 bg-gray-200 dark:bg-[#2C2C2C] text-gray-700 dark:text-gray-300 rounded-2xl font-bold hover:bg-gray-300 dark:hover:bg-[#333] transition-all"
+                    >
+                      إلغاء
+                    </button>
+                    <button 
+                      onClick={executeSave}
+                      className="px-6 py-3.5 bg-brand-orange text-white rounded-2xl font-bold shadow-lg shadow-orange-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                    >
+                      حفظ المحتوى <Check size={20} />
+                    </button>
+                 </div>
+              </div>
+           </div>
+        </div>
+      )}
+
       {/* Top Header */}
       <div className="flex justify-between items-center bg-white dark:bg-[#1E1E1E] p-5 rounded-xl border border-gray-200 dark:border-[#333] shadow-sm transition-colors">
          <div>
@@ -384,7 +422,6 @@ export const CoursesTab: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {courses.map(course => (
           <div key={course.id} className="group bg-white dark:bg-[#1E1E1E] rounded-xl border border-gray-200 dark:border-[#333] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col relative">
-            {/* ... (Course Card rendering) ... */}
             {!isOwner && (
                <div className="absolute top-3 right-3 z-10">
                   <div className="bg-black/50 backdrop-blur-sm text-white p-1.5 rounded-full" title="Read Only">
@@ -475,18 +512,18 @@ export const CoursesTab: React.FC = () => {
                </button>
 
                <div className="flex gap-3 w-full sm:w-auto">
-                  <button onClick={() => setIsModalOpen(false)} className="flex-1 sm:flex-none px-5 py-2.5 text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#333] rounded-lg transition-colors">
+                  <button onClick={() => setIsModalOpen(false)} disabled={isSaving} className="flex-1 sm:flex-none px-5 py-2.5 text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#333] rounded-lg transition-colors">
                     Discard
                   </button>
-                  <button onClick={handleSave} className="flex-1 sm:flex-none btn-primary px-6 py-2.5 rounded-lg flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20">
-                     <Save size={18}/> Save
+                  <button onClick={triggerSaveRequest} disabled={isSaving} className="flex-1 sm:flex-none btn-primary px-6 py-2.5 rounded-lg flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20 disabled:opacity-50 min-w-[120px]">
+                     {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18}/>}
+                     {isSaving ? 'Saving...' : 'Save Course'}
                   </button>
                </div>
              </div>
 
              <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
                 <div className={`w-full lg:w-72 border-r border-gray-200 dark:border-[#333] overflow-y-auto bg-gray-50/50 dark:bg-[#181818] p-6 ${showMobileSettings ? 'block' : 'hidden lg:block'}`}>
-                   {/* ... Settings ... */}
                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">Course Settings</h4>
                    <div className="space-y-5">
                       <div>
@@ -653,7 +690,6 @@ export const CoursesTab: React.FC = () => {
                                     {/* TAB 1: CONTENT */}
                                     {activeLessonTab === 'content' && (
                                         <div className="space-y-6">
-                                            {/* Content Resources Toolbar */}
                                             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                                                 <h5 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Lesson Materials</h5>
                                                 <div className="flex flex-wrap gap-2">
@@ -661,7 +697,6 @@ export const CoursesTab: React.FC = () => {
                                                     <button onClick={() => addResource(index, 'audio')} className="flex items-center gap-1 px-3 py-1.5 bg-white dark:bg-[#252525] border border-gray-200 dark:border-[#333] rounded hover:border-purple-400 hover:text-purple-500 text-xs font-medium transition-colors"><Mic size={14}/> Aud</button>
                                                     <button onClick={() => addResource(index, 'pdf')} className="flex items-center gap-1 px-3 py-1.5 bg-white dark:bg-[#252525] border border-gray-200 dark:border-[#333] rounded hover:border-red-400 hover:text-red-500 text-xs font-medium transition-colors"><FileText size={14}/> PDF</button>
                                                     <button onClick={() => addResource(index, 'article')} className="flex items-center gap-1 px-3 py-1.5 bg-white dark:bg-[#252525] border border-gray-200 dark:border-[#333] rounded hover:border-orange-400 hover:text-orange-500 text-xs font-medium transition-colors"><AlignLeft size={14}/> Txt</button>
-                                                    {/* Added Image Button */}
                                                     <button onClick={() => addResource(index, 'image')} className="flex items-center gap-1 px-3 py-1.5 bg-white dark:bg-[#252525] border border-gray-200 dark:border-[#333] rounded hover:border-green-400 hover:text-green-500 text-xs font-medium transition-colors"><ImageIcon size={14}/> Img</button>
                                                 </div>
                                             </div>
@@ -755,7 +790,6 @@ export const CoursesTab: React.FC = () => {
                                     {/* TAB 2: QUIZ */}
                                     {activeLessonTab === 'quiz' && (
                                         <div className="space-y-6">
-                                            {/* ... (Existing Quiz Code) ... */}
                                             <div className="bg-blue-50 dark:bg-[#1a202c] p-4 rounded-lg border border-blue-100 dark:border-[#2d3748] flex flex-col sm:flex-row flex-wrap gap-4 items-end">
                                                 <div className="flex-1 w-full sm:w-auto">
                                                     <label className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase mb-1 block">Quiz Title</label>
@@ -861,7 +895,6 @@ export const CoursesTab: React.FC = () => {
                                                 </div>
                                             )}
 
-                                            {/* Questions List */}
                                             <div className="space-y-4">
                                                 {(!lesson.quiz?.questions || lesson.quiz.questions.length === 0) && (
                                                     <div className="text-center py-12 text-gray-400">

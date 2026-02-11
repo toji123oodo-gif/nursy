@@ -80,22 +80,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return device;
   };
 
+  // Real-time Courses Listener
   useEffect(() => {
     if (!db) return;
     const unsubscribe = db.collection("courses").onSnapshot((snapshot) => {
       if (snapshot.empty) {
+        // If Firestore is completely empty, we show defaults but don't force write them
+        // This allows the admin to start with a clean slate if they delete everything
         setCourses(defaultCourses);
       } else {
-        const cloudCourses = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Course));
+        const cloudCourses = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Course));
         setCourses(cloudCourses);
       }
+    }, (error) => {
+      console.error("Firestore Courses Listener Error:", error);
     });
     return () => unsubscribe();
   }, []);
 
   const syncUserToCloud = async (userData: User) => {
     if (!db || !userData.id) return;
-    // Fire and forget - completely backgrounded
     db.collection("users").doc(userData.id).set({
           ...userData,
           lastSeen: new Date().toISOString(),
@@ -105,13 +109,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Auth Listener & Persistence Logic
   useEffect(() => {
-    // Check if we have a persisted token first to show UI immediately
     const persistedToken = jwtUtils.getToken();
     if (persistedToken && !jwtUtils.isExpired(persistedToken)) {
        const decoded = jwtUtils.decode(persistedToken);
        if (decoded) {
-          // Temporarily set user from token while firebase loads
-          // This prevents "flicker" of login screen
           setUser({
              id: decoded.sub,
              name: decoded.name,
@@ -131,7 +132,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
       if (firebaseUser) {
-        // User is signed in.
         const optimisticUser: User = {
           id: firebaseUser.uid,
           name: firebaseUser.displayName || 'Student',
@@ -144,7 +144,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           subscriptionTier: 'free'
         };
 
-        // If we don't have a user set yet (or it's partial), set optimistic
         if (!user) setUser(optimisticUser);
         
         const newToken = jwtUtils.sign({ 
@@ -157,13 +156,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setToken(newToken);
         setIsLoading(false);
 
-        // Fetch detailed profile from Firestore
         db.collection("users").doc(firebaseUser.uid).get().then((docSnap: any) => {
           if (docSnap.exists) {
-            const userData = { id: firebaseUser.uid, ...docSnap.data() } as User;
+            const userData = { ...docSnap.data(), id: firebaseUser.uid } as User;
             setUser(userData);
             
-            // Update token with role if exists
             if (userData.role) {
                 const updatedToken = jwtUtils.sign({ 
                     sub: userData.id, 
@@ -179,7 +176,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }).catch(console.error);
 
       } else {
-        // User is signed out.
         setUser(null);
         setToken(null);
         jwtUtils.removeToken();
@@ -199,7 +195,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const firebaseUser = userCredential.user;
     if (firebaseUser) {
       await firebaseUser.updateProfile({ displayName: name });
-      // Create initial user doc
       await db.collection("users").doc(firebaseUser.uid).set({
           name,
           email,
@@ -230,20 +225,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await auth.signOut(); 
       jwtUtils.removeToken();
       setUser(null);
-      // Force reload to clear any in-memory states
       window.location.href = '/';
   };
   
   const updateUserData = async (data: Partial<User>) => {
     if (!user) return;
     const updatedUser = { ...user, ...data };
-    setUser(updatedUser); // Optimistic update
+    setUser(updatedUser); 
     syncUserToCloud(updatedUser);
   };
 
-  const addCourse = async (course: Course) => { await db.collection("courses").doc(course.id).set(course); };
-  const updateCourse = async (course: Course) => { await db.collection("courses").doc(course.id).set(course, { merge: true }); };
-  const deleteCourse = async (id: string) => { await db.collection("courses").doc(id).delete(); };
+  const addCourse = async (course: Course) => { 
+    if (!db) return;
+    await db.collection("courses").doc(course.id).set(course); 
+  };
+  
+  const updateCourse = async (course: Course) => { 
+    if (!db) return;
+    // CRITICAL: We use set(course) WITHOUT merge: true here. 
+    // This ensures that if we deleted a lesson or content item locally, 
+    // it is correctly removed from the Firestore document.
+    await db.collection("courses").doc(course.id).set(course); 
+  };
+  
+  const deleteCourse = async (id: string) => { 
+    if (!db) return;
+    await db.collection("courses").doc(id).delete(); 
+  };
 
   return (
     <AppContext.Provider value={{ 
