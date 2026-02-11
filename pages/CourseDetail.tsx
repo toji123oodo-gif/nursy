@@ -8,17 +8,19 @@ import {
   Play, Lock, Clock, CheckCircle2,
   Download, ArrowLeft, Share2,
   Info, BookOpen, Image as ImageIcon, Zap,
-  Music, Film
+  Music, Film, MessageSquare, Edit3
 } from 'lucide-react';
 import { QuizPlayer } from '../components/QuizPlayer';
 import { FlashcardDeck } from '../components/flashcards/FlashcardDeck';
 import { VideoPlayer } from '../components/VideoPlayer';
+import { LessonDiscussion } from '../components/dashboard/LessonDiscussion';
+import { LessonNotes } from '../components/dashboard/LessonNotes';
 
 export const CourseDetail: React.FC = () => {
   const { courseId } = useParams();
   const navigate = useNavigate();
   const { user, courses } = useApp();
-  const [activeTab, setActiveTab] = useState<'overview' | 'resources' | 'quiz' | 'flashcards'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'resources' | 'quiz' | 'flashcards' | 'discussion' | 'notes'>('overview');
   const [activeLessonId, setActiveLessonId] = useState<string | null>(null);
   const [activeQuizId, setActiveQuizId] = useState<string | null>(null);
 
@@ -137,13 +139,15 @@ export const CourseDetail: React.FC = () => {
             {/* 2. Content Tabs & Details */}
             <div className="flex-1 bg-white dark:bg-[#151515] p-4 md:p-8">
                <div className="max-w-4xl mx-auto">
-                  {/* Tab Navigation */}
+                  {/* Tab Navigation - Full Restored Version */}
                   <div className="flex items-center gap-6 border-b border-gray-200 dark:border-[#333] mb-6 overflow-x-auto scrollbar-hide">
                      {[
                         { id: 'overview', label: 'نظرة عامة', icon: Info },
-                        { id: 'resources', label: 'المصادر والمرفقات', icon: BookOpen, count: downloadableResources.length },
+                        { id: 'resources', label: 'المصادر', icon: BookOpen, count: downloadableResources.length },
+                        { id: 'quiz', label: 'الاختبارات', icon: Brain },
                         { id: 'flashcards', label: 'Flashcards', icon: Zap, count: activeLesson?.flashcards?.length },
-                        { id: 'quiz', label: 'الاختبارات', icon: Brain }
+                        { id: 'discussion', label: 'النقاشات', icon: MessageSquare },
+                        { id: 'notes', label: 'ملاحظاتي', icon: Edit3 },
                      ].map(tab => (
                         <button 
                           key={tab.id}
@@ -200,6 +204,7 @@ export const CourseDetail: React.FC = () => {
                                           'bg-blue-50 text-blue-500'
                                        } dark:bg-[#252525]`}>
                                           {file.type === 'pdf' && <FileText size={20} />}
+                                          {file.type === 'video' && <Play size={20} />}
                                           {file.type === 'image' && <ImageIcon size={20} />}
                                           {file.type === 'article' && <FileText size={20} />}
                                           {file.type === 'audio' && <Music size={20} />}
@@ -256,6 +261,18 @@ export const CourseDetail: React.FC = () => {
                                  بدء الاختبار الآن
                               </button>
                            )}
+                        </div>
+                     )}
+
+                     {activeTab === 'discussion' && (
+                        <div className="animate-in fade-in duration-500">
+                           <LessonDiscussion />
+                        </div>
+                     )}
+
+                     {activeTab === 'notes' && (
+                        <div className="animate-in fade-in duration-500">
+                           <LessonNotes lessonId={activeLessonId || 'default'} />
                         </div>
                      )}
                   </div>
