@@ -1,19 +1,18 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-const { useParams, Link, useNavigate } = ReactRouterDOM as any;
+const { useParams, useNavigate } = ReactRouterDOM as any;
 import { useApp } from '../context/AppContext';
 import { 
-  FileText, Brain, ChevronDown, ChevronRight, 
-  Play, Lock, Clock, CheckCircle2, AlertCircle,
-  BarChart3, Settings, Download, ArrowLeft,
-  Layout as LayoutIcon, Maximize2, Menu, Share2,
-  MessageSquare, Info, BookOpen, Image as ImageIcon, Zap,
-  Music // Added Music icon
+  FileText, Brain, ChevronRight, 
+  Play, Lock, Clock, CheckCircle2,
+  Download, ArrowLeft, Share2,
+  Info, BookOpen, Image as ImageIcon, Zap,
+  Music, Film
 } from 'lucide-react';
-// AudioPlayer import removed as we are downloading audio now
 import { QuizPlayer } from '../components/QuizPlayer';
 import { FlashcardDeck } from '../components/flashcards/FlashcardDeck';
+import { VideoPlayer } from '../components/VideoPlayer';
 
 export const CourseDetail: React.FC = () => {
   const { courseId } = useParams();
@@ -22,29 +21,30 @@ export const CourseDetail: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'resources' | 'quiz' | 'flashcards'>('overview');
   const [activeLessonId, setActiveLessonId] = useState<string | null>(null);
   const [activeQuizId, setActiveQuizId] = useState<string | null>(null);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true); // For mobile/desktop toggle if needed
 
   const course = courses.find(c => c.id === courseId);
   
-  // Set initial active lesson
   useEffect(() => {
      if (course && course.lessons?.length > 0 && !activeLessonId) {
         setActiveLessonId(course.lessons[0].id);
      }
   }, [course]);
 
+  const activeLesson = useMemo(() => 
+    course?.lessons?.find(l => l.id === activeLessonId),
+  [course, activeLessonId]);
+
+  // Find the primary video for this lesson
+  const primaryVideo = useMemo(() => 
+    activeLesson?.contents?.find(c => c.type === 'video'),
+  [activeLesson]);
+
   if (!course) return <div className="p-8 text-center text-muted">Course not found.</div>;
 
-  const activeLesson = course.lessons?.find(l => l.id === activeLessonId);
   const isCompleted = (id: string) => user?.completedLessons?.includes(id);
-
-  // Helper to calculate course progress
   const progress = course.lessons 
     ? Math.round((course.lessons.filter(l => isCompleted(l.id)).length / course.lessons.length) * 100)
     : 0;
-
-  // Find the first PDF in the active lesson to use as the quiz reference source
-  const lessonPdfUrl = activeLesson?.contents?.find(c => c.type === 'pdf')?.url;
 
   const handleDownload = async (e: React.MouseEvent<HTMLAnchorElement>, url: string, filename: string) => {
     e.preventDefault();
@@ -60,7 +60,6 @@ export const CourseDetail: React.FC = () => {
         document.body.removeChild(link);
         window.URL.revokeObjectURL(blobUrl);
     } catch (error) {
-        console.warn("Download failed, opening in new tab", error);
         window.open(url, '_blank');
     }
   };
@@ -73,7 +72,6 @@ export const CourseDetail: React.FC = () => {
           quiz={course.lessons?.find(l => l.id === activeQuizId)?.quiz!} 
           onComplete={() => {}} 
           onClose={() => setActiveQuizId(null)} 
-          pdfUrl={lessonPdfUrl} // Pass the PDF URL here
         />
       )}
 
@@ -101,7 +99,7 @@ export const CourseDetail: React.FC = () => {
                      <div className="h-full bg-brand-orange transition-all duration-500" style={{ width: `${progress}%` }}></div>
                   </div>
                </div>
-               <button className="md:hidden p-2 text-gray-500 hover:text-brand-orange">
+               <button className="p-2 text-gray-500 hover:text-brand-orange">
                   <Share2 size={20} />
                </button>
             </div>
@@ -113,32 +111,22 @@ export const CourseDetail: React.FC = () => {
          {/* LEFT: Main Content Area */}
          <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
             
-            {/* 1. Player Section (Cinema Mode) */}
-            <div className="bg-black aspect-video w-full relative group flex items-center justify-center">
-               {/* This is a placeholder for the actual video player */}
-               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 opacity-60"></div>
-               
-               <div className="text-center relative z-10 p-6">
-                  <div className="w-16 h-16 bg-[#F38020] rounded-full flex items-center justify-center mx-auto mb-4 cursor-pointer hover:scale-110 transition-transform shadow-[0_0_30px_rgba(243,128,32,0.4)]">
-                     <Play size={32} className="text-white ml-1" fill="currentColor" />
-                  </div>
-                  <h3 className="text-white font-bold text-lg md:text-xl drop-shadow-md">
-                     {activeLesson?.title || 'Select a lesson to start'}
-                  </h3>
-                  {activeLesson?.duration && (
-                     <p className="text-white/80 text-sm mt-2 font-mono flex items-center justify-center gap-2">
-                        <Clock size={14} /> {activeLesson.duration}
-                     </p>
-                  )}
-               </div>
-
-               {/* Video Controls Mockup */}
-               <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-black/90 to-transparent px-4 flex items-center justify-between text-white/80">
-                  <div className="flex gap-4 text-xs font-mono">
-                     <span>00:00 / {activeLesson?.duration?.replace('m', ':00') || '10:00'}</span>
-                  </div>
-                  <Maximize2 size={16} className="cursor-pointer hover:text-white" />
-               </div>
+            {/* 1. Player Section */}
+            <div className="w-full bg-black">
+              {primaryVideo ? (
+                <VideoPlayer 
+                  url={primaryVideo.url} 
+                  poster={course.image}
+                />
+              ) : (
+                <div className="aspect-video bg-gray-900 flex flex-col items-center justify-center text-center p-6 border-b border-white/5">
+                   <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-4">
+                      <Film size={40} className="text-gray-600" />
+                   </div>
+                   <h3 className="text-white font-bold text-lg">هذا الدرس لا يحتوي على فيديو</h3>
+                   <p className="text-gray-500 text-sm mt-2 max-w-xs">يمكنك الاطلاع على المصادر والملخصات أو البطاقات التعليمية المتاحة بالأسفل.</p>
+                </div>
+              )}
             </div>
 
             {/* 2. Content Tabs & Details */}
@@ -146,46 +134,35 @@ export const CourseDetail: React.FC = () => {
                <div className="max-w-4xl mx-auto">
                   {/* Tab Navigation */}
                   <div className="flex items-center gap-6 border-b border-gray-200 dark:border-[#333] mb-6 overflow-x-auto scrollbar-hide">
-                     <button 
-                        onClick={() => setActiveTab('overview')}
-                        className={`pb-3 text-sm font-bold flex items-center gap-2 transition-all whitespace-nowrap border-b-2 ${activeTab === 'overview' ? 'text-[#F38020] border-[#F38020]' : 'text-gray-500 border-transparent hover:text-gray-800 dark:hover:text-gray-300'}`}
-                     >
-                        <Info size={16} /> نظرة عامة
-                     </button>
-                     <button 
-                        onClick={() => setActiveTab('resources')}
-                        className={`pb-3 text-sm font-bold flex items-center gap-2 transition-all whitespace-nowrap border-b-2 ${activeTab === 'resources' ? 'text-[#F38020] border-[#F38020]' : 'text-gray-500 border-transparent hover:text-gray-800 dark:hover:text-gray-300'}`}
-                     >
-                        <BookOpen size={16} /> المصادر والمرفقات
-                        <span className="bg-gray-100 dark:bg-[#333] text-gray-600 dark:text-gray-400 text-[10px] px-1.5 py-0.5 rounded-full">{activeLesson?.contents?.length || 0}</span>
-                     </button>
-                     <button 
-                        onClick={() => setActiveTab('flashcards')}
-                        className={`pb-3 text-sm font-bold flex items-center gap-2 transition-all whitespace-nowrap border-b-2 ${activeTab === 'flashcards' ? 'text-[#F38020] border-[#F38020]' : 'text-gray-500 border-transparent hover:text-gray-800 dark:hover:text-gray-300'}`}
-                     >
-                        <Zap size={16} /> Flashcards
-                        <span className="bg-gray-100 dark:bg-[#333] text-gray-600 dark:text-gray-400 text-[10px] px-1.5 py-0.5 rounded-full">{activeLesson?.flashcards?.length || 0}</span>
-                     </button>
-                     <button 
-                        onClick={() => setActiveTab('quiz')}
-                        className={`pb-3 text-sm font-bold flex items-center gap-2 transition-all whitespace-nowrap border-b-2 ${activeTab === 'quiz' ? 'text-[#F38020] border-[#F38020]' : 'text-gray-500 border-transparent hover:text-gray-800 dark:hover:text-gray-300'}`}
-                     >
-                        <Brain size={16} /> الاختبارات
-                     </button>
+                     {[
+                        { id: 'overview', label: 'نظرة عامة', icon: Info },
+                        { id: 'resources', label: 'المصادر والمرفقات', icon: BookOpen, count: activeLesson?.contents?.length },
+                        { id: 'flashcards', label: 'Flashcards', icon: Zap, count: activeLesson?.flashcards?.length },
+                        { id: 'quiz', label: 'الاختبارات', icon: Brain }
+                     ].map(tab => (
+                        <button 
+                          key={tab.id}
+                          onClick={() => setActiveTab(tab.id as any)}
+                          className={`pb-3 text-sm font-bold flex items-center gap-2 transition-all whitespace-nowrap border-b-2 ${activeTab === tab.id ? 'text-[#F38020] border-[#F38020]' : 'text-gray-500 border-transparent hover:text-gray-800 dark:hover:text-gray-300'}`}
+                        >
+                          <tab.icon size={16} /> {tab.label}
+                          {tab.count !== undefined && (
+                            <span className="bg-gray-100 dark:bg-[#333] text-gray-600 dark:text-gray-400 text-[10px] px-1.5 py-0.5 rounded-full">{tab.count}</span>
+                          )}
+                        </button>
+                     ))}
                   </div>
 
-                  {/* Tab Content */}
                   <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
                      {activeTab === 'overview' && (
                         <div className="space-y-6">
                            <div>
-                              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-3">عن هذا الدرس</h2>
+                              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-3">{activeLesson?.title}</h2>
                               <p className="text-gray-600 dark:text-gray-300 leading-relaxed text-sm md:text-base">
-                                 {activeLesson?.description || "لا يوجد وصف متاح لهذا الدرس. يرجى مراجعة الفيديو والمرفقات للحصول على المعلومات الكاملة."}
+                                 {activeLesson?.description || "لا يوجد وصف متاح لهذا الدرس."}
                               </p>
                            </div>
                            
-                           {/* Quick Stats */}
                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                               <div className="p-4 bg-gray-50 dark:bg-[#202020] rounded-xl border border-gray-100 dark:border-[#333]">
                                  <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">المادة</p>
@@ -202,8 +179,6 @@ export const CourseDetail: React.FC = () => {
                      {activeTab === 'resources' && (
                         <div className="space-y-4">
                            <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">مواد تعليمية قابلة للتحميل</h3>
-                           
-                           {/* All Content List (Downloadable) */}
                            <div className="grid grid-cols-1 gap-3">
                               {activeLesson?.contents?.map(file => (
                                  <a 
@@ -235,12 +210,6 @@ export const CourseDetail: React.FC = () => {
                                     </div>
                                  </a>
                               ))}
-                              {(!activeLesson?.contents || activeLesson.contents.length === 0) && (
-                                 <div className="text-center py-8 text-gray-400 border-2 border-dashed border-gray-200 dark:border-[#333] rounded-xl">
-                                    <FileText size={24} className="mx-auto mb-2 opacity-50"/>
-                                    لا توجد مرفقات لهذا الدرس
-                                 </div>
-                              )}
                            </div>
                         </div>
                      )}
@@ -286,7 +255,7 @@ export const CourseDetail: React.FC = () => {
             </div>
          </div>
 
-         {/* RIGHT: Sidebar Playlist (Sticky on Desktop) */}
+         {/* RIGHT: Sidebar Playlist */}
          <div className="w-full lg:w-[380px] bg-white dark:bg-[#1E1E1E] border-t lg:border-t-0 lg:border-l border-gray-200 dark:border-[#333] flex flex-col shrink-0 lg:h-[calc(100vh-4rem)] lg:sticky lg:top-[4rem]">
             <div className="p-5 border-b border-gray-200 dark:border-[#333] bg-[#FAFAFA] dark:bg-[#252525]">
                <h3 className="font-bold text-gray-900 dark:text-white mb-1">محتوى الكورس</h3>
@@ -315,7 +284,6 @@ export const CourseDetail: React.FC = () => {
                            ${locked ? 'opacity-60 cursor-not-allowed' : ''}
                         `}
                      >
-                        {/* Active Indicator Bar */}
                         {active && <div className="absolute right-0 top-0 bottom-0 w-1 bg-[#F38020]"></div>}
 
                         <div className="mt-1">
@@ -344,8 +312,6 @@ export const CourseDetail: React.FC = () => {
                            </h4>
                            <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
                               <span className="flex items-center gap-1"><Clock size={10} /> {lesson.duration || '15m'}</span>
-                              {lesson.quiz && <span className="flex items-center gap-1 text-blue-500"><Brain size={10} /> Quiz</span>}
-                              {lesson.flashcards && lesson.flashcards.length > 0 && <span className="flex items-center gap-1 text-orange-500"><Zap size={10} /> {lesson.flashcards.length} Cards</span>}
                            </div>
                         </div>
                      </div>
