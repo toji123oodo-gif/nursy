@@ -120,7 +120,7 @@ export const CourseDetail: React.FC = () => {
             
             {/* 1. Player Section */}
             <div className="w-full bg-black">
-              {primaryVideo ? (
+              {primaryVideo && primaryVideo.url ? (
                 <VideoPlayer 
                   url={primaryVideo.url} 
                   poster={course.image}
@@ -139,7 +139,7 @@ export const CourseDetail: React.FC = () => {
             {/* 2. Content Tabs & Details */}
             <div className="flex-1 bg-white dark:bg-[#151515] p-4 md:p-8">
                <div className="max-w-4xl mx-auto">
-                  {/* Tab Navigation - Full Restored Version */}
+                  {/* Tab Navigation */}
                   <div className="flex items-center gap-6 border-b border-gray-200 dark:border-[#333] mb-6 overflow-x-auto scrollbar-hide">
                      {[
                         { id: 'overview', label: 'نظرة عامة', icon: Info },

@@ -2,7 +2,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { 
   Play, Pause, Volume2, VolumeX, Maximize, 
-  Settings, SkipBack, SkipForward, Loader2 
+  Settings, SkipBack, SkipForward, Loader2, AlertCircle, RefreshCw
 } from 'lucide-react';
 
 interface VideoPlayerProps {
@@ -18,6 +18,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, poster }) => {
   const [progress, setProgress] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [showControls, setShowControls] = useState(true);
 
   // Force video reload when URL changes
@@ -27,6 +28,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, poster }) => {
       setIsPlaying(false);
       setProgress(0);
       setIsLoading(true);
+      setError(false);
     }
   }, [url]);
 
@@ -40,7 +42,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, poster }) => {
   }, [isPlaying, showControls]);
 
   const togglePlay = () => {
-    if (videoRef.current) {
+    if (videoRef.current && !error) {
       if (isPlaying) videoRef.current.pause();
       else videoRef.current.play().catch(e => console.warn("Autoplay blocked", e));
       setIsPlaying(!isPlaying);
@@ -68,6 +70,16 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, poster }) => {
     }
   };
 
+  const handleReady = () => {
+    setIsLoading(false);
+    setError(false);
+  };
+
+  const handleError = () => {
+    setIsLoading(false);
+    setError(true);
+  };
+
   return (
     <div 
       ref={containerRef}
@@ -85,71 +97,97 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, poster }) => {
         onWaiting={() => setIsLoading(true)}
         onPlaying={() => setIsLoading(false)}
         onLoadStart={() => setIsLoading(true)}
-        onLoadedData={() => setIsLoading(false)}
+        onLoadedData={handleReady}
+        onCanPlay={handleReady}
+        onCanPlayThrough={handleReady}
+        onError={handleError}
         onClick={togglePlay}
         playsInline
         muted={isMuted}
+        preload="metadata"
       />
 
       {/* Loading Overlay */}
-      {isLoading && (
+      {isLoading && !error && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-10">
           <Loader2 size={48} className="text-brand-orange animate-spin" />
         </div>
       )}
 
+      {/* Error Overlay */}
+      {error && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-20 text-white">
+          <AlertCircle size={48} className="text-red-500 mb-2" />
+          <p className="font-bold">فشل تشغيل الفيديو</p>
+          <button 
+            onClick={() => {
+                if(videoRef.current) { 
+                    videoRef.current.load(); 
+                    setError(false); 
+                    setIsLoading(true); 
+                }
+            }}
+            className="mt-4 flex items-center gap-2 px-4 py-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors text-sm font-bold"
+          >
+            <RefreshCw size={16} /> إعادة المحاولة
+          </button>
+        </div>
+      )}
+
       {/* Custom Controls Overlay */}
-      <div className={`absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 transition-opacity duration-500 flex flex-col justify-end p-4 md:p-6 ${showControls || !isPlaying ? 'opacity-100' : 'opacity-0'}`}>
-        
-        {/* Playback Progress */}
-        <div className="mb-4 group/slider">
-          <input
-            type="range"
-            min="0"
-            max="100"
-            step="0.1"
-            value={progress}
-            onChange={handleProgressChange}
-            className="w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-brand-orange hover:h-2 transition-all"
-          />
-        </div>
+      {!error && (
+        <div className={`absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 transition-opacity duration-500 flex flex-col justify-end p-4 md:p-6 ${showControls || !isPlaying ? 'opacity-100' : 'opacity-0'}`}>
+          
+          {/* Playback Progress */}
+          <div className="mb-4 group/slider">
+            <input
+              type="range"
+              min="0"
+              max="100"
+              step="0.1"
+              value={progress}
+              onChange={handleProgressChange}
+              className="w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-brand-orange hover:h-2 transition-all"
+            />
+          </div>
 
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4 md:gap-6">
-            <button onClick={togglePlay} className="text-white hover:text-brand-orange transition-colors">
-              {isPlaying ? <Pause size={28} fill="currentColor" /> : <Play size={28} fill="currentColor" />}
-            </button>
-            
-            <div className="hidden sm:flex items-center gap-4">
-               <button onClick={() => videoRef.current && (videoRef.current.currentTime -= 10)} className="text-white/80 hover:text-white">
-                 <SkipBack size={20} />
-               </button>
-               <button onClick={() => videoRef.current && (videoRef.current.currentTime += 10)} className="text-white/80 hover:text-white">
-                 <SkipForward size={20} />
-               </button>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <button onClick={() => setIsMuted(!isMuted)} className="text-white/80 hover:text-white">
-                {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4 md:gap-6">
+              <button onClick={togglePlay} className="text-white hover:text-brand-orange transition-colors">
+                {isPlaying ? <Pause size={28} fill="currentColor" /> : <Play size={28} fill="currentColor" />}
               </button>
-              <span className="text-white/60 text-xs font-mono hidden md:block">
-                {videoRef.current ? Math.floor(videoRef.current.currentTime / 60) : 0}:
-                {videoRef.current ? String(Math.floor(videoRef.current.currentTime % 60)).padStart(2, '0') : '00'}
-              </span>
+              
+              <div className="hidden sm:flex items-center gap-4">
+                <button onClick={() => videoRef.current && (videoRef.current.currentTime -= 10)} className="text-white/80 hover:text-white">
+                  <SkipBack size={20} />
+                </button>
+                <button onClick={() => videoRef.current && (videoRef.current.currentTime += 10)} className="text-white/80 hover:text-white">
+                  <SkipForward size={20} />
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button onClick={() => setIsMuted(!isMuted)} className="text-white/80 hover:text-white">
+                  {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+                </button>
+                <span className="text-white/60 text-xs font-mono hidden md:block">
+                  {videoRef.current ? Math.floor(videoRef.current.currentTime / 60) : 0}:
+                  {videoRef.current ? String(Math.floor(videoRef.current.currentTime % 60)).padStart(2, '0') : '00'}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <button className="text-white/80 hover:text-white">
+                <Settings size={20} />
+              </button>
+              <button onClick={toggleFullscreen} className="text-white/80 hover:text-white">
+                <Maximize size={20} />
+              </button>
             </div>
           </div>
-
-          <div className="flex items-center gap-4">
-            <button className="text-white/80 hover:text-white">
-              <Settings size={20} />
-            </button>
-            <button onClick={toggleFullscreen} className="text-white/80 hover:text-white">
-              <Maximize size={20} />
-            </button>
-          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
