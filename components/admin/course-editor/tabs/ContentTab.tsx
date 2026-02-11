@@ -62,7 +62,12 @@ export const ContentTab: React.FC<Props> = ({ contents, courseId, onChange }) =>
     const safeName = file.name.replace(/[^a-zA-Z0-9.]/g, '_');
     const storageRef = storage.ref(`courses/${courseId || 'temp'}/${timestamp}_${safeName}`);
     
-    const uploadTask = storageRef.put(file);
+    // IMPORTANT: Set content type metadata for correct playback
+    const metadata = {
+        contentType: file.type
+    };
+
+    const uploadTask = storageRef.put(file, metadata);
 
     uploadTask.on('state_changed', 
       (snapshot) => {

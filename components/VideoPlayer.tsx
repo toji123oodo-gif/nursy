@@ -1,5 +1,5 @@
 
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { 
   Play, Pause, Volume2, VolumeX, Maximize, 
   Settings, SkipBack, SkipForward, Loader2, AlertCircle, RefreshCw
@@ -20,6 +20,32 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, poster }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(false);
   const [showControls, setShowControls] = useState(true);
+
+  // 1. YouTube Detection Logic
+  const youtubeId = useMemo(() => {
+    if (!url) return null;
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+  }, [url]);
+
+  // 2. Return YouTube Iframe if applicable
+  if (youtubeId) {
+    return (
+      <div className="relative w-full aspect-video bg-black rounded-xl overflow-hidden shadow-2xl">
+        <iframe 
+          className="w-full h-full"
+          src={`https://www.youtube.com/embed/${youtubeId}?rel=0&modestbranding=1`}
+          title="YouTube video player" 
+          frameBorder="0" 
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+          allowFullScreen
+        ></iframe>
+      </div>
+    );
+  }
+
+  // --- NATIVE PLAYER LOGIC ---
 
   // Force video reload when URL changes
   useEffect(() => {
@@ -75,7 +101,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, poster }) => {
     setError(false);
   };
 
-  const handleError = () => {
+  const handleError = (e: any) => {
+    console.error("Video Error Details:", videoRef.current?.error, e);
     setIsLoading(false);
     setError(true);
   };
@@ -105,6 +132,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, poster }) => {
         playsInline
         muted={isMuted}
         preload="metadata"
+        crossOrigin="anonymous" 
       />
 
       {/* Loading Overlay */}
@@ -119,6 +147,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, poster }) => {
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-20 text-white">
           <AlertCircle size={48} className="text-red-500 mb-2" />
           <p className="font-bold">فشل تشغيل الفيديو</p>
+          <p className="text-xs text-gray-400 mt-1">تأكد من صحة الرابط أو نوع الملف</p>
           <button 
             onClick={() => {
                 if(videoRef.current) { 
