@@ -39,6 +39,11 @@ export const CourseDetail: React.FC = () => {
     activeLesson?.contents?.find(c => c.type === 'video'),
   [activeLesson]);
 
+  // Filter out the video from the downloadable resources list
+  const downloadableResources = useMemo(() => 
+    activeLesson?.contents?.filter(c => c.type !== 'video') || [],
+  [activeLesson]);
+
   if (!course) return <div className="p-8 text-center text-muted">Course not found.</div>;
 
   const isCompleted = (id: string) => user?.completedLessons?.includes(id);
@@ -136,7 +141,7 @@ export const CourseDetail: React.FC = () => {
                   <div className="flex items-center gap-6 border-b border-gray-200 dark:border-[#333] mb-6 overflow-x-auto scrollbar-hide">
                      {[
                         { id: 'overview', label: 'نظرة عامة', icon: Info },
-                        { id: 'resources', label: 'المصادر والمرفقات', icon: BookOpen, count: activeLesson?.contents?.length },
+                        { id: 'resources', label: 'المصادر والمرفقات', icon: BookOpen, count: downloadableResources.length },
                         { id: 'flashcards', label: 'Flashcards', icon: Zap, count: activeLesson?.flashcards?.length },
                         { id: 'quiz', label: 'الاختبارات', icon: Brain }
                      ].map(tab => (
@@ -180,7 +185,7 @@ export const CourseDetail: React.FC = () => {
                         <div className="space-y-4">
                            <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">مواد تعليمية قابلة للتحميل</h3>
                            <div className="grid grid-cols-1 gap-3">
-                              {activeLesson?.contents?.map(file => (
+                              {downloadableResources.length > 0 ? downloadableResources.map(file => (
                                  <a 
                                     key={file.id} 
                                     href={file.url} 
@@ -195,7 +200,6 @@ export const CourseDetail: React.FC = () => {
                                           'bg-blue-50 text-blue-500'
                                        } dark:bg-[#252525]`}>
                                           {file.type === 'pdf' && <FileText size={20} />}
-                                          {file.type === 'video' && <Play size={20} />}
                                           {file.type === 'image' && <ImageIcon size={20} />}
                                           {file.type === 'article' && <FileText size={20} />}
                                           {file.type === 'audio' && <Music size={20} />}
@@ -209,7 +213,11 @@ export const CourseDetail: React.FC = () => {
                                        تحميل <Download size={18} />
                                     </div>
                                  </a>
-                              ))}
+                              )) : (
+                                <div className="text-center py-12 bg-gray-50 dark:bg-[#202020] rounded-2xl border border-dashed border-gray-200 dark:border-[#333]">
+                                  <p className="text-gray-500">لا توجد مرفقات إضافية لهذا الدرس.</p>
+                                </div>
+                              )}
                            </div>
                         </div>
                      )}

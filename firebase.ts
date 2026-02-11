@@ -2,6 +2,7 @@
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/auth';
 import 'firebase/compat/firestore';
+import 'firebase/compat/storage';
 import 'firebase/compat/analytics';
 
 /**
@@ -46,6 +47,7 @@ const auth = firebase.auth();
 auth.languageCode = 'ar'; 
 
 const db = firebase.firestore();
+const storage = firebase.storage();
 db.settings({ ignoreUndefinedProperties: true });
 
 if (typeof window !== 'undefined') {
@@ -68,4 +70,4 @@ if (typeof window !== 'undefined') {
   analytics = firebase.analytics();
 }
 
-export { auth, db, googleProvider, analytics };
+export { auth, db, storage, googleProvider, analytics };

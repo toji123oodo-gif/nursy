@@ -20,6 +20,16 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, poster }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [showControls, setShowControls] = useState(true);
 
+  // Force video reload when URL changes
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.load();
+      setIsPlaying(false);
+      setProgress(0);
+      setIsLoading(true);
+    }
+  }, [url]);
+
   // Auto-hide controls timer
   useEffect(() => {
     let timeout: number;
@@ -32,7 +42,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, poster }) => {
   const togglePlay = () => {
     if (videoRef.current) {
       if (isPlaying) videoRef.current.pause();
-      else videoRef.current.play();
+      else videoRef.current.play().catch(e => console.warn("Autoplay blocked", e));
       setIsPlaying(!isPlaying);
     }
   };
@@ -53,6 +63,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, poster }) => {
   const toggleFullscreen = () => {
     if (containerRef.current?.requestFullscreen) {
       containerRef.current.requestFullscreen();
+    } else if ((containerRef.current as any)?.webkitRequestFullscreen) {
+      (containerRef.current as any).webkitRequestFullscreen();
     }
   };
 
@@ -68,7 +80,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, poster }) => {
         ref={videoRef}
         src={url}
         poster={poster}
-        className="w-full h-full cursor-pointer"
+        className="w-full h-full cursor-pointer object-contain"
         onTimeUpdate={handleTimeUpdate}
         onWaiting={() => setIsLoading(true)}
         onPlaying={() => setIsLoading(false)}
@@ -76,6 +88,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, poster }) => {
         onLoadedData={() => setIsLoading(false)}
         onClick={togglePlay}
         playsInline
+        muted={isMuted}
       />
 
       {/* Loading Overlay */}
@@ -89,11 +102,12 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, poster }) => {
       <div className={`absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 transition-opacity duration-500 flex flex-col justify-end p-4 md:p-6 ${showControls || !isPlaying ? 'opacity-100' : 'opacity-0'}`}>
         
         {/* Playback Progress */}
-        <div className="mb-4">
+        <div className="mb-4 group/slider">
           <input
             type="range"
             min="0"
             max="100"
+            step="0.1"
             value={progress}
             onChange={handleProgressChange}
             className="w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-brand-orange hover:h-2 transition-all"
