@@ -4,7 +4,33 @@ import 'firebase/compat/auth';
 import 'firebase/compat/firestore';
 import 'firebase/compat/analytics';
 
-// Firebase configuration
+/**
+ * 💡 IMPORTANT: COPY AND PASTE THESE RULES INTO FIREBASE CONSOLE 💡
+ * Go to Firestore Database > Rules, and paste exactly this:
+ * 
+ * rules_version = '2';
+ * service cloud.firestore {
+ *   match /databases/{database}/documents {
+ *     match /courses/{courseId} {
+ *       allow read: if true;
+ *       allow write: if request.auth != null && 
+ *         (request.auth.token.email == 'toji123oodo@gmail.com' || 
+ *          request.auth.token.email == 'Mstfymdht542@gmail.com');
+ *     }
+ *     match /users/{userId} {
+ *       allow read, write: if request.auth != null && (request.auth.uid == userId || 
+ *         request.auth.token.email == 'toji123oodo@gmail.com' || 
+ *         request.auth.token.email == 'Mstfymdht542@gmail.com');
+ *     }
+ *     match /{document=**} {
+ *       allow read, write: if request.auth != null && 
+ *         (request.auth.token.email == 'toji123oodo@gmail.com' || 
+ *          request.auth.token.email == 'Mstfymdht542@gmail.com');
+ *     }
+ *   }
+ * }
+ */
+
 const firebaseConfig = {
   apiKey: "AIzaSyCgk9AqmGYf6O2mtuMzseOrjtqRWPNJn0U",
   authDomain: "nursssssssyyy.firebaseapp.com",
@@ -15,20 +41,13 @@ const firebaseConfig = {
   measurementId: "G-KJJDXK8TEC"
 };
 
-// Initialize Firebase
 const app = !firebase.apps.length ? firebase.initializeApp(firebaseConfig) : firebase.app();
-
-// Initialize Auth
 const auth = firebase.auth();
 auth.languageCode = 'ar'; 
 
-// Initialize Firestore
 const db = firebase.firestore();
-
-// IMPORTANT: Ignore undefined properties to prevent "Unsupported field value: undefined" errors
 db.settings({ ignoreUndefinedProperties: true });
 
-// Standard persistence settings - removed experimentalForceLongPolling as it causes hangs
 if (typeof window !== 'undefined') {
   db.enablePersistence({ synchronizeTabs: true }).catch((err) => {
     if (err.code === 'failed-precondition') {
@@ -39,19 +58,14 @@ if (typeof window !== 'undefined') {
   });
 }
 
-// Initialize Google Provider
 const googleProvider = new firebase.auth.GoogleAuthProvider();
 googleProvider.setCustomParameters({
   prompt: 'select_account'
 });
 
-// Initialize Analytics safely
 let analytics: any;
 if (typeof window !== 'undefined') {
   analytics = firebase.analytics();
-  // Debug: Log current domain for Authorized Domain setup
-  console.log("%c[Firebase Auth] Current Domain:", "color: #F38020; font-weight: bold;", window.location.hostname);
-  console.log("Add this domain to Firebase Console > Authentication > Settings > Authorized domains if you see 'auth/unauthorized-domain' error.");
 }
 
 export { auth, db, googleProvider, analytics };
