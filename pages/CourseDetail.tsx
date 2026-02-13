@@ -8,11 +8,10 @@ import {
   Play, Lock, Clock, CheckCircle2,
   Download, ArrowLeft, Share2,
   Info, BookOpen, Image as ImageIcon, Zap,
-  Music, Film, MessageSquare, Edit3
+  Music, Video, MessageSquare, Edit3
 } from 'lucide-react';
 import { QuizPlayer } from '../components/QuizPlayer';
 import { FlashcardDeck } from '../components/flashcards/FlashcardDeck';
-import { VideoPlayer } from '../components/VideoPlayer';
 import { LessonDiscussion } from '../components/dashboard/LessonDiscussion';
 import { LessonNotes } from '../components/dashboard/LessonNotes';
 
@@ -36,14 +35,9 @@ export const CourseDetail: React.FC = () => {
     course?.lessons?.find(l => l.id === activeLessonId),
   [course, activeLessonId]);
 
-  // Find the primary video for this lesson
-  const primaryVideo = useMemo(() => 
-    activeLesson?.contents?.find(c => c.type === 'video'),
-  [activeLesson]);
-
-  // Filter out the video from the downloadable resources list
+  // Treat all contents as resources (including videos)
   const downloadableResources = useMemo(() => 
-    activeLesson?.contents?.filter(c => c.type !== 'video') || [],
+    activeLesson?.contents || [],
   [activeLesson]);
 
   if (!course) return <div className="p-8 text-center text-muted">Course not found.</div>;
@@ -118,25 +112,7 @@ export const CourseDetail: React.FC = () => {
          {/* LEFT: Main Content Area */}
          <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
             
-            {/* 1. Player Section */}
-            <div className="w-full bg-black">
-              {primaryVideo && primaryVideo.url ? (
-                <VideoPlayer 
-                  url={primaryVideo.url} 
-                  poster={course.image}
-                />
-              ) : (
-                <div className="aspect-video bg-gray-900 flex flex-col items-center justify-center text-center p-6 border-b border-white/5">
-                   <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-4">
-                      <Film size={40} className="text-gray-600" />
-                   </div>
-                   <h3 className="text-white font-bold text-lg">هذا الدرس لا يحتوي على فيديو</h3>
-                   <p className="text-gray-500 text-sm mt-2 max-w-xs">يمكنك الاطلاع على المصادر والملخصات أو البطاقات التعليمية المتاحة بالأسفل.</p>
-                </div>
-              )}
-            </div>
-
-            {/* 2. Content Tabs & Details */}
+            {/* Content Tabs & Details */}
             <div className="flex-1 bg-white dark:bg-[#151515] p-4 md:p-8">
                <div className="max-w-4xl mx-auto">
                   {/* Tab Navigation */}
@@ -201,10 +177,11 @@ export const CourseDetail: React.FC = () => {
                                           file.type === 'pdf' ? 'bg-red-50 text-red-500' : 
                                           file.type === 'image' ? 'bg-green-50 text-green-500' :
                                           file.type === 'audio' ? 'bg-purple-50 text-purple-500' :
+                                          file.type === 'video' ? 'bg-orange-50 text-orange-500' :
                                           'bg-blue-50 text-blue-500'
                                        } dark:bg-[#252525]`}>
                                           {file.type === 'pdf' && <FileText size={20} />}
-                                          {file.type === 'video' && <Play size={20} />}
+                                          {file.type === 'video' && <Video size={20} />}
                                           {file.type === 'image' && <ImageIcon size={20} />}
                                           {file.type === 'article' && <FileText size={20} />}
                                           {file.type === 'audio' && <Music size={20} />}
