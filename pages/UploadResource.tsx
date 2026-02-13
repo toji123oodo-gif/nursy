@@ -3,9 +3,10 @@ import React, { useState, useRef } from 'react';
 import { 
   UploadCloud, FileText, Link as LinkIcon, Video, Send, 
   CheckCircle2, Info, AlertTriangle, Image as ImageIcon, X, 
-  Paperclip, FolderOpen 
+  Paperclip, FolderOpen, Loader2
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { storage, db } from '../firebase';
 
 export const UploadResource: React.FC = () => {
   const { user } = useApp();
@@ -16,17 +17,45 @@ export const UploadResource: React.FC = () => {
   const [submitted, setSubmitted] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     
-    // Simulate API submission with delay
-    setTimeout(() => {
+    try {
+        let finalUrl = formData.url;
+
+        // 1. Upload File if selected
+        if (type !== 'link' && selectedFile) {
+             const timestamp = Date.now();
+             const safeName = selectedFile.name.replace(/[^a-zA-Z0-9.]/g, '_');
+             const storageRef = storage.ref(`uploads/requests/${user?.id || 'guest'}/${timestamp}_${safeName}`);
+             
+             // Explicitly set content type to preserve format and avoid HTML handling
+             const metadata = { 
+                 contentType: selectedFile.type || 'application/octet-stream',
+                 customMetadata: {
+                     originalName: selectedFile.name,
+                     uploaderId: user?.id || 'guest'
+                 }
+             };
+             
+             const snapshot = await storageRef.put(selectedFile, metadata);
+             finalUrl = await snapshot.ref.getDownloadURL();
+        }
+
+        // 2. Save Request Metadata (Simulated for now as we don't have a 'requests' collection listener in this view)
+        console.log("Submission Complete:", { ...formData, url: finalUrl, type, user: user?.id });
+
         setIsSubmitting(false);
         setSubmitted(true);
         setFormData({ title: '', category: 'General', description: '', url: '' });
         setSelectedFile(null);
-    }, 2500);
+
+    } catch (error) {
+        console.error("Upload Error:", error);
+        alert("فشل الرفع. يرجى التأكد من الاتصال بالإنترنت.");
+        setIsSubmitting(false);
+    }
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -144,13 +173,13 @@ export const UploadResource: React.FC = () => {
                                  onClick={() => fileInputRef.current?.click()}
                                  className="border-2 border-dashed border-gray-300 dark:border-[#444] hover:border-orange-400 dark:hover:border-orange-500 hover:bg-orange-50/50 dark:hover:bg-orange-900/10 rounded-2xl p-10 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 group"
                                >
-                                  <input type="file" ref={fileInputRef} onChange={handleFileSelect} className="hidden" accept={type === 'video' ? 'video/*' : '.pdf,.doc,.docx'} />
+                                  <input type="file" ref={fileInputRef} onChange={handleFileSelect} className="hidden" accept={type === 'video' ? 'video/*' : '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx'} />
                                   <div className="w-16 h-16 bg-gray-100 dark:bg-[#2C2C2C] rounded-full flex items-center justify-center text-gray-400 group-hover:text-orange-500 group-hover:scale-110 transition-all duration-300 mb-4 shadow-inner">
                                      <UploadCloud size={32} />
                                   </div>
                                   <p className="text-base font-bold text-gray-700 dark:text-gray-200">اضغط لرفع الملف أو اسحبه هنا</p>
                                   <p className="text-xs text-gray-400 mt-2">
-                                     {type === 'video' ? 'MP4, WebM (Max 100MB)' : 'PDF, DOCX (Max 25MB)'}
+                                     {type === 'video' ? 'MP4, WebM (Max 100MB)' : 'PDF, DOCX, PPT, XLS (Max 50MB)'}
                                   </p>
                                </div>
                             ) : (
@@ -248,7 +277,7 @@ export const UploadResource: React.FC = () => {
                          >
                             {isSubmitting ? (
                                <>
-                                  <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                                  <Loader2 className="animate-spin" size={20} />
                                   جاري الرفع...
                                </>
                             ) : (
@@ -280,7 +309,7 @@ export const UploadResource: React.FC = () => {
                    {[
                       { title: 'جودة المحتوى', desc: 'تأكد من وضوح الصور وجودة الصوت في الفيديوهات.' },
                       { title: 'حقوق الملكية', desc: 'يمنع رفع كتب محمية بحقوق نشر بدون إذن.' },
-                      { title: 'الروابط العامة', desc: 'تأكد أن روابط Google Drive متاحة للجميع (Public Access).' }
+                      { title: 'الصيغة الأصلية', desc: 'يتم رفع الملفات بصيغتها الأصلية (PDF, Word, MP4) لضمان سهولة الاستخدام.' }
                    ].map((rule, i) => (
                       <div key={i} className="flex gap-3 items-start">
                          <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#F38020] shrink-0 shadow-sm shadow-orange-500"></div>

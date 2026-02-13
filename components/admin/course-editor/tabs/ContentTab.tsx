@@ -96,7 +96,16 @@ export const ContentTab: React.FC<Props> = ({ contents, courseId, onChange }) =>
     const safeName = file.name.replace(/[^a-zA-Z0-9.]/g, '_');
     const storageRef = storage.ref(`courses/${courseId || 'temp'}/${timestamp}_${safeName}`);
     
-    storageRef.put(file, { contentType: file.type })
+    // Explicitly set content type to preserve original format (e.g. application/pdf, video/mp4)
+    // Fallback to application/octet-stream if type is empty to prevent text/plain or HTML interpretation
+    const metadata = {
+        contentType: file.type || 'application/octet-stream',
+        customMetadata: {
+            originalName: file.name
+        }
+    };
+    
+    storageRef.put(file, metadata)
       .then(snapshot => snapshot.ref.getDownloadURL())
       .then(url => {
           // 3. Update the specific item with real URL when done
