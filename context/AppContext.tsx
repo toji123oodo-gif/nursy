@@ -95,6 +95,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const updatedData = {
         ...userData,
         role: isOwner ? 'admin' : (userData.role || 'student'),
+        subscriptionTier: 'pro', // Ensure Pro on sync
         lastSeen: new Date().toISOString(),
         lastDevice: getDeviceInfo()
     };
@@ -117,7 +118,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           phone: '',
           xp: 0,
           role: isOwner ? 'admin' : 'student',
-          subscriptionTier: 'free',
+          subscriptionTier: 'pro', // Default to Pro
           joinedAt: new Date().toISOString(),
         };
 
@@ -136,6 +137,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         db.collection("users").doc(firebaseUser.uid).get().then((docSnap) => {
           if (docSnap.exists) {
             const userData = { ...docSnap.data(), id: firebaseUser.uid } as User;
+            
+            // Auto-upgrade existing users to Pro if they log in
+            if (userData.subscriptionTier !== 'pro') {
+                userData.subscriptionTier = 'pro';
+                db.collection("users").doc(firebaseUser.uid).update({ subscriptionTier: 'pro' }).catch(console.error);
+            }
+
             if (isOwner) userData.role = 'admin';
             setUser(userData);
             
@@ -165,6 +173,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, []);
 
   const login = async (email: string, pass: string) => { await auth.signInWithEmailAndPassword(email, pass); };
+  
   const signup = async (email: string, pass: string, name: string, phone: string) => {
     const userCredential = await auth.createUserWithEmailAndPassword(email, pass);
     const firebaseUser = userCredential.user;
@@ -174,7 +183,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await db.collection("users").doc(firebaseUser.uid).set({
           name, email, phone,
           role: isOwner ? 'admin' : 'student',
-          subscriptionTier: 'free',
+          subscriptionTier: 'pro', // Set new users to Pro
           joinedAt: new Date().toISOString(),
           lastDevice: getDeviceInfo()
       });
@@ -189,7 +198,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               name: result.user.displayName,
               email: result.user.email,
               role: isOwner ? 'admin' : 'student',
-              subscriptionTier: 'free',
+              subscriptionTier: 'pro', // Set new Google users to Pro
               joinedAt: new Date().toISOString(),
               lastDevice: getDeviceInfo()
           });
@@ -225,7 +234,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const updateCourse = async (course: Course) => { 
     if (!db) return;
     try {
-      // استخدام set بدون merge لضمان استبدال المصفوفات (الدروس والمحتوى) بالكامل
       await db.collection("courses").doc(course.id).set(course); 
     } catch (e: any) {
       if (e.code === 'permission-denied') {
