@@ -8,7 +8,7 @@ import {
   Play, Lock, Clock, CheckCircle2,
   Download, ArrowLeft, Share2,
   Info, BookOpen, Image as ImageIcon, Zap,
-  Music, Video, MessageSquare, Edit3
+  Music, Video, MessageSquare, Edit3, FileSpreadsheet, Presentation
 } from 'lucide-react';
 import { QuizPlayer } from '../components/QuizPlayer';
 import { FlashcardDeck } from '../components/flashcards/FlashcardDeck';
@@ -63,6 +63,30 @@ export const CourseDetail: React.FC = () => {
     } catch (error) {
         window.open(url, '_blank');
     }
+  };
+
+  const getFileIcon = (file: any) => {
+      const ext = file.title.split('.').pop()?.toLowerCase();
+      if (file.type === 'video') return <Video size={20} />;
+      if (file.type === 'image') return <ImageIcon size={20} />;
+      if (file.type === 'audio') return <Music size={20} />;
+      
+      // Document types based on extension or fallback
+      if (['xls', 'xlsx', 'csv'].includes(ext)) return <FileSpreadsheet size={20} />;
+      if (['ppt', 'pptx'].includes(ext)) return <Presentation size={20} />;
+      return <FileText size={20} />;
+  };
+
+  const getFileColor = (file: any) => {
+      const ext = file.title.split('.').pop()?.toLowerCase();
+      if (file.type === 'video') return 'bg-orange-50 text-orange-500';
+      if (file.type === 'image') return 'bg-green-50 text-green-500';
+      if (file.type === 'audio') return 'bg-purple-50 text-purple-500';
+      
+      if (['xls', 'xlsx', 'csv'].includes(ext)) return 'bg-green-100 text-green-700'; // Excel Green
+      if (['ppt', 'pptx'].includes(ext)) return 'bg-orange-100 text-orange-700'; // PPT Orange
+      if (['doc', 'docx'].includes(ext)) return 'bg-blue-50 text-blue-500'; // Word Blue
+      return 'bg-red-50 text-red-500'; // PDF Red
   };
 
   return (
@@ -173,18 +197,8 @@ export const CourseDetail: React.FC = () => {
                                     className="flex items-center justify-between p-4 bg-white dark:bg-[#1E1E1E] border border-gray-200 dark:border-[#333] rounded-xl hover:border-[#F38020] hover:shadow-md transition-all group cursor-pointer"
                                  >
                                     <div className="flex items-center gap-4">
-                                       <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                                          file.type === 'pdf' ? 'bg-red-50 text-red-500' : 
-                                          file.type === 'image' ? 'bg-green-50 text-green-500' :
-                                          file.type === 'audio' ? 'bg-purple-50 text-purple-500' :
-                                          file.type === 'video' ? 'bg-orange-50 text-orange-500' :
-                                          'bg-blue-50 text-blue-500'
-                                       } dark:bg-[#252525]`}>
-                                          {file.type === 'pdf' && <FileText size={20} />}
-                                          {file.type === 'video' && <Video size={20} />}
-                                          {file.type === 'image' && <ImageIcon size={20} />}
-                                          {file.type === 'article' && <FileText size={20} />}
-                                          {file.type === 'audio' && <Music size={20} />}
+                                       <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${getFileColor(file)} dark:bg-[#252525]`}>
+                                          {getFileIcon(file)}
                                        </div>
                                        <div>
                                           <p className="font-bold text-gray-900 dark:text-white text-sm group-hover:text-[#F38020] transition-colors">{file.title}</p>

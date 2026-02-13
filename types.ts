@@ -1,5 +1,5 @@
 
-export type ContentType = 'audio' | 'pdf' | 'video' | 'article' | 'image';
+export type ContentType = 'audio' | 'pdf' | 'video' | 'article' | 'image' | 'document';
 
 export interface Flashcard {
   id: string;
