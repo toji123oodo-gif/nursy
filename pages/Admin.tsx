@@ -5,7 +5,7 @@ import { User, ActivationCode } from '../types';
 import { db } from '../firebase';
 import { 
   Shield, Activity, CreditCard, Users, 
-  BarChart3, Layout, Ticket, GraduationCap, Globe, AlertTriangle
+  BarChart3, Layout, Ticket, GraduationCap, Globe, AlertTriangle, Table
 } from 'lucide-react';
 import { UsersTab } from '../components/admin/UsersTab';
 import { CodesTab } from '../components/admin/CodesTab';
@@ -13,10 +13,11 @@ import { CoursesTab } from '../components/admin/CoursesTab';
 import { OverviewTab } from '../components/admin/OverviewTab';
 import { ExamsTab } from '../components/admin/ExamsTab';
 import { CommunitiesTab } from '../components/admin/CommunitiesTab';
+import { SchedulesTab } from '../components/admin/SchedulesTab';
 
 export const Admin: React.FC = () => {
   const { courses } = useApp();
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'codes' | 'courses' | 'exams' | 'communities'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'codes' | 'courses' | 'exams' | 'communities' | 'schedules'>('overview');
   const [users, setUsers] = useState<User[]>([]);
   const [codes, setCodes] = useState<ActivationCode[]>([]);
   const [activities, setActivities] = useState<any[]>([]);
@@ -50,11 +51,12 @@ export const Admin: React.FC = () => {
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: BarChart3 },
-    { id: 'users', label: 'Students & Users', icon: Users },
-    { id: 'exams', label: 'Exam Results', icon: GraduationCap },
+    { id: 'users', label: 'Students', icon: Users },
+    { id: 'schedules', label: 'Tables', icon: Table }, // New Tab
     { id: 'courses', label: 'Curriculum', icon: Layout },
-    { id: 'codes', label: 'Access Codes', icon: Ticket },
-    { id: 'communities', label: 'Communities', icon: Globe },
+    { id: 'exams', label: 'Exams', icon: GraduationCap },
+    { id: 'codes', label: 'Codes', icon: Ticket },
+    { id: 'communities', label: 'Community', icon: Globe },
   ];
 
   return (
@@ -72,7 +74,7 @@ export const Admin: React.FC = () => {
              </div>
           </div>
           
-          <div className="flex bg-gray-100 dark:bg-[#2C2C2C] p-1 rounded-lg border border-gray-200 dark:border-[#333] overflow-x-auto transition-colors">
+          <div className="flex bg-gray-100 dark:bg-[#2C2C2C] p-1 rounded-lg border border-gray-200 dark:border-[#333] overflow-x-auto transition-colors scrollbar-hide">
              {tabs.map(tab => (
                <button
                  key={tab.id}
@@ -107,6 +109,7 @@ export const Admin: React.FC = () => {
          {activeTab === 'codes' && <CodesTab initialCodes={codes} />}
          {activeTab === 'courses' && <CoursesTab />}
          {activeTab === 'communities' && <CommunitiesTab />}
+         {activeTab === 'schedules' && <SchedulesTab />}
       </div>
     </div>
   );

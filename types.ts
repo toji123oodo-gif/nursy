@@ -128,3 +128,23 @@ export interface ChatMessage {
   timestamp: string;
   isAdmin?: boolean;
 }
+
+// --- Schedule / Timetable Types ---
+export interface ScheduleItem {
+  day: string;
+  time: string;
+  course_name: string;
+  course_code: string;
+  location: string;
+  staff: string[];
+}
+
+export interface AcademicSchedule {
+  id?: string;
+  semester: string;
+  academic_year: string;
+  level: string;
+  group: string;
+  schedule: ScheduleItem[];
+  createdAt?: string;
+}
