@@ -6,7 +6,7 @@ import {
   Home, Book, Wallet, User, LogOut, Menu, X, 
   Activity, ChevronRight, Bell, Settings, Cloud,
   Moon, Sun, Users, HelpCircle, ExternalLink, Search, Command,
-  Calendar, UploadCloud, Award, Trophy, Shield
+  Calendar, UploadCloud, Award, Trophy, Shield, Table
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { CommandPalette } from './CommandPalette';
@@ -39,7 +39,8 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
   const navLinks = [
     { path: '/dashboard', label: 'Overview', icon: Home },
-    { path: '/schedule', label: 'Schedule', icon: Calendar },
+    { path: '/tables', label: 'Timetables', icon: Table }, // Added Timetables
+    { path: '/schedule', label: 'Calendar', icon: Calendar },
     { path: '/dashboard/courses', label: 'My Courses', icon: Book },
     { path: '/community', label: 'Community', icon: Users },
     { path: '/wallet', label: 'Billing', icon: Wallet },
