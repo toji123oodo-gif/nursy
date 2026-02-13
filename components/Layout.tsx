@@ -95,9 +95,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           {navLinks.map(link => (
             <Link
               key={link.path}
-              to={link.path === '/dashboard/courses' ? '/dashboard' : link.path}
+              to={link.path}
               className={`flex items-center gap-3 px-3 py-2 rounded-[4px] text-sm font-medium transition-colors ${
-                isActive(link.path === '/dashboard/courses' ? '/dashboard' : link.path) 
+                isActive(link.path) 
                 ? 'bg-blue-50 dark:bg-[#2B3A4F] text-[#0051C3] dark:text-[#68b5fb]' 
                 : 'text-[#595959] dark:text-[#A3A3A3] hover:bg-gray-100 dark:hover:bg-[#2C2C2C] hover:text-main'
               }`}

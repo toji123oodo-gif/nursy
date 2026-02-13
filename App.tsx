@@ -23,6 +23,7 @@ import { UploadResource } from './pages/UploadResource';
 import { Certificates } from './pages/Certificates';
 import { Leaderboard } from './pages/Leaderboard';
 import { HelpCenter } from './pages/HelpCenter';
+import { MyCourses } from './pages/MyCourses';
 import { jwtUtils } from './utils/jwt';
 
 // Public Route: Redirects to dashboard if user is ALREADY logged in
@@ -103,7 +104,7 @@ const AppContent: React.FC = () => {
        
        {/* Dashboard Layout Routes */}
        <Route path="/dashboard" element={<Layout><ProtectedRoute><Dashboard /></ProtectedRoute></Layout>} />
-       <Route path="/dashboard/courses" element={<Layout><ProtectedRoute><Dashboard /></ProtectedRoute></Layout>} /> 
+       <Route path="/dashboard/courses" element={<Layout><ProtectedRoute><MyCourses /></ProtectedRoute></Layout>} /> 
        
        <Route path="/course/:courseId" element={<Layout><ProtectedRoute><CourseDetail /></ProtectedRoute></Layout>} />
        <Route path="/community" element={<Layout><ProtectedRoute><Community /></ProtectedRoute></Layout>} />
