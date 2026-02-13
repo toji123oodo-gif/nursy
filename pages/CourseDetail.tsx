@@ -35,7 +35,7 @@ export const CourseDetail: React.FC = () => {
     course?.lessons?.find(l => l.id === activeLessonId),
   [course, activeLessonId]);
 
-  // Treat all contents as resources (including videos)
+  // Treat all contents as downloadable resources (including videos)
   const downloadableResources = useMemo(() => 
     activeLesson?.contents || [],
   [activeLesson]);
