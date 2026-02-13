@@ -6,7 +6,7 @@ import { useApp } from '../context/AppContext';
 import { 
   FileText, Brain, ChevronRight, 
   Play, Lock, Clock, CheckCircle2,
-  Download, ArrowLeft, Share2,
+  ExternalLink, ArrowLeft, Share2,
   Info, BookOpen, Image as ImageIcon, Zap,
   Music, Video, MessageSquare, Edit3, FileSpreadsheet, Presentation
 } from 'lucide-react';
@@ -46,24 +46,6 @@ export const CourseDetail: React.FC = () => {
   const progress = course.lessons 
     ? Math.round((course.lessons.filter(l => isCompleted(l.id)).length / course.lessons.length) * 100)
     : 0;
-
-  const handleDownload = async (e: React.MouseEvent<HTMLAnchorElement>, url: string, filename: string) => {
-    e.preventDefault();
-    try {
-        const response = await fetch(url);
-        const blob = await response.blob();
-        const blobUrl = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = blobUrl;
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(blobUrl);
-    } catch (error) {
-        window.open(url, '_blank');
-    }
-  };
 
   const getFileIcon = (file: any) => {
       const ext = file.title.split('.').pop()?.toLowerCase();
@@ -187,13 +169,14 @@ export const CourseDetail: React.FC = () => {
 
                      {activeTab === 'resources' && (
                         <div className="space-y-4">
-                           <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">مواد تعليمية قابلة للتحميل</h3>
+                           <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">مواد تعليمية</h3>
                            <div className="grid grid-cols-1 gap-3">
                               {downloadableResources.length > 0 ? downloadableResources.map(file => (
                                  <a 
                                     key={file.id} 
                                     href={file.url} 
-                                    onClick={(e) => handleDownload(e, file.url, file.title)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
                                     className="flex items-center justify-between p-4 bg-white dark:bg-[#1E1E1E] border border-gray-200 dark:border-[#333] rounded-xl hover:border-[#F38020] hover:shadow-md transition-all group cursor-pointer"
                                  >
                                     <div className="flex items-center gap-4">
@@ -206,7 +189,7 @@ export const CourseDetail: React.FC = () => {
                                        </div>
                                     </div>
                                     <div className="flex items-center gap-2 text-sm text-gray-400 group-hover:text-[#F38020] font-bold">
-                                       تحميل <Download size={18} />
+                                       فتح المحاضرة <ExternalLink size={18} />
                                     </div>
                                  </a>
                               )) : (
