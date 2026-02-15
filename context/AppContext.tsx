@@ -31,35 +31,43 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(jwtUtils.getToken());
+  const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [courses, setCourses] = useState<Course[]>([]);
   const [isExamHubOpen, setExamHubOpen] = useState(false);
   
   const OWNERS = ["toji123oodo@gmail.com", "Mstfymdht542@gmail.com"];
 
+  // Safety Timeout: If loading takes too long, force stop it
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (isLoading) {
+        console.warn("Auth check timed out, forcing UI to load.");
+        setIsLoading(false);
+      }
+    }, 6000); // 6 seconds limit
+    return () => clearTimeout(timer);
+  }, [isLoading]);
+
   const [language, setLanguage] = useState<'ar' | 'en'>(() => {
-    return (localStorage.getItem('nursy_lang') as 'ar' | 'en') || 'ar';
+    try { return (localStorage.getItem('nursy_lang') as 'ar' | 'en') || 'ar'; } catch(e) { return 'ar'; }
   });
 
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    return (localStorage.getItem('nursy_theme') as 'light' | 'dark') || 'dark';
+    try { return (localStorage.getItem('nursy_theme') as 'light' | 'dark') || 'dark'; } catch(e) { return 'dark'; }
   });
 
   useEffect(() => {
     document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
     document.documentElement.lang = language;
-    localStorage.setItem('nursy_lang', language);
+    try { localStorage.setItem('nursy_lang', language); } catch(e) {}
   }, [language]);
 
   useEffect(() => {
     const root = window.document.documentElement;
-    if (theme === 'dark') {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
-    localStorage.setItem('nursy_theme', theme);
+    if (theme === 'dark') root.classList.add('dark');
+    else root.classList.remove('dark');
+    try { localStorage.setItem('nursy_theme', theme); } catch(e) {}
   }, [theme]);
 
   const toggleLanguage = () => setLanguage(prev => (prev === 'ar' ? 'en' : 'ar'));
@@ -71,37 +79,39 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (ua.match(/iPhone|iPad|iPod/i)) return "iOS Device";
     if (ua.match(/Windows/i)) return "Windows PC";
     if (ua.match(/Macintosh/i)) return "MacBook";
-    return "Desktop Browser";
+    return "Browser";
   };
 
+  // Listen to Courses
   useEffect(() => {
     if (!db) return;
     const unsubscribe = db.collection("courses").onSnapshot((snapshot) => {
-      if (snapshot.empty) {
-        setCourses(defaultCourses);
+      if (!snapshot.empty) {
+        setCourses(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Course)));
       } else {
-        const cloudCourses = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Course));
-        setCourses(cloudCourses);
+        setCourses(defaultCourses);
       }
-    }, (error) => {
-      console.error("Firestore Courses Listener Error:", error);
-    });
+    }, (error) => console.error("Courses Listener Error:", error));
     return () => unsubscribe();
   }, []);
 
+  // Sync user data helper
   const syncUserToCloud = async (userData: User) => {
     if (!db || !userData.id) return;
-    const isOwner = OWNERS.includes(userData.email);
-    const updatedData = {
-        ...userData,
-        role: isOwner ? 'admin' : (userData.role || 'student'),
-        subscriptionTier: 'pro', // Ensure Pro on sync
-        lastSeen: new Date().toISOString(),
-        lastDevice: getDeviceInfo()
-    };
-    db.collection("users").doc(userData.id).set(updatedData, { merge: true }).catch(err => console.error("Background sync failed", err));
+    try {
+      const isOwner = OWNERS.includes(userData.email);
+      const updatedData = {
+          ...userData,
+          role: isOwner ? 'admin' : (userData.role || 'student'),
+          subscriptionTier: 'pro',
+          lastSeen: new Date().toISOString(),
+          lastDevice: getDeviceInfo()
+      };
+      await db.collection("users").doc(userData.id).set(updatedData, { merge: true });
+    } catch (err) { console.error("Sync failed", err); }
   };
 
+  // Authentication Listener (Robust)
   useEffect(() => {
     if (!auth) {
       setIsLoading(false);
@@ -109,62 +119,49 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
-      if (firebaseUser) {
-        const isOwner = OWNERS.includes(firebaseUser.email || '');
-        const optimisticUser: User = {
-          id: firebaseUser.uid,
-          name: firebaseUser.displayName || 'Student',
-          email: firebaseUser.email || '',
-          phone: '',
-          xp: 0,
-          role: isOwner ? 'admin' : 'student',
-          subscriptionTier: 'pro', // Default to Pro
-          joinedAt: new Date().toISOString(),
-        };
-
-        if (!user) setUser(optimisticUser);
-        
-        const newToken = jwtUtils.sign({ 
-           sub: optimisticUser.id, 
-           name: optimisticUser.name, 
-           email: optimisticUser.email,
-           role: optimisticUser.role
-        });
-        jwtUtils.saveToken(newToken);
-        setToken(newToken);
-        setIsLoading(false);
-
-        db.collection("users").doc(firebaseUser.uid).get().then((docSnap) => {
-          if (docSnap.exists) {
-            const userData = { ...docSnap.data(), id: firebaseUser.uid } as User;
-            
-            // Auto-upgrade existing users to Pro if they log in
-            if (userData.subscriptionTier !== 'pro') {
-                userData.subscriptionTier = 'pro';
-                db.collection("users").doc(firebaseUser.uid).update({ subscriptionTier: 'pro' }).catch(console.error);
-            }
-
+      try {
+        if (firebaseUser) {
+          const isOwner = OWNERS.includes(firebaseUser.email || '');
+          
+          // Try to fetch existing data
+          const docSnap = await db.collection("users").doc(firebaseUser.uid).get().catch(() => null);
+          
+          let userData: User;
+          if (docSnap && docSnap.exists) {
+            userData = { ...docSnap.data(), id: firebaseUser.uid } as User;
             if (isOwner) userData.role = 'admin';
-            setUser(userData);
-            
-            const updatedToken = jwtUtils.sign({ 
-                sub: userData.id, 
-                name: userData.name, 
-                email: userData.email,
-                role: userData.role
-            });
-            jwtUtils.saveToken(updatedToken);
+            if (userData.subscriptionTier !== 'pro') {
+              userData.subscriptionTier = 'pro';
+              db.collection("users").doc(firebaseUser.uid).update({ subscriptionTier: 'pro' }).catch(() => {});
+            }
           } else {
-            syncUserToCloud(optimisticUser);
+            userData = {
+              id: firebaseUser.uid,
+              name: firebaseUser.displayName || 'Student',
+              email: firebaseUser.email || '',
+              phone: '',
+              xp: 0,
+              role: isOwner ? 'admin' : 'student',
+              subscriptionTier: 'pro',
+              joinedAt: new Date().toISOString(),
+            };
+            syncUserToCloud(userData);
           }
-        }).catch(err => {
-            console.error("Error fetching user data:", err);
-        });
 
-      } else {
-        setUser(null);
-        setToken(null);
-        jwtUtils.removeToken();
+          setUser(userData);
+          const newToken = jwtUtils.sign({ 
+             sub: userData.id, name: userData.name, email: userData.email, role: userData.role 
+          });
+          jwtUtils.saveToken(newToken);
+          setToken(newToken);
+        } else {
+          setUser(null);
+          setToken(null);
+          jwtUtils.removeToken();
+        }
+      } catch (err) {
+        console.error("Auth process error", err);
+      } finally {
         setIsLoading(false);
       }
     });
@@ -176,17 +173,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   
   const signup = async (email: string, pass: string, name: string, phone: string) => {
     const userCredential = await auth.createUserWithEmailAndPassword(email, pass);
-    const firebaseUser = userCredential.user;
-    if (firebaseUser) {
-      await firebaseUser.updateProfile({ displayName: name });
+    if (userCredential.user) {
+      await userCredential.user.updateProfile({ displayName: name });
       const isOwner = OWNERS.includes(email);
-      await db.collection("users").doc(firebaseUser.uid).set({
+      const newUser: any = {
           name, email, phone,
           role: isOwner ? 'admin' : 'student',
-          subscriptionTier: 'pro', // Set new users to Pro
+          subscriptionTier: 'pro',
           joinedAt: new Date().toISOString(),
           lastDevice: getDeviceInfo()
-      });
+      };
+      await db.collection("users").doc(userCredential.user.uid).set(newUser);
     }
   };
 
@@ -198,7 +195,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               name: result.user.displayName,
               email: result.user.email,
               role: isOwner ? 'admin' : 'student',
-              subscriptionTier: 'pro', // Set new Google users to Pro
+              subscriptionTier: 'pro',
               joinedAt: new Date().toISOString(),
               lastDevice: getDeviceInfo()
           });
@@ -209,6 +206,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await auth.signOut(); 
       jwtUtils.removeToken();
       setUser(null);
+      setToken(null);
       window.location.href = '/';
   };
   
@@ -219,41 +217,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     syncUserToCloud(updatedUser);
   };
 
-  const addCourse = async (course: Course) => { 
-    if (!db) return;
-    try {
-      await db.collection("courses").doc(course.id).set(course); 
-    } catch (e: any) {
-      if (e.code === 'permission-denied') {
-        alert("خطأ في الصلاحيات: يرجى التأكد من تحديث قواعد Firestore (Rules) في الكونسول.");
-      }
-      throw e;
-    }
-  };
-  
-  const updateCourse = async (course: Course) => { 
-    if (!db) return;
-    try {
-      await db.collection("courses").doc(course.id).set(course); 
-    } catch (e: any) {
-      if (e.code === 'permission-denied') {
-        alert("خطأ في الصلاحيات: يرجى التأكد من تحديث قواعد Firestore (Rules) في الكونسول.");
-      }
-      throw e;
-    }
-  };
-  
-  const deleteCourse = async (id: string) => { 
-    if (!db) return;
-    try {
-      await db.collection("courses").doc(id).delete();
-    } catch (e: any) {
-      if (e.code === 'permission-denied') {
-        alert("خطأ في الصلاحيات: لا تملك صلاحية حذف هذا الكورس.");
-      }
-      throw e;
-    }
-  };
+  const addCourse = async (course: Course) => { if (db) await db.collection("courses").doc(course.id).set(course); };
+  const updateCourse = async (course: Course) => { if (db) await db.collection("courses").doc(course.id).set(course); };
+  const deleteCourse = async (id: string) => { if (db) await db.collection("courses").doc(id).delete(); };
 
   return (
     <AppContext.Provider value={{ 
